@@ -5,6 +5,27 @@
 
 /**
  * Computes the sum of three bits.
+ *
+ * Updating the truth table with outputs for two half adders, one connected to BC
+ * and the other connected to A and the sum output of the first half adder, we get
+ * the values below.
+ *
+ * The sum2 column gives the values we need for the sum line on the full adder,
+ * and the OR of the two carry lines gives the carry for the full adder.
+ *
+ *             Inputs             Desired         HA1(bc)       HA2(HA1sum + a)
+ * 
+ * |   a   |   b   |   c   ||  sum  | carry || sum1 | carry1 || sum2 | carry2 |
+ * ----------------------------------------------------------------------------
+ * |   0   |   0   |   0   ||   0   |   0   ||   0  |    0   ||   0  |    0   |
+ * |   0   |   0   |   1   ||   1   |   0   ||   1  |    0   ||   1  |    0   |
+ * |   0   |   1   |   0   ||   1   |   0   ||   1  |    0   ||   1  |    0   |
+ * |   0   |   1   |   1   ||   0   |   1   ||   0  |    1   ||   0  |    0   |
+ * |   1   |   0   |   0   ||   1   |   0   ||   0  |    0   ||   1  |    0   |
+ * |   1   |   0   |   1   ||   0   |   1   ||   1  |    0   ||   0  |    1   |
+ * |   1   |   1   |   0   ||   0   |   1   ||   1  |    0   ||   0  |    1   |
+ * |   1   |   1   |   1   ||   1   |   1   ||   0  |    1   ||   1  |    0   |
+ *
  */
 
 CHIP FullAdder {
@@ -13,5 +34,7 @@ CHIP FullAdder {
         carry;   // Left bit of a + b + c
 
     PARTS:
-    // Put your code here.
+        HalfAdder(a=b, b=c, sum=sum1, carry=carry1);
+        HalfAdder(a=a, b=sum1, sum=sum, carry=carry2);
+        Or(a=carry1, b=carry2, out=carry);
 }
