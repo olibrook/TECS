@@ -31,7 +31,7 @@
   
 CHIP ALU {
     IN  
-        x[16], y[16],  // 16-bit inputs        
+        x[16], y[16],  // 16-bit inputs
         zx, // zero the x input?
         nx, // negate the x input?
         zy, // zero the y input?
@@ -43,7 +43,36 @@ CHIP ALU {
         out[16], // 16-bit output
         zr, // 1 if (out==0), 0 otherwise
         ng; // 1 if (out<0),  0 otherwise
-
+        
+        
     PARTS:
-    // Put your code here.
+        Mux16(a=x, b[0..15]=false, sel=zx, out=zx16);
+        Mux16(a=y, b[0..15]=false, sel=zy, out=zy16);
+        
+        Not16(in=zx16, out=nx16);
+        Not16(in=zy16, out=ny16);
+        
+        Mux16(a=zx16, b=nx16, sel=nx, out=presetx);
+        Mux16(a=zy16, b=ny16, sel=ny, out=presety);
+        
+        Add16(a=presetx, b=presety, out=added);
+        And16(a=presetx, b=presety, out=anded);
+        
+        Mux16(a=anded, b=added, sel=f, out=computed);
+        
+        Not16(in=computed, out=notcomputed);
+        
+        // Split the outputs up so that:
+        //
+        // - MSB of the output is sent to ng. Using 2's complement, a 1 indicates a negative output.
+        // - Low and high 8-bits of the output are split so they can be easily OR-ed with the 8 way
+        //   OR gate we developed, to work out if the output is a zero.
+        
+        Mux16(a=computed, b=notcomputed, sel=no, out=out, out[0..7]=lsb, out[8..15]=msb, out[15]=ng);
+        
+        Or8Way(in=lsb, out=lsbor);
+        Or8Way(in=msb, out=msbor);
+        
+        Or(a=lsbor, b=msbor, out=or16);
+        Not(in=or16, out=zr);
 }
