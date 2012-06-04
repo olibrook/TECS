@@ -39,5 +39,43 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
      PARTS:
-    // Put your code here.
+        // Determine if the instruction is an 'A' instruction.
+        Not(in=instruction[15], out=isAInstruction);
+        Not(in=isAInstruction, out=isCInstruction);
+        
+        // Decode destination portion of an instruction.
+        And(a=isCInstruction, b=instruction[3], out=writeM); // Write to memory
+        
+        // Decode the jump portion of an instruction.
+        Not(in=ng, out=notng);
+        And(a=instruction[2], b=ng, out=JLE);
+        And(a=instruction[1], b=zr, out=JEQ);
+        And(a=instruction[0], b=notng, out=JGT);
+        Or(a=JLE, b=JEQ, out=doJumpPartial1);
+        Or(a=JGT, b=doJumpPartial1, out=doJumpPartial2);
+        And(a=doJumpPartial2, b=isCInstruction, out=doJump);
+        Not(in=doJump, out=noJump);
+        
+        // 'A' register
+        Mux16(a=aluOut, b=instruction, sel=isAInstruction, out=aIn);
+        Or(a=isAInstruction, b=instruction[5], out=loadA); // Instruction[5] = store result in A
+        ARegister(in=aIn, load=loadA, out=aOut, out[0..14]=addressM);
+        
+        // Determine if the selected operation uses the value in the A register as a parameter
+        // or the location it points to in memory (instruction[12] is the 'i' bit).
+        And(a=isCInstruction, b=instruction[12], out=memoryAsOperand);
+        Mux16(a=aOut, b=inM, sel=memoryAsOperand, out=AorM);
+        
+        // Program counter
+        PC(in=AorM, load=doJump, inc=noJump, reset=reset, out[0..14]=pc);
+        
+        // 'D' register
+        And(a=isCInstruction, b=instruction[4], out=loadD); // Instruction[4] = store result in D
+        DRegister(in=aluOut, load=loadD, out=dOut);
+        
+        // Opcodes just happen to match the spec. of the ALU!!
+        ALU(x=dOut, y=AorM,
+            zx=instruction[11], nx=instruction[10], zy=instruction[9],
+            ny=instruction[8], f=instruction[7], no=instruction[6],
+            zr=zr, ng=ng, out=aluOut, out=outM);
 }
