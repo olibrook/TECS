@@ -1,7 +1,80 @@
 #!/usr/bin/env node
 
-var fs = require('fs'),
-    lazy = require('lazy');
+var fs = require('fs');
+
+
+function LineReader(path){
+    
+    // Contents of the file gets read into a string as we scan for newlines.
+    this.buffer = "";
+    
+    // Scan position into this.buffer for newline characters.
+    this.newlinePosition = 0;
+    
+    // Amount read from the file at a time.
+    this.chunkSize = 1024;
+    this.path = path;
+    this.fd = null;
+}
+
+
+LineReader.prototype.open = function(){
+    this.fd = fs.openSync(this.path, "r");
+}
+
+
+LineReader.prototype.close = function(){
+    fs.closeSync(this.fd);
+}
+
+
+LineReader.prototype._read = function(){
+    // Read from current position in the file (position=null).
+    // Hack assembly files are ASCII.
+    var result = fs.readSync(this.fd, this.chunkSize, null, 'ASCII'),
+        content = result[0],
+        bytesRead = result[1];
+    
+    this.buffer += content;
+    return bytesRead;
+}
+
+
+LineReader.prototype._readUntilLineOrEOF = function(){
+    var lineEnd = -1, bytesRead;
+    
+    while(lineEnd === -1){
+        lineEnd = this.buffer.indexOf('\n', this.newlinePosition);
+        
+        if(lineEnd === -1){
+            this.newlinePosition = this.buffer.length -1;
+            
+            bytesRead = this._read();
+            
+            if(bytesRead===0) {
+                // End of file. Return true if the buffer is not empty,
+                // treat the last line in the file as a full line if not
+                // terminated by a newline.
+                return this.buffer.length > 0;
+            }
+        }
+    }
+    this.newlinePosition = lineEnd;
+    return true;
+}
+
+
+LineReader.prototype.hasLines = function(){
+    return this._readUntilLineOrEOF();
+}
+
+
+LineReader.prototype.next = function(){
+    var ret = this.buffer.slice(0, this.newlinePosition);
+    this.buffer = this.buffer.slice(this.newlinePosition + 1); // Skip the newline itself.
+    this.newlinePosition = 0;
+    return ret;
+}
 
 
 /*
@@ -11,6 +84,7 @@ function Parser(){
     
 }
 
+
 /*
  * Returns true if there are more commands remaining in the
  * input stream.
@@ -19,12 +93,14 @@ Parser.prototype.hasMoreCommands = function(){
     
 }
 
+
 /*
  * Reads the next command from the input and makes it the current command.
  */
 Parser.prototype.advance = function(){
     
 }
+
 
 /*
  * Returns the command type of the current command (either A_COMMAND, C_COMMAND
@@ -33,6 +109,7 @@ Parser.prototype.advance = function(){
 Parser.prototype.commandType = function(){
     
 }
+
 
 /*
  * Returns the symbol or decimal xxx of the current command when the command
@@ -55,10 +132,11 @@ Parser.prototype.dest = function(){
 Parser.prototype.comp = function(){
     
 }
- 
- /*
-  * Returns the jump mnemonic in the current command if it is a C_COMMAND.
-  */
+
+
+/*
+ * Returns the jump mnemonic in the current command if it is a C_COMMAND.
+ */
 Parser.prototype.jump = function(){
     
 }
@@ -124,12 +202,14 @@ function Code(){
     }
 }
 
+
 Code.prototype.defined = function(mnemonic, result){
     if(typeof(result) === 'undefined'){
         throw Error('Unknown mnemonic encountered "' + mnemonic + '"');
     }
     return result;
 }
+
 
 /*
  * Returns the 3-bit dest field in binary for the given mnemonic.
@@ -138,13 +218,15 @@ Code.prototype.dest = function(mnemonic){
     return this.defined(mnemonic, this.destMap[mnemonic]);
 }
 
+
 /*
  * Returns the 7-bit comp field in binary for the given mnemonic.
  */
 Code.prototype.comp = function(mnemonic){
     return this.defined(mnemonic, this.compMap[mnemonic]);
 }
- 
+
+
 /*
  * Returns the 3-bit jump field in binary for the given mnemonic.
  */
@@ -154,12 +236,16 @@ Code.prototype.jump = function(mnemonic){
 
 
 
-
-if(process.argv.length !== 4) {
-    console.log('Usage: assembler.js inFile outFile');
+if(process.argv.length !== 3) {
+    console.log('Usage: assembler.js inFile');
     process.exit(1);
 }
 
-var code = new Code();
+var reader = new LineReader(process.argv[2]);
+reader.open();
 
-console.log('0000' + code.jump('JEQ') + code.dest('AMD') + code.jump('JEQ'));
+while(reader.hasLines()){
+    console.log(reader.next());
+}
+
+reader.close();
