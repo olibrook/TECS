@@ -18,63 +18,63 @@ function LineReader(path){
 }
 
 
-LineReader.prototype.open = function(){
-    this.fd = fs.openSync(this.path, "r");
-}
-
-
-LineReader.prototype.close = function(){
-    fs.closeSync(this.fd);
-}
-
-
-LineReader.prototype._read = function(){
-    // Read from current position in the file (position=null).
-    // Hack assembly files are ASCII.
-    var result = fs.readSync(this.fd, this.chunkSize, null, 'ASCII'),
-        content = result[0],
-        bytesRead = result[1];
+LineReader.prototype = {
     
-    this.buffer += content;
-    return bytesRead;
-}
-
-
-LineReader.prototype._readUntilLineOrEOF = function(){
-    var lineEnd = -1, bytesRead;
+    open: function(){
+        this.fd = fs.openSync(this.path, "r");
+    },
     
-    while(lineEnd === -1){
-        lineEnd = this.buffer.indexOf('\n', this.newlinePosition);
-        
-        if(lineEnd === -1){
-            this.newlinePosition = this.buffer.length -1;
-            
-            bytesRead = this._read();
-            
-            if(bytesRead===0) {
-                // End of file. Return true if the buffer is not empty,
-                // treat the last line in the file as a full line if not
-                // terminated by a newline.
-                return this.buffer.length > 0;
+    close: function(){
+        fs.closeSync(this.fd);
+    },
+    
+    _read: function(){
+        // Read from current position in the file (position=null).
+        // Hack assembly files are ASCII.
+        var result = fs.readSync(this.fd, this.chunkSize, null, 'ASCII'),
+            content = result[0],
+            bytesRead = result[1];
+
+        this.buffer += content;
+        return bytesRead;
+    },
+    
+    _readUntilLineOrEOF: function(){
+        var lineEnd = -1, bytesRead;
+
+        while(lineEnd === -1){
+            lineEnd = this.buffer.indexOf('\n', this.newlinePosition);
+
+            if(lineEnd === -1){
+                this.newlinePosition = this.buffer.length -1;
+
+                bytesRead = this._read();
+
+                if(bytesRead===0) {
+                    // End of file. Return true if the buffer is not empty,
+                    // treat the last line in the file as a full line if not
+                    // terminated by a newline.
+                    return this.buffer.length > 0;
+                }
             }
         }
+        this.newlinePosition = lineEnd;
+        return true;
+    },
+    
+    hasLines: function(){
+        return this._readUntilLineOrEOF();
+    },
+    
+    next: function(){
+        var ret = this.buffer.slice(0, this.newlinePosition);
+        this.buffer = this.buffer.slice(this.newlinePosition + 1); // Skip the newline itself.
+        this.newlinePosition = 0;
+        return ret;
     }
-    this.newlinePosition = lineEnd;
-    return true;
 }
 
 
-LineReader.prototype.hasLines = function(){
-    return this._readUntilLineOrEOF();
-}
-
-
-LineReader.prototype.next = function(){
-    var ret = this.buffer.slice(0, this.newlinePosition);
-    this.buffer = this.buffer.slice(this.newlinePosition + 1); // Skip the newline itself.
-    this.newlinePosition = 0;
-    return ret;
-}
 
 function zeroPad(str, pad){
     while(str.length < pad){
@@ -82,6 +82,8 @@ function zeroPad(str, pad){
     }
     return str;
 }
+
+
 
 
 /*
@@ -94,89 +96,90 @@ function Parser(lineReader){
 }
 
 
-/*
- * Returns true if there are more commands remaining in the
- * input stream.
- */
-Parser.prototype.hasMoreCommands = function(){
-    while((this.currentLine === '') && (this.lineReader.hasLines())){
-        
-        this.currentLine = this.lineReader.next();
-        this.currentLine = this.currentLine.replace(/\/\/.+/, ''); // Strip comments
-        this.currentLine = this.currentLine.replace(/\s/g, ''); // Strip whitespace
-    }
-    return (this.currentLine !== '');
-}
-
-
-/*
- * Reads the next command from the input and makes it the current command.
- */
-Parser.prototype.advance = function(){
-    this.currentCommand = this.currentLine;
-    this.currentLine = '';
-}
-
-
-/*
- * Returns the command type of the current command (either A_COMMAND, C_COMMAND
- * or L_COMMAND);
- */
-Parser.prototype.commandType = function(){
-    if(this.currentCommand.match(/^@/)){
-        return 'A_COMMAND';
-    } else if(this.currentCommand.match(/\(/)) {
-        return 'L_COMMAND';
-    } else {
-        return 'C_COMMAND';
-    }
-}
-
-/*
- * Returns the symbol or decimal xxx of the current command when the command
- * is an A_COMMAND or an L_COMMAND.
- */
-Parser.prototype.symbol = function(){
-    if(this.commandType() == 'A_COMMAND'){
-        return zeroPad(parseInt(this.currentCommand.substring(1)).toString(2), 15);
-    }
-    return null;
-}
-
-/*
- * Returns the dest mnemonic in the current command if it is a C_COMMAND.
- */
-Parser.prototype.dest = function(){
-    var index = this.currentCommand.indexOf('=');
-    if(index > 0){
-        return this.currentCommand.substring(0, index);
-    }
-    return 'null';
-}
-
-/*
- * Returns the comp mnemonic in the current command if it is a C_COMMAND.
- */
-Parser.prototype.comp = function(){
-    var start = this.currentCommand.indexOf('='),
-        end = this.currentCommand.indexOf(';');
+Parser.prototype = {
     
-    start = start < 0 ? 0 : Math.min(start + 1, this.currentCommand.length);
-    end = end < 0 ? this.currentCommand.length : end;
-    
-    return this.currentCommand.substring(start, end);
-}
+    /*
+     * Returns true if there are more commands remaining in the
+     * input stream.
+     */
+    hasMoreCommands: function(){
+        while((this.currentLine === '') && (this.lineReader.hasLines())){
 
-/*
- * Returns the jump mnemonic in the current command if it is a C_COMMAND.
- */
-Parser.prototype.jump = function(){
-    var index = this.currentCommand.indexOf(';');
-    if(index > 0){
-        index = Math.min(index + 1, this.currentCommand.length);
-        return this.currentCommand.substring(index);
+            this.currentLine = this.lineReader.next();
+            this.currentLine = this.currentLine.replace(/\/\/.+/, ''); // Strip comments
+            this.currentLine = this.currentLine.replace(/\s/g, ''); // Strip whitespace
+        }
+        return (this.currentLine !== '');
+    },
+    
+    /*
+     * Reads the next command from the input and makes it the current command.
+     */
+    advance: function(){
+        this.currentCommand = this.currentLine;
+        this.currentLine = '';
+    },
+    
+    /*
+     * Returns the command type of the current command (either A_COMMAND, C_COMMAND
+     * or L_COMMAND);
+     */
+    commandType: function(){
+        if(this.currentCommand.match(/^@/)){
+            return 'A_COMMAND';
+        } else if(this.currentCommand.match(/\(/)) {
+            return 'L_COMMAND';
+        } else {
+            return 'C_COMMAND';
+        }
+    },
+    
+    /*
+     * Returns the symbol or decimal xxx of the current command when the command
+     * is an A_COMMAND or an L_COMMAND.
+     */
+    symbol: function(){
+        if(this.commandType() == 'A_COMMAND'){
+            return zeroPad(parseInt(this.currentCommand.substring(1)).toString(2), 15);
+        }
+        return null;
+    },
+    
+    /*
+     * Returns the dest mnemonic in the current command if it is a C_COMMAND.
+     */
+    dest: function(){
+        var index = this.currentCommand.indexOf('=');
+        if(index > 0){
+            return this.currentCommand.substring(0, index);
+        }
+        return 'null';
+    },
+    
+    /*
+     * Returns the comp mnemonic in the current command if it is a C_COMMAND.
+     */
+    comp: function(){
+        var start = this.currentCommand.indexOf('='),
+            end = this.currentCommand.indexOf(';');
+
+        start = start < 0 ? 0 : Math.min(start + 1, this.currentCommand.length);
+        end = end < 0 ? this.currentCommand.length : end;
+
+        return this.currentCommand.substring(start, end);
+    },
+    
+    /*
+     * Returns the jump mnemonic in the current command if it is a C_COMMAND.
+     */
+    jump: function(){
+        var index = this.currentCommand.indexOf(';');
+        if(index > 0){
+            index = Math.min(index + 1, this.currentCommand.length);
+            return this.currentCommand.substring(index);
+        }
+        return 'null';
     }
-    return 'null';
 }
 
 
@@ -240,37 +243,39 @@ function Code(){
     }
 }
 
-
-Code.prototype.defined = function(mnemonic, result){
-    if(typeof(result) === 'undefined'){
-        throw Error('Unknown mnemonic encountered "' + mnemonic + '"');
+Code.prototype = {
+    
+    defined: function(mnemonic, result){
+        if(typeof(result) === 'undefined'){
+            throw Error('Unknown mnemonic encountered "' + mnemonic + '"');
+        }
+        return result;
+    },
+    
+    /*
+     * Returns the 3-bit dest field in binary for the given mnemonic.
+     */
+    dest: function(mnemonic){
+        return this.defined(mnemonic, this.destMap[mnemonic]);
+    },
+    
+    /*
+     * Returns the 7-bit comp field in binary for the given mnemonic.
+     */
+    comp: function(mnemonic){
+        return this.defined(mnemonic, this.compMap[mnemonic]);
+    },
+    
+    /*
+     * Returns the 3-bit jump field in binary for the given mnemonic.
+     */
+    jump: function(mnemonic){
+        return this.defined(mnemonic, this.jumpMap[mnemonic]);
     }
-    return result;
 }
 
 
-/*
- * Returns the 3-bit dest field in binary for the given mnemonic.
- */
-Code.prototype.dest = function(mnemonic){
-    return this.defined(mnemonic, this.destMap[mnemonic]);
-}
 
-
-/*
- * Returns the 7-bit comp field in binary for the given mnemonic.
- */
-Code.prototype.comp = function(mnemonic){
-    return this.defined(mnemonic, this.compMap[mnemonic]);
-}
-
-
-/*
- * Returns the 3-bit jump field in binary for the given mnemonic.
- */
-Code.prototype.jump = function(mnemonic){
-    return this.defined(mnemonic, this.jumpMap[mnemonic]);
-}
 
 
 if(process.argv.length !== 4) {
@@ -280,19 +285,13 @@ if(process.argv.length !== 4) {
 
 
 
+var reader, parser, code, outFile, binaryInstruction, commandType
 
-
-
-var reader = new LineReader(process.argv[2]);
+reader = new LineReader(process.argv[2]);
 reader.open();
-
-var parser = new Parser(reader);
-var code = new Code();
-
-var outFile = fs.openSync(process.argv[3], "w");
-
-var binaryInstruction, commandType;
-
+parser = new Parser(reader);
+code = new Code();
+outFile = fs.openSync(process.argv[3], "w");
 
 
 while(parser.hasMoreCommands()){
