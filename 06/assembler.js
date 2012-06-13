@@ -76,12 +76,21 @@ LineReader.prototype.next = function(){
     return ret;
 }
 
+function zeroPad(str, pad){
+    while(str.length < pad){
+        str = '0' + str;
+    }
+    return str;
+}
+
 
 /*
  * Parser class for the Hack assembly language.
  */
-function Parser(){
-    
+function Parser(lineReader){
+    this.lineReader = lineReader;
+    this.currentLine = '';
+    this.currentCommand = '';
 }
 
 
@@ -90,7 +99,13 @@ function Parser(){
  * input stream.
  */
 Parser.prototype.hasMoreCommands = function(){
-    
+    while((this.currentLine === '') && (this.lineReader.hasLines())){
+        
+        this.currentLine = this.lineReader.next();
+        this.currentLine = this.currentLine.replace(/\/\/.+/, ''); // Strip comments
+        this.currentLine = this.currentLine.replace(/\s/g, ''); // Strip whitespace
+    }
+    return (this.currentLine !== '');
 }
 
 
@@ -98,7 +113,8 @@ Parser.prototype.hasMoreCommands = function(){
  * Reads the next command from the input and makes it the current command.
  */
 Parser.prototype.advance = function(){
-    
+    this.currentCommand = this.currentLine;
+    this.currentLine = '';
 }
 
 
@@ -107,38 +123,60 @@ Parser.prototype.advance = function(){
  * or L_COMMAND);
  */
 Parser.prototype.commandType = function(){
-    
+    if(this.currentCommand.match(/^@/)){
+        return 'A_COMMAND';
+    } else if(this.currentCommand.match(/\(/)) {
+        return 'L_COMMAND';
+    } else {
+        return 'C_COMMAND';
+    }
 }
-
 
 /*
  * Returns the symbol or decimal xxx of the current command when the command
  * is an A_COMMAND or an L_COMMAND.
  */
 Parser.prototype.symbol = function(){
-    
+    if(this.commandType() == 'A_COMMAND'){
+        return zeroPad(parseInt(this.currentCommand.substring(1)).toString(2), 15);
+    }
+    return null;
 }
 
 /*
  * Returns the dest mnemonic in the current command if it is a C_COMMAND.
  */
 Parser.prototype.dest = function(){
-    
+    var index = this.currentCommand.indexOf('=');
+    if(index > 0){
+        return this.currentCommand.substring(0, index);
+    }
+    return 'null';
 }
 
 /*
  * Returns the comp mnemonic in the current command if it is a C_COMMAND.
  */
 Parser.prototype.comp = function(){
+    var start = this.currentCommand.indexOf('='),
+        end = this.currentCommand.indexOf(';');
     
+    start = start < 0 ? 0 : Math.min(start + 1, this.currentCommand.length);
+    end = end < 0 ? this.currentCommand.length : end;
+    
+    return this.currentCommand.substring(start, end);
 }
-
 
 /*
  * Returns the jump mnemonic in the current command if it is a C_COMMAND.
  */
 Parser.prototype.jump = function(){
-    
+    var index = this.currentCommand.indexOf(';');
+    if(index > 0){
+        index = Math.min(index + 1, this.currentCommand.length);
+        return this.currentCommand.substring(index);
+    }
+    return 'null';
 }
 
 
@@ -235,17 +273,48 @@ Code.prototype.jump = function(mnemonic){
 }
 
 
-
-if(process.argv.length !== 3) {
-    console.log('Usage: assembler.js inFile');
+if(process.argv.length !== 4) {
+    console.log('Usage: assembler.js inFile outFile');
     process.exit(1);
 }
+
+
+
+
+
 
 var reader = new LineReader(process.argv[2]);
 reader.open();
 
-while(reader.hasLines()){
-    console.log(reader.next());
+var parser = new Parser(reader);
+var code = new Code();
+
+var outFile = fs.openSync(process.argv[3], "w");
+
+var binaryInstruction, commandType;
+
+
+
+while(parser.hasMoreCommands()){
+    parser.advance();
+    commandType = parser.commandType();
+    
+    if(commandType == 'A_COMMAND'){
+        binaryInstruction = '0' + parser.symbol();
+        
+    } else if(commandType == 'C_COMMAND'){
+        binaryInstruction = '111';
+        binaryInstruction += code.comp(parser.comp());
+        binaryInstruction += code.dest(parser.dest());
+        binaryInstruction += code.jump(parser.jump());
+        
+    } else {
+        throw new Error('Unknown command type');
+    }
+    
+    fs.writeSync(outFile, binaryInstruction + '\n', null, 'ascii');
 }
 
+
 reader.close();
+fs.closeSync(outFile);
