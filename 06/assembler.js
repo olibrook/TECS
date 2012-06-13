@@ -285,7 +285,7 @@ if(process.argv.length !== 4) {
 
 
 
-var reader, parser, code, outFile, binaryInstruction, commandType
+var reader, parser, code, outFile, binaryInstruction, commandType;
 
 reader = new LineReader(process.argv[2]);
 reader.open();
