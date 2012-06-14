@@ -1,6 +1,17 @@
 #!/usr/bin/env node
 
-var fs = require('fs');
+var fs = require('fs'),
+    path = require('path'),
+    glob = require('glob'),
+    optimist = require('optimist');
+
+
+function zeroPad(str, pad){
+    while(str.length < pad){
+        str = '0' + str;
+    }
+    return str;
+}
 
 
 function LineReader(path){
@@ -73,17 +84,6 @@ LineReader.prototype = {
         return ret;
     }
 }
-
-
-
-function zeroPad(str, pad){
-    while(str.length < pad){
-        str = '0' + str;
-    }
-    return str;
-}
-
-
 
 
 /*
@@ -275,45 +275,81 @@ Code.prototype = {
 }
 
 
-
-
-
-if(process.argv.length !== 4) {
-    console.log('Usage: assembler.js inFile outFile');
-    process.exit(1);
+function Driver(inFile, outFile){
+    this.reader = new LineReader(inFile);
+    this.parser = new Parser(this.reader);
+    this.code = new Code();
+    this.outFile = fs.openSync(outFile, "w");
 }
 
-
-
-var reader, parser, code, outFile, binaryInstruction, commandType;
-
-reader = new LineReader(process.argv[2]);
-reader.open();
-parser = new Parser(reader);
-code = new Code();
-outFile = fs.openSync(process.argv[3], "w");
-
-
-while(parser.hasMoreCommands()){
-    parser.advance();
-    commandType = parser.commandType();
-    
-    if(commandType == 'A_COMMAND'){
-        binaryInstruction = '0' + parser.symbol();
+Driver.prototype = {
+    run: function(){
+        var binaryInstruction, commandType;
         
-    } else if(commandType == 'C_COMMAND'){
-        binaryInstruction = '111';
-        binaryInstruction += code.comp(parser.comp());
-        binaryInstruction += code.dest(parser.dest());
-        binaryInstruction += code.jump(parser.jump());
+        this.reader.open();
         
-    } else {
-        throw new Error('Unknown command type');
+        while(this.parser.hasMoreCommands()){
+            this.parser.advance();
+            commandType = this.parser.commandType();
+
+            if(commandType == 'A_COMMAND'){
+                binaryInstruction = '0' + this.parser.symbol();
+
+            } else if(commandType == 'C_COMMAND'){
+                binaryInstruction = '111';
+                binaryInstruction += this.code.comp(this.parser.comp());
+                binaryInstruction += this.code.dest(this.parser.dest());
+                binaryInstruction += this.code.jump(this.parser.jump());
+
+            } else {
+                throw new Error('Unknown command type');
+            }
+
+            fs.writeSync(this.outFile, binaryInstruction + '\n', null, 'ascii');
+        }
+
+        this.reader.close();
+        fs.closeSync(this.outFile);
     }
-    
-    fs.writeSync(outFile, binaryInstruction + '\n', null, 'ascii');
 }
 
 
-reader.close();
-fs.closeSync(outFile);
+
+/*
+ * Process command line args and run the assembler
+ */
+argv = optimist.usage('Assembler for hack platform assembly language.\n\nUsage: $0')
+        .options('f', {
+                alias : 'file',
+                default : process.cwd(),
+        })
+        .argv;
+
+
+if (argv.h || argv.help) {
+        optimist.showHelp();
+        process.exit(0);
+
+} else {
+    (function(){
+        var stats, inputFiles;
+        stats = fs.statSync(argv.f);
+
+        if(stats.isDirectory()) {
+            inputFiles = glob.sync("**/*.asm", {cwd: argv.f});
+
+        } else {
+            inputFiles = [argv.f];
+        }
+
+
+        for (var i=0; i<inputFiles.length; i++) {
+            var inputFile = inputFiles[i],
+                outputFile = path.join(
+                    path.dirname(inputFile), path.basename(inputFile, '.asm')) + '.hack';
+
+            new Driver(inputFile, outputFile).run();
+        }
+        process.exit(0);
+    })()
+}
