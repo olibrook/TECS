@@ -26,6 +26,7 @@ function LineReader(path){
     this.chunkSize = 1024;
     this.path = path;
     this.fd = null;
+    this.position = 0;
 }
 
 
@@ -40,12 +41,11 @@ LineReader.prototype = {
     },
     
     _read: function(){
-        // Read from current position in the file (position=null).
-        // Hack assembly files are ASCII.
-        var result = fs.readSync(this.fd, this.chunkSize, null, 'ASCII'),
+        var result = fs.readSync(this.fd, this.chunkSize, this.position, 'ASCII'),
             content = result[0],
             bytesRead = result[1];
-
+        
+        this.position += bytesRead;
         this.buffer += content;
         return bytesRead;
     },
@@ -98,6 +98,10 @@ function Parser(lineReader){
 
 Parser.prototype = {
     
+    rewind: function(){
+        this.lineReader.position = 0;
+    },
+    
     /*
      * Returns true if there are more commands remaining in the
      * input stream.
@@ -118,6 +122,7 @@ Parser.prototype = {
     advance: function(){
         this.currentCommand = this.currentLine;
         this.currentLine = '';
+        this.currentCommandType = this._commandType();
     },
     
     /*
@@ -125,6 +130,11 @@ Parser.prototype = {
      * or L_COMMAND);
      */
     commandType: function(){
+        return this.currentCommandType;
+
+    },
+    
+    _commandType: function(){
         if(this.currentCommand.match(/^@/)){
             return 'A_COMMAND';
         } else if(this.currentCommand.match(/\(/)) {
@@ -139,10 +149,18 @@ Parser.prototype = {
      * is an A_COMMAND or an L_COMMAND.
      */
     symbol: function(){
-        if(this.commandType() == 'A_COMMAND'){
-            return zeroPad(parseInt(this.currentCommand.substring(1)).toString(2), 15);
+        var symbol;
+        if(this.commandType() === 'A_COMMAND'){
+            symbol = this.currentCommand.substring(1);
+            
+            if(symbol.match(/^[0-9]+$/)) {
+                return ['literal', zeroPad(parseInt(symbol).toString(2), 15)];
+            } else {
+                return ['symbol', symbol];
+            }
+        } else if(this.commandType() === 'L_COMMAND'){
+            return ['symbol', this.currentCommand.substring(1, this.currentCommand.length-1)]
         }
-        return null;
     },
     
     /*
@@ -275,81 +293,164 @@ Code.prototype = {
 }
 
 
+function createSymbolTable(){
+    var symbolTable =  {}, symbol, i;
+
+    for(i = 0; i<=15; i++){
+        symbol = 'R' + i;
+        symbolTable[symbol] = i;
+    }
+
+    symbolTable['SP']     = 0x0000;
+    symbolTable['LCL']    = 0x0001;
+    symbolTable['ARG']    = 0x0002;
+    symbolTable['THIS']   = 0x0003;
+    symbolTable['THAT']   = 0x0004;
+    symbolTable['SCREEN'] = 0x4000;
+    symbolTable['KBD']    = 0x6000;
+    
+    for(k in symbolTable){
+        symbolTable[k] = zeroPad(symbolTable[k].toString(2), 15);
+    }
+    return symbolTable;
+}
+
+
 function Driver(inFile, outFile){
     this.reader = new LineReader(inFile);
-    this.parser = new Parser(this.reader);
+    this.symbolTable = createSymbolTable();
+    this.parser = new Parser(this.reader, this.symbolTable);
     this.code = new Code();
     this.outFile = fs.openSync(outFile, "w");
+    this.instructionCount = 0;
+    this.nextRAMVarAddress = 0x0010;
 }
 
 Driver.prototype = {
     run: function(){
-        var binaryInstruction, commandType;
+        var binaryInstruction, commandType, symbol, symbolValue, symbolType, symbolDesc;
         
         this.reader.open();
         
+        // First pass scans for symbols.
+        while(this.parser.hasMoreCommands()){
+            this.parser.advance();
+            commandType = this.parser.commandType();
+            
+            if(commandType === 'A_COMMAND' || commandType === 'C_COMMAND') {
+                this.instructionCount++;
+                
+            } else if(commandType === 'L_COMMAND'){
+                
+                symbolDesc = this.parser.symbol();
+                symbolType = symbolDesc[0];
+                symbol = symbolDesc[1];
+                
+                if(!symbolType == 'symbol'){
+                    throw new Error('"' + symbol +'" is not a valid symbol label.');
+                } else {
+                    this.symbolTable[symbol] = zeroPad(this.instructionCount.toString(2), 15);
+                }
+                
+            } else {
+                throw new Error('Unknown command type: "' + commandType + '"');
+            }
+        }
+        
+        this.parser.rewind();
+        this.instructionCount = 0;
+        
+        // Second pass produces the output.
         while(this.parser.hasMoreCommands()){
             this.parser.advance();
             commandType = this.parser.commandType();
 
             if(commandType == 'A_COMMAND'){
-                binaryInstruction = '0' + this.parser.symbol();
+                
+                symbolDesc = this.parser.symbol();
+                symbolType = symbolDesc[0];
+                symbol = symbolDesc[1];
+                
+                if(symbolType === 'literal'){
+                    symbolValue = symbol;
+                    
+                } else {
+                    symbolValue = this.symbolTable[symbol];
+                    
+                    if(symbolValue === undefined) {
+                        // RAM Variable declaration
+                        symbolValue = zeroPad(this.nextRAMVarAddress.toString(2), 15);
+                        this.symbolTable[symbol] = symbolValue;
+                        this.nextRAMVarAddress++;
+                    }
+                }
+                binaryInstruction = '0' + symbolValue;
+                fs.writeSync(this.outFile, binaryInstruction + '\n', null, 'ascii');
 
             } else if(commandType == 'C_COMMAND'){
                 binaryInstruction = '111';
                 binaryInstruction += this.code.comp(this.parser.comp());
                 binaryInstruction += this.code.dest(this.parser.dest());
                 binaryInstruction += this.code.jump(this.parser.jump());
+                fs.writeSync(this.outFile, binaryInstruction + '\n', null, 'ascii');
 
+            } else if(commandType === 'L_COMMAND') {
+                // No-op
             } else {
-                throw new Error('Unknown command type');
+                throw new Error('Unknown command type: "' + commandType + '"');
             }
-
-            fs.writeSync(this.outFile, binaryInstruction + '\n', null, 'ascii');
         }
-
+        
         this.reader.close();
         fs.closeSync(this.outFile);
     }
 }
 
 
+exports.LineReader = LineReader;
+exports.Parser = Parser;
+exports.Code = Code;
+exports.Driver = Driver;
+
+
 
 /*
- * Process command line args and run the assembler
+ * Configure and run the assembler if run as a script.
  */
-argv = optimist.usage('Assembler for hack platform assembly language.\n\nUsage: $0')
-        .options('f', {
-                alias : 'file',
-                default : process.cwd(),
-        })
-        .argv;
+if(require.main === module){
+
+    argv = optimist.usage('Assembler for hack platform assembly language.\n\nUsage: $0')
+            .options('f', {
+                    alias : 'file',
+                    default : process.cwd(),
+            })
+            .argv;
 
 
-if (argv.h || argv.help) {
-        optimist.showHelp();
-        process.exit(0);
+    if (argv.h || argv.help) {
+            optimist.showHelp();
+            process.exit(0);
 
-} else {
-    (function(){
-        var stats, inputFiles;
-        stats = fs.statSync(argv.f);
+    } else {
+        (function(){
+            var stats, inputFiles;
+            stats = fs.statSync(argv.f);
 
-        if(stats.isDirectory()) {
-            inputFiles = glob.sync("**/*.asm", {cwd: argv.f});
+            if(stats.isDirectory()) {
+                inputFiles = glob.sync('**/*.asm', {cwd: argv.f});
 
-        } else {
-            inputFiles = [argv.f];
-        }
+            } else {
+                inputFiles = [argv.f];
+            }
 
+            for (var i=0; i<inputFiles.length; i++) {
+                var inputFile = inputFiles[i],
+                    outputFile = path.join(
+                        path.dirname(inputFile), path.basename(inputFile, '.asm')) + '.hack';
 
-        for (var i=0; i<inputFiles.length; i++) {
-            var inputFile = inputFiles[i],
-                outputFile = path.join(
-                    path.dirname(inputFile), path.basename(inputFile, '.asm')) + '.hack';
-
-            new Driver(inputFile, outputFile).run();
-        }
-        process.exit(0);
-    })()
+                new Driver(inputFile, outputFile).run();
+            }
+            process.exit(0);
+        })();
+    }
 }
