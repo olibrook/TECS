@@ -203,7 +203,7 @@ Parser.prototype = {
 
 /*
  * Code generator class for the Hack assembly language. Returns machine-language
- * instrunctions for mnemonic codes used in the assembly language.
+ * instructions for mnemonic codes used in the assembly language.
  */
 function Code(){
     
@@ -294,7 +294,7 @@ Code.prototype = {
 
 
 function createSymbolTable(){
-    var symbolTable =  {}, symbol, i;
+    var symbolTable =  {}, symbol, i, k;
 
     for(i = 0; i<=15; i++){
         symbol = 'R' + i;
