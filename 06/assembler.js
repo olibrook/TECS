@@ -154,7 +154,7 @@ Parser.prototype = {
             symbol = this.currentCommand.substring(1);
             
             if(symbol.match(/^[0-9]+$/)) {
-                return ['literal', zeroPad(parseInt(symbol).toString(2), 15)];
+                return ['decimal', zeroPad(parseInt(symbol).toString(2), 15)];
             } else {
                 return ['symbol', symbol];
             }
@@ -316,102 +316,128 @@ function createSymbolTable(){
 }
 
 
-function Driver(inFile, outFile){
-    this.reader = new LineReader(inFile);
-    this.symbolTable = createSymbolTable();
-    this.parser = new Parser(this.reader, this.symbolTable);
-    this.code = new Code();
-    this.outFile = fs.openSync(outFile, "w");
-    this.instructionCount = 0;
-    this.nextRAMVarAddress = 0x0010;
-}
 
-Driver.prototype = {
-    run: function(){
-        var binaryInstruction, commandType, symbol, symbolValue, symbolType, symbolDesc;
-        
-        this.reader.open();
-        
-        // First pass scans for symbols.
-        while(this.parser.hasMoreCommands()){
-            this.parser.advance();
-            commandType = this.parser.commandType();
-            
-            if(commandType === 'A_COMMAND' || commandType === 'C_COMMAND') {
-                this.instructionCount++;
-                
-            } else if(commandType === 'L_COMMAND'){
-                
-                symbolDesc = this.parser.symbol();
-                symbolType = symbolDesc[0];
-                symbol = symbolDesc[1];
-                
-                if(!symbolType == 'symbol'){
-                    throw new Error('"' + symbol +'" is not a valid symbol label.');
-                } else {
-                    this.symbolTable[symbol] = zeroPad(this.instructionCount.toString(2), 15);
-                }
-                
-            } else {
-                throw new Error('Unknown command type: "' + commandType + '"');
+
+Assembler = (function(){
+    
+    var SCAN_PHASE = 'SCAN_PHASE',
+        CODE_PHASE = 'CODE_PHASE',
+        PHASES = [SCAN_PHASE, CODE_PHASE];
+    
+    /*
+     * 2-phase assembler for the Hack platform machine language, with
+     * support for symbols.
+     */
+    function Assembler(inFile, outFile){
+        this.reader = new LineReader(inFile);
+        this.symbolTable = createSymbolTable();
+        this.parser = new Parser(this.reader, this.symbolTable);
+        this.code = new Code();
+        this.outFile = fs.openSync(outFile, "w");
+        this.instructionCount = 0;
+        this.nextRAMVarAddress = 0x0010;
+        this.CALL_MAP = {
+            'SCAN_PHASE': {
+                'A_COMMAND': countInstruction,
+                'C_COMMAND': countInstruction,
+                'L_COMMAND': declareLabel
+            },
+            'CODE_PHASE': {
+                'A_COMMAND': aCommand,
+                'C_COMMAND': cCommand,
             }
         }
-        
-        this.parser.rewind();
-        this.instructionCount = 0;
-        
-        // Second pass produces the output.
-        while(this.parser.hasMoreCommands()){
-            this.parser.advance();
-            commandType = this.parser.commandType();
+    }
 
-            if(commandType == 'A_COMMAND'){
-                
-                symbolDesc = this.parser.symbol();
-                symbolType = symbolDesc[0];
-                symbol = symbolDesc[1];
-                
-                if(symbolType === 'literal'){
-                    symbolValue = symbol;
-                    
-                } else {
-                    symbolValue = this.symbolTable[symbol];
-                    
-                    if(symbolValue === undefined) {
-                        // RAM Variable declaration
-                        symbolValue = zeroPad(this.nextRAMVarAddress.toString(2), 15);
-                        this.symbolTable[symbol] = symbolValue;
-                        this.nextRAMVarAddress++;
+    Assembler.prototype = {
+        main: function(){
+            var output, phase, i;
+
+            this.reader.open();
+
+            for(i=0; i<PHASES.length; i++){
+                phase = PHASES[i];
+
+                while(this.parser.hasMoreCommands()){
+                    this.parser.advance();
+                    commandType = this.parser.commandType();
+                    callback = this.CALL_MAP[phase][commandType];
+
+                    if(callback !== undefined){
+                        output = callback.call(this);
+
+                        if(output !== undefined){
+                            fs.writeSync(this.outFile, output + '\n', null, 'ascii');
+                        }
                     }
                 }
-                binaryInstruction = '0' + symbolValue;
-                fs.writeSync(this.outFile, binaryInstruction + '\n', null, 'ascii');
+                this.parser.rewind();
+                this.instructionCount = 0;
+            }
 
-            } else if(commandType == 'C_COMMAND'){
-                binaryInstruction = '111';
-                binaryInstruction += this.code.comp(this.parser.comp());
-                binaryInstruction += this.code.dest(this.parser.dest());
-                binaryInstruction += this.code.jump(this.parser.jump());
-                fs.writeSync(this.outFile, binaryInstruction + '\n', null, 'ascii');
+            this.reader.close();
+            fs.closeSync(this.outFile);
+        }
+    }
+    
+    /*
+     * Callbacks handle instruction types at different phases of
+     * assembly and are invoked with 'this' bound to an instance of Assembler.
+     */
+    function countInstruction(){
+        this.instructionCount++;
+    }
 
-            } else if(commandType === 'L_COMMAND') {
-                // No-op
-            } else {
-                throw new Error('Unknown command type: "' + commandType + '"');
+    function declareLabel(){
+        var symbolDesc, symbolType;
+
+        symbolDesc = this.parser.symbol();
+        symbolType = symbolDesc[0];
+        symbol = symbolDesc[1];
+        this.symbolTable[symbol] = zeroPad(this.instructionCount.toString(2), 15);
+    }
+
+    function aCommand(){
+        var symbolDesc, symbolType, symbol, symbolValue, out;
+
+        symbolDesc = this.parser.symbol();
+        symbolType = symbolDesc[0];
+        symbol = symbolDesc[1];
+
+        if(symbolType === 'decimal'){
+            symbolValue = symbol;
+
+        } else {
+            symbolValue = this.symbolTable[symbol];
+
+            if(symbolValue === undefined) {
+                // RAM Variable declaration
+                symbolValue = zeroPad(this.nextRAMVarAddress.toString(2), 15);
+                this.symbolTable[symbol] = symbolValue;
+                this.nextRAMVarAddress++;
             }
         }
-        
-        this.reader.close();
-        fs.closeSync(this.outFile);
+        out = '0' + symbolValue;
+        return out;
     }
-}
+
+    function cCommand(){
+        var out;
+        out = '111';
+        out += this.code.comp(this.parser.comp());
+        out += this.code.dest(this.parser.dest());
+        out += this.code.jump(this.parser.jump());
+        return out;
+    }
+    
+    return Assembler;
+}())
 
 
 exports.LineReader = LineReader;
 exports.Parser = Parser;
 exports.Code = Code;
-exports.Driver = Driver;
-
+exports.Assembler = Assembler;
 
 
 /*
@@ -448,7 +474,7 @@ if(require.main === module){
                     outputFile = path.join(
                         path.dirname(inputFile), path.basename(inputFile, '.asm')) + '.hack';
 
-                new Driver(inputFile, outputFile).run();
+                new Assembler(inputFile, outputFile).main();
             }
             process.exit(0);
         })();
