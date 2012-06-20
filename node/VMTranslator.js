@@ -121,7 +121,7 @@ Parser.prototype = {
      * Returns true if there are more commands in the input.
      */
     hasMoreCommands: function(){
-        while((this.currentLine === '') && (this.lineReader.hasLines())){
+        while(!(this.currentLine.match(/\S/)) && (this.lineReader.hasLines())){
 
             this.currentLine = this.lineReader.next();
             
@@ -197,53 +197,59 @@ Parser.prototype = {
 
 
 
-function CodeWriter(){
+function Code(){
     
 }
 
-CodeWriter.prototype = {
-    
-    /*
-     * Informs the CodeWriter that the translation of a new filename has started.
-     */
-    setFileName: function(fileName){
-        
-    },
+Code.prototype = {
     
     /*
      * Writes the assembly code that is the translation of the given arithmentic
      * command.
      */
      command: function(command){
-         
      },
      
      /*
       * Writes the assembly code that is the translation of the given push or pop
       * command.
       */
-     writePushPop: function(command, segment, index){
-         
-     },
-     
-     /*
-      * Close the output file.
-      */
-     close: function(){
-         
+     pushPop: function(command, segment, index){
      }
 }
 
 
 function main(inputFile, outputFile){
+    
     var lineReader = new lr.LineReader(inputFile),
-        parser = new Parser(lineReader);
+        parser = new Parser(lineReader),
+        code = new Code();
         
     lineReader.open();
+
     while(parser.hasMoreCommands()){
         parser.advance();
-        console.log(parser.commandType(), '"' + parser.currentCommand + '"');
+        
+        switch(parser.commandType()){
+            case C_ARITHMETIC:
+                console.log(code.command(parser.commandParts[0]));
+                break;
+            case C_PUSH:
+            case C_POP:
+                console.log(code.pushPop(parser.commandParts));
+                break;
+            case C_LABEL:
+            case C_GOTO:
+            case C_IF:
+            case C_FUNCTION:
+            case C_RETURN:
+            case C_CALL:
+            default:
+                console.log(new Error("Unknown command type: '" + parser.commandType() + "'"));
+                break;
+        }
     }
+    
     lineReader.close();
 }
 
