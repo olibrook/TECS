@@ -208,6 +208,67 @@ Code.prototype = {
      * command.
      */
      command: function(command){
+        // - Handle binary and unary operations separately.
+        // - Handle operations which are built into the CPU seperately.
+        var binarySetup, binaryCommands, unarySetup, output;
+         
+        // Common setup for binary commands.
+        binarySetup = [
+            '@SP',      // Load the SP
+            'D=M',      // Store second param in D
+            'A=A-1',    // Decrement the address
+            'M=A',      // Decrement the SP
+            'A=M',      // Store first param in A
+        ]
+        
+        unarySetup = [
+            '@SP',      // Load the SP
+            'D=M',      // Store param in D
+        ]
+
+        binaryCommands = ['add', 'sub', 'eq', 'gt', 'lt', 'and', 'or']
+         
+        switch(command){
+            case 'add':
+                out = [
+                    'M=D+A',
+                ]
+                break
+            case 'sub':
+                out = [
+                    'M=D-A',
+                ]
+                break
+            case 'neg':
+                out = [
+                    'M=-D',
+                ]
+            case 'eq':
+                break
+            case 'gt':
+                break
+            case 'lt':
+                break
+            case 'and':
+                out = [
+                    'M=D&A',
+                ]
+            case 'or':
+                out = [
+                    'M=D|A',
+                ]
+            case 'not':
+                out = [
+                    'M=!D',
+                ]
+        }
+        
+        
+        if(binaryCommands.indexOf(command)>=0){
+            return binarySetup + out;
+        } else {
+            return unarySetup + out;
+        }
      },
      
      /*
