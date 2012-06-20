@@ -127,13 +127,9 @@ Parser.prototype = {
             
             // Strip comments
             this.currentLine = this.currentLine.replace(/\/\/.+/, '');
-            
-            // Strip whitespace
-            this.currentLine = this.currentLine.replace(/^\s*/, '')
-                .replace(/\s*$/, '')
-                .replace(/\s\s*/g, ' ');
         }
-        return (this.currentLine !== '');
+        // Return true if line not empty.
+        return (this.currentLine.match(/\S/));
     },
     
     /*
@@ -142,7 +138,7 @@ Parser.prototype = {
     advance: function(){
         this.currentCommand = this.currentLine;
         this.currentLine = '';
-        this.commandParts = this.currentCommand.match(/^(\S+)? ?(\S+)? ?(\S+)?/).slice(1);
+        this.commandParts = this.currentCommand.match(/^\s*(\S+)?\s*(\S+)?\s*(\S+)?/).slice(1);
         this.currentCommandType = this._commandType();
     },
     
@@ -184,14 +180,18 @@ Parser.prototype = {
      * Returns the first argument of the current command as a string.
      */
     arg1: function(){
-        
+        return this.commandParts[1];
     },
     
     /*
-     * Returns the second argument of the current command as an int.
+     * Returns the second argument of the current command as an integer.
      */
     arg2: function(){
-        
+        if(!this.commandParts[2].match(/^[0-9]+$/)){
+            throw new Error("Cannot parse '" + this.commandParts[2] + "' as an integer.");
+        } else {
+            return parseInt(this.commandParts[2], 10);
+        }
     }
 }
 
