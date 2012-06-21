@@ -95,15 +95,15 @@ var lr = require('./linereader'),
     path = require('path');
 
 
-C_ARITHMETIC = 'C_ARITHMETIC'
-C_PUSH = 'C_PUSH'
-C_POP = 'C_POP'
-C_LABEL = 'C_LABEL'
-C_GOTO = 'C_GOTO'
-C_IF = 'C_IF'
-C_FUNCTION = 'C_FUNCTION'
-C_RETURN = 'C_RETURN'
-C_CALL = 'C_CALL'
+C_ARITHMETIC = 'C_ARITHMETIC';
+C_PUSH = 'C_PUSH';
+C_POP = 'C_POP';
+C_LABEL = 'C_LABEL';
+C_GOTO = 'C_GOTO';
+C_IF = 'C_IF';
+C_FUNCTION = 'C_FUNCTION';
+C_RETURN = 'C_RETURN';
+C_CALL = 'C_CALL';
 
 
 function Parser(lineReader){
@@ -214,16 +214,25 @@ Code.prototype = {
          
         // Common setup for binary commands.
         binarySetup = [
-            '@SP',      // Load the SP
-            'D=M',      // Store second param in D
-            'A=A-1',    // Decrement the address
-            'M=A',      // Decrement the SP
-            'A=M',      // Store first param in A
+            '@SP',      // Load the address of the SP
+            'A=M',      // Load the address of the value it points to
+            'D=M',      // Load the value into D (second param)
+            '@SP',      // Load the address of the SP
+            'M=M-1',    // Decrement the SP
+            'A=M'       // Load the address of the value it points to
+            
+            // Leave with the address loaded into the A register from which
+            // the second argument should be loaded and to which the output needs
+            // to be saved. The SP has already been decremented.
         ]
         
         unarySetup = [
-            '@SP',      // Load the SP
-            'D=M',      // Store param in D
+            '@SP',      // Load the address of the SP
+            'A=M',      // Load the address of the value it points to
+            'D=M'       // Store the single parameter in D
+            
+            // Leave with the address loaded into the A register to which the output
+            // needs to be saved.
         ]
 
         binaryCommands = ['add', 'sub', 'eq', 'gt', 'lt', 'and', 'or']
@@ -231,12 +240,12 @@ Code.prototype = {
         switch(command){
             case 'add':
                 out = [
-                    'M=D+A',
+                    'M=D+M',
                 ]
                 break
             case 'sub':
                 out = [
-                    'M=D-A',
+                    'M=D-M',
                 ]
                 break
             case 'neg':
@@ -251,11 +260,11 @@ Code.prototype = {
                 break
             case 'and':
                 out = [
-                    'M=D&A',
+                    'M=D&M',
                 ]
             case 'or':
                 out = [
-                    'M=D|A',
+                    'M=D|M',
                 ]
             case 'not':
                 out = [
