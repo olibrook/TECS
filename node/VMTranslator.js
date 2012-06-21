@@ -43,7 +43,7 @@ gt          x > y
 lt          x < y
 and         x && y (bitwise)
 or          x || y (bitwise)
-not         ! y    (butwise)
+not         ! y    (bitwise)
 
 
 Memory access commands
@@ -198,7 +198,10 @@ Parser.prototype = {
 
 
 function Code(){
-    
+    // Used to generate unique labels for instructions which require jumps.
+    this.eqCount = 0;
+    this.ltCount = 0;
+    this.gtCount = 0;
 }
 
 Code.prototype = {
@@ -218,8 +221,7 @@ Code.prototype = {
             'A=M',      // Load the address of the value it points to
             'D=M',      // Load the value into D (second param)
             '@SP',      // Load the address of the SP
-            'M=M-1',    // Decrement the SP
-            'A=M'       // Load the address of the value it points to
+            'AM=M-1',    // Decrement the SP and load the address of the value it points to
             
             // Leave with the address loaded into the A register from which
             // the second argument should be loaded and to which the output needs
@@ -238,38 +240,73 @@ Code.prototype = {
         binaryCommands = ['add', 'sub', 'eq', 'gt', 'lt', 'and', 'or']
          
         switch(command){
+            
             case 'add':
                 out = [
                     'M=D+M',
-                ]
-                break
+                ];
+                break;
+                
             case 'sub':
                 out = [
                     'M=D-M',
-                ]
-                break
+                ];
+                break;
+                
             case 'neg':
                 out = [
                     'M=-D',
-                ]
+                ];
+                break;
+                
             case 'eq':
-                break
+                out = [
+                    'D=D-M',                            // Subtract one from the other. Equal if result == 0.
+                    '@R13',                             // Save output address to R13 so we can jump
+                    'M=A',
+                    '@IF_EQ_', + this.eqCount,
+                    'D;JEQ',
+                    '@R13',                             // Restore output address
+                    'A=M',
+                    'M=0',                              // Output = false
+                    '@EQ_END' + this.eqCount,
+                    '0;JMP',                            // Jump to finish
+                    '(IF_EQ_' + this.eqCount + ')',
+                    '@R13',                             // Restore output address
+                    'A=M',
+                    'M=-1',                             // Output = true
+                    '(EQ_END' + this.eqCount + ')'      // Finish
+                ];
+                this.eqCount++;
+                break;
+                
             case 'gt':
-                break
+                out = [
+                ];
+                break;
+                
             case 'lt':
-                break
+                out = [
+                ];
+                break;
+                
             case 'and':
                 out = [
                     'M=D&M',
-                ]
+                ];
+                break;
+                
             case 'or':
                 out = [
                     'M=D|M',
-                ]
+                ];
+                break;
+                
             case 'not':
                 out = [
                     'M=!D',
-                ]
+                ];
+                break;
         }
         
         
