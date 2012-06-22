@@ -221,7 +221,7 @@ Code.prototype = {
             'A=M',      // Load the address of the value it points to
             'D=M',      // Load the value into D (second param)
             '@SP',      // Load the address of the SP
-            'AM=M-1',    // Decrement the SP and load the address of the value it points to
+            'AM=M-1'    // Decrement the SP and load the address of the value it points to
             
             // Leave with the address loaded into the A register from which
             // the second argument should be loaded and to which the output needs
@@ -264,18 +264,18 @@ Code.prototype = {
                     'D=D-M',                            // Subtract one from the other. Equal if result == 0.
                     '@R13',                             // Save output address to R13 so we can jump
                     'M=A',
-                    '@IF_EQ_', + this.eqCount,
+                    '@IF_EQ_' + this.eqCount,
                     'D;JEQ',
                     '@R13',                             // Restore output address
                     'A=M',
                     'M=0',                              // Output = false
-                    '@EQ_END' + this.eqCount,
+                    '@EQ_END_' + this.eqCount,
                     '0;JMP',                            // Jump to finish
                     '(IF_EQ_' + this.eqCount + ')',
                     '@R13',                             // Restore output address
                     'A=M',
                     'M=-1',                             // Output = true
-                    '(EQ_END' + this.eqCount + ')'      // Finish
+                    '(EQ_END_' + this.eqCount + ')'     // Finish
                 ];
                 this.eqCount++;
                 break;
@@ -311,10 +311,12 @@ Code.prototype = {
         
         
         if(binaryCommands.indexOf(command)>=0){
-            return binarySetup + out;
+            out = binarySetup.concat(out);
         } else {
-            return unarySetup + out;
+            out = unarySetup.concat(out)
         }
+
+        return out.join('\n');
      },
      
      /*
