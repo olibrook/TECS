@@ -323,8 +323,47 @@ Code.prototype = {
       * Writes the assembly code that is the translation of the given push or pop
       * command.
       */
-     pushPop: function(command, segment, index){
-     }
+    pushPop: function(command, segment, index){
+        var out, incrementStack, saveDToStack;
+        
+        out = [];
+        
+        incrementStack = [
+            '@SP',
+            'M=M+1',
+        ];
+        
+        saveDToStack = [
+            '@SP',
+            'A=M',
+            'M=D'
+        ];
+        
+        if(command === 'push'){
+            switch(segment){
+                
+                case 'constant':
+                    out = out.concat(incrementStack);
+                    out = out.concat([
+                        '@' + index,        // Load constant
+                        'D=A',
+                    ]);
+                    out = out.concat(saveDToStack);
+                    break;
+                    
+                default:
+                    throw new Error('Push to unimplemented segment.');
+            }
+            
+        } else if(command === 'pop'){
+            
+        } else {
+            throw new Error('Invalid command in pushPop.');
+        }
+        
+        
+        return out.join('\n');
+    }
 }
 
 
@@ -345,7 +384,7 @@ function main(inputFile, outputFile){
                 break;
             case C_PUSH:
             case C_POP:
-                console.log(code.pushPop(parser.commandParts));
+                console.log(code.pushPop(parser.commandParts[0], parser.commandParts[1], parser.commandParts[2]));
                 break;
             case C_LABEL:
             case C_GOTO:
