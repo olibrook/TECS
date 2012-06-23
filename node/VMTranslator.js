@@ -239,18 +239,13 @@ Command.prototype.incSP = function(){
     return this;
 }
 
-Command.prototype.add = function(){
-    this.commands.push('M=D+M');
-    return this;
-}
-
-Command.prototype.sub = function(){
-    this.commands.push('M=M-D');
-    return this;
-}
-
-Command.prototype.neg = function(){
-    this.commands.push('M=-D');
+Command.prototype.asm = function(asm){
+    if(typeof(asm) == 'string'){
+        this.commands.push(asm);
+        
+    } else if(typeof(asm) == 'array'){
+        this.commands = this.commands.concat(asm);
+    }
     return this;
 }
 
@@ -322,27 +317,9 @@ Command.prototype.lt = function(offset){
     return this;
 }
 
-Command.prototype.and = function(){
-    this.commands.push('M=D&M');
-    return this;
-}
-
-Command.prototype.or = function(){
-    this.commands.push('M=D|M');
-    return this;
-}
-
-Command.prototype.not = function(){
-    this.commands.push('M=!D');
-    return this;
-}
-
 Command.prototype.toString = function(){
     return this.commands.join('\n');
 }
-
-
-
 
 
 function Code(){
@@ -372,17 +349,17 @@ Code.prototype = {
          }
      },
      
-     add: new Command().binary().add().incSP().toString(),
+     add: new Command().binary().asm('M=D+M').incSP().toString(),
         
-     sub: new Command().binary().sub().incSP().toString(),
+     sub: new Command().binary().asm('M=M-D').incSP().toString(),
         
-     neg: new Command().unary().neg().incSP().toString(),
+     neg: new Command().unary().asm('M=-D').incSP().toString(),
         
-     and: new Command().binary().and().incSP().toString(),
+     and: new Command().binary().asm('M=D&M').incSP().toString(),
 
-     or:  new Command().binary().or().incSP().toString(),
+     or:  new Command().binary().asm('M=D|M').incSP().toString(),
 
-     not: new Command().unary().not().incSP().toString(),
+     not: new Command().unary().asm('M=!D').incSP().toString(),
 
      eq:  function(){
              return new Command().binary().eq(this.eqCount++).incSP().toString();
