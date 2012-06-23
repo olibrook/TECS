@@ -239,81 +239,15 @@ Command.prototype.incSP = function(){
     return this;
 }
 
-Command.prototype.asm = function(asm){
-    if(typeof(asm) == 'string'){
-        this.commands.push(asm);
-        
-    } else if(typeof(asm) == 'array'){
-        this.commands = this.commands.concat(asm);
+/**
+ * Add arbitrary lines of assembly language to the command.
+ * 
+ * Accepts variable length args.
+ */
+Command.prototype.asm = function(){
+    for(var i=0; i<arguments.length; i++){
+        this.commands.push(arguments[i]);
     }
-    return this;
-}
-
-Command.prototype.eq = function(offset){
-    this.commands = this.commands.concat([
-        'D=D-M',                            // Subtract one from the other. Equal if result == 0.
-        '@IF_EQ_' + offset,
-        'D;JEQ',
-        
-        '@SP',
-        'A=M',
-        'M=0',                              // Output = false
-        '@EQ_END_' + offset,
-        '0;JMP',                            // Jump to finish
-        
-        '(IF_EQ_' + offset + ')',
-        '@SP',
-        'A=M',
-        'M=-1',                             // Output = true
-        
-        '(EQ_END_' + offset + ')'           // Finish
-    ]);
-    return this;
-}
-
-Command.prototype.gt = function(offset){
-    this.commands = this.commands.concat([
-        'D=D-M',                            // Subtract first from second. GT = True if result < 0.
-
-        '@IF_GT_' + offset,
-        'D;JLT',
-        
-        '@SP',
-        'A=M',
-        'M=0',                              // Output = false
-        '@GT_END_' + offset,
-        '0;JMP',                            // Jump to finish
-        
-        '(IF_GT_' + offset + ')',
-        '@SP',
-        'A=M',
-        'M=-1',                             // Output = true
-        
-        '(GT_END_' + offset + ')'     // Finish
-    ]);
-    return this;
-}
-
-Command.prototype.lt = function(offset){
-    this.commands = this.commands.concat([
-        'D=D-M',                            // Subtract first from second. LT = True if result > 0.
-        
-        '@IF_LT_' + offset,
-        'D;JGT',
-        
-        '@SP',
-        'A=M',
-        'M=0',                              // Output = false
-        '@LT_END_' + offset,
-        '0;JMP',                            // Jump to finish
-        
-        '(IF_LT_' + offset + ')',
-        '@SP',
-        'A=M',
-        'M=-1',                             // Output = true
-        
-        '(LT_END_' + offset + ')'// Finish
-    ]);
     return this;
 }
 
@@ -361,16 +295,80 @@ Code.prototype = {
 
      not: new Command().unary().asm('M=!D').incSP().toString(),
 
-     eq:  function(){
-             return new Command().binary().eq(this.eqCount++).incSP().toString();
+     eq: function(){
+         var command = new Command().binary().asm(
+                 'D=D-M',                            // Subtract one from the other. Equal if result == 0.
+                 '@IF_EQ_' + this.eqCount,
+                 'D;JEQ',
+
+                 '@SP',
+                 'A=M',
+                 'M=0',                              // Output = false
+                 '@EQ_END_' + this.eqCount,
+                 '0;JMP',                            // Jump to finish
+
+                 '(IF_EQ_' + this.eqCount + ')',
+                 '@SP',
+                 'A=M',
+                 'M=-1',                             // Output = true
+
+                 '(EQ_END_' + this.eqCount + ')'        // Finish
+                 
+                 ).incSP();
+
+        this.eqCount++;
+        return command.toString();
      },
 
-     gt:  function(){
-             return new Command().binary().gt(this.gtCount++).incSP().toString();
+     gt: function(){
+         var command = new Command().binary().asm(
+                 'D=D-M',                            // Subtract first from second. GT = True if result < 0.
+
+                 '@IF_GT_' + this.gtCount,
+                 'D;JLT',
+
+                 '@SP',
+                 'A=M',
+                 'M=0',                              // Output = false
+                 '@GT_END_' + this.gtCount,
+                 '0;JMP',                            // Jump to finish
+
+                 '(IF_GT_' + this.gtCount + ')',
+                 '@SP',
+                 'A=M',
+                 'M=-1',                             // Output = true
+
+                 '(GT_END_' + this.gtCount + ')'     // Finish
+                 
+                 ).incSP();
+
+        this.gtCount++;
+        return command.toString();
      },
 
-     lt:  function(){
-             return new Command().binary().lt(this.ltCount++).incSP().toString();
+     lt: function(){
+         var command = new Command().binary().asm( 
+             'D=D-M',                            // Subtract first from second. LT = True if result > 0.
+
+             '@IF_LT_' + this.ltCount,
+             'D;JGT',
+
+             '@SP',
+             'A=M',
+             'M=0',                              // Output = false
+             '@LT_END_' + this.ltCount,
+             '0;JMP',                            // Jump to finish
+
+             '(IF_LT_' + this.ltCount + ')',
+             '@SP',
+             'A=M',
+             'M=-1',                             // Output = true
+
+             '(LT_END_' + this.ltCount + ')'    // Finish
+             ).incSP();
+             
+        this.ltCount++;
+        return command.toString();
      },
      
      /*
