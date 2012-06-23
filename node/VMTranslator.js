@@ -211,109 +211,160 @@ Code.prototype = {
      * command.
      */
      command: function(command){
-        // - Handle binary and unary operations separately.
-        // - Handle operations which are built into the CPU seperately.
-        var binarySetup, binaryCommands, unarySetup, output;
+
+        var binarySetup, unarySetup, incrementSP, out;
          
         // Common setup for binary commands.
         binarySetup = [
             '@SP',      // Load the address of the SP
-            'A=M',      // Load the address of the value it points to
-            'D=M',      // Load the value into D (second param)
-            '@SP',      // Load the address of the SP
-            'AM=M-1'    // Decrement the SP and load the address of the value it points to
+            'AM=M-1',   // Decrement the SP
+            'D=M',      // Load the second parameter into D 
+            '@SP',
+            'AM=M-1'    // Decrement SP and leave A with the address of the first parameter
             
-            // Leave with the address loaded into the A register from which
-            // the second argument should be loaded and to which the output needs
-            // to be saved. The SP has already been decremented.
-        ]
+            // The 'A' register now points at the address of the first parameter,
+            // which is also where the output should go.
+        ];
         
         unarySetup = [
             '@SP',      // Load the address of the SP
-            'A=M',      // Load the address of the value it points to
+            'AM=M-1',   // Load the address of the value it points to
             'D=M'       // Store the single parameter in D
             
             // Leave with the address loaded into the A register to which the output
             // needs to be saved.
-        ]
-
-        binaryCommands = ['add', 'sub', 'eq', 'gt', 'lt', 'and', 'or']
+        ];
+        
+        incrementSP = [
+            '@SP',
+            'M=M+1'
+        ];
+        
+        out = [];
          
         switch(command){
             
             case 'add':
-                out = [
+                out = out.concat(binarySetup);
+                out = out.concat([
                     'M=D+M',
-                ];
+                ]);
+                out = out.concat(incrementSP);
                 break;
                 
             case 'sub':
-                out = [
-                    'M=D-M',
-                ];
+                out = out.concat(binarySetup);
+                out = out.concat([
+                    'M=M-D',
+                ]);
+                out = out.concat(incrementSP);
                 break;
                 
             case 'neg':
-                out = [
+                out = out.concat(unarySetup);
+                out = out.concat([
                     'M=-D',
-                ];
+                ]);
+                out = out.concat(incrementSP);
                 break;
                 
             case 'eq':
-                out = [
+                out = out.concat(binarySetup);
+                out = out.concat([
                     'D=D-M',                            // Subtract one from the other. Equal if result == 0.
-                    '@R13',                             // Save output address to R13 so we can jump
-                    'M=A',
                     '@IF_EQ_' + this.eqCount,
                     'D;JEQ',
-                    '@R13',                             // Restore output address
+                    
+                    '@SP',
                     'A=M',
                     'M=0',                              // Output = false
                     '@EQ_END_' + this.eqCount,
                     '0;JMP',                            // Jump to finish
+                    
                     '(IF_EQ_' + this.eqCount + ')',
-                    '@R13',                             // Restore output address
+                    '@SP',
                     'A=M',
                     'M=-1',                             // Output = true
+                    
                     '(EQ_END_' + this.eqCount + ')'     // Finish
-                ];
+                ]);
+                out = out.concat(incrementSP);
                 this.eqCount++;
                 break;
                 
             case 'gt':
-                out = [
-                ];
+                out = out.concat(binarySetup);
+                out = out.concat([
+                    'D=D-M',                            // Subtract first from second. GT = True if result < 0.
+
+                    '@IF_GT_' + this.gtCount,
+                    'D;JLT',
+                    
+                    '@SP',
+                    'A=M',
+                    'M=0',                              // Output = false
+                    '@GT_END_' + this.gtCount,
+                    '0;JMP',                            // Jump to finish
+                    
+                    '(IF_GT_' + this.gtCount + ')',
+                    '@SP',
+                    'A=M',
+                    'M=-1',                             // Output = true
+                    
+                    '(GT_END_' + this.gtCount + ')'     // Finish
+                ]);
+                out = out.concat(incrementSP);
+                this.gtCount++;
                 break;
                 
             case 'lt':
-                out = [
-                ];
+                out = out.concat(binarySetup);
+                out = out.concat([
+                    'D=D-M',                            // Subtract first from second. LT = True if result > 0.
+                    
+                    '@IF_LT_' + this.ltCount,
+                    'D;JGT',
+                    
+                    '@SP',
+                    'A=M',
+                    'M=0',                              // Output = false
+                    '@LT_END_' + this.ltCount,
+                    '0;JMP',                            // Jump to finish
+                    
+                    '(IF_LT_' + this.ltCount + ')',
+                    '@SP',
+                    'A=M',
+                    'M=-1',                             // Output = true
+                    
+                    '(LT_END_' + this.ltCount + ')'     // Finish
+                ]);
+                out = out.concat(incrementSP);
+                this.ltCount++;
                 break;
                 
             case 'and':
-                out = [
+                out = out.concat(binarySetup);
+                out = out.concat([
                     'M=D&M',
-                ];
+                ]);
+                out = out.concat(incrementSP);
                 break;
                 
             case 'or':
-                out = [
+                out = out.concat(binarySetup);
+                out = out.concat([
                     'M=D|M',
-                ];
+                ]);
+                out = out.concat(incrementSP);
                 break;
                 
             case 'not':
-                out = [
+                out = out.concat(unarySetup);
+                out = out.concat([
                     'M=!D',
-                ];
+                ]);
+                out = out.concat(incrementSP);
                 break;
-        }
-        
-        
-        if(binaryCommands.indexOf(command)>=0){
-            out = binarySetup.concat(out);
-        } else {
-            out = unarySetup.concat(out)
         }
 
         return out.join('\n');
@@ -343,12 +394,12 @@ Code.prototype = {
             switch(segment){
                 
                 case 'constant':
-                    out = out.concat(incrementStack);
                     out = out.concat([
                         '@' + index,        // Load constant
                         'D=A',
                     ]);
                     out = out.concat(saveDToStack);
+                    out = out.concat(incrementStack);
                     break;
                     
                 default:
@@ -377,6 +428,8 @@ function main(inputFile, outputFile){
 
     while(parser.hasMoreCommands()){
         parser.advance();
+        
+        console.log('\n// ' + parser.currentCommand + '\n');
         
         switch(parser.commandType()){
             case C_ARITHMETIC:
