@@ -197,11 +197,188 @@ Parser.prototype = {
 
 
 
+
+/**
+ * Code generator class for arithmetic commands.
+ */
+function Arithmetic(commandCount){
+    this.commands = [];
+    this.commandCount = commandCount;
+}
+
+/**
+ * Common setup for binary commands.
+ */
+Arithmetic.prototype.binary = function(){
+    this.commands = this.commands.concat([
+        '@SP',      // Load the address of the SP
+        'AM=M-1',   // Decrement the SP
+        'D=M',      // Load the second parameter into D 
+        '@SP',
+        'AM=M-1'    // Decrement SP and leave A with the address of the first parameter
+    ]);
+    return this;
+}
+
+/**
+ * Common setup for unary commands.
+ */
+Arithmetic.prototype.unary = function(){
+    this.commands = this.commands.concat([
+        '@SP',      // Load the address of the SP
+        'AM=M-1',   // Load the address of the value it points to
+        'D=M'       // Store the single parameter in D
+    ]);
+    return this;
+}
+
+Arithmetic.prototype.incSP = function(){
+    this.commands = this.commands.concat([
+        '@SP',
+        'M=M+1'
+    ]);
+    return this;
+}
+
+Arithmetic.prototype.add = function(){
+    this.commands.push('M=D+M');
+    return this;
+}
+
+Arithmetic.prototype.sub = function(){
+    this.commands.push('M=M-D');
+    return this;
+}
+
+Arithmetic.prototype.neg = function(){
+    this.commands.push('M=-D');
+    return this;
+}
+
+Arithmetic.prototype.eq = function(){
+    this.commands = this.commands.concat([
+        'D=D-M',                            // Subtract one from the other. Equal if result == 0.
+        '@IF_EQ_' + this.commandCount,
+        'D;JEQ',
+        
+        '@SP',
+        'A=M',
+        'M=0',                              // Output = false
+        '@EQ_END_' + this.commandCount,
+        '0;JMP',                            // Jump to finish
+        
+        '(IF_EQ_' + this.commandCount + ')',
+        '@SP',
+        'A=M',
+        'M=-1',                             // Output = true
+        
+        '(EQ_END_' + this.commandCount + ')'     // Finish
+    ]);
+    return this;
+}
+
+Arithmetic.prototype.gt = function(){
+    this.commands = this.commands.concat([
+        'D=D-M',                            // Subtract first from second. GT = True if result < 0.
+
+        '@IF_GT_' + this.commandCount,
+        'D;JLT',
+        
+        '@SP',
+        'A=M',
+        'M=0',                              // Output = false
+        '@GT_END_' + this.commandCount,
+        '0;JMP',                            // Jump to finish
+        
+        '(IF_GT_' + this.commandCount + ')',
+        '@SP',
+        'A=M',
+        'M=-1',                             // Output = true
+        
+        '(GT_END_' + this.commandCount + ')'     // Finish
+    ]);
+    return this;
+}
+
+Arithmetic.prototype.lt = function(){
+    this.commands = this.commands.concat([
+        'D=D-M',                            // Subtract first from second. LT = True if result > 0.
+        
+        '@IF_LT_' + this.commandCount,
+        'D;JGT',
+        
+        '@SP',
+        'A=M',
+        'M=0',                              // Output = false
+        '@LT_END_' + this.commandCount,
+        '0;JMP',                            // Jump to finish
+        
+        '(IF_LT_' + this.commandCount + ')',
+        '@SP',
+        'A=M',
+        'M=-1',                             // Output = true
+        
+        '(LT_END_' + this.commandCount + ')'// Finish
+    ]);
+    return this;
+}
+
+Arithmetic.prototype.and = function(){
+    this.commands.push('M=D&M');
+    return this;
+}
+
+Arithmetic.prototype.or = function(){
+    this.commands.push('M=D|M');
+    return this;
+}
+
+Arithmetic.prototype.not = function(){
+    this.commands.push('M=!D');
+    return this;
+}
+
+Arithmetic.prototype.out = function(){
+    return this.commands.join('\n');
+}
+
+
+
+
+
 function Code(){
-    // Used to generate unique labels for instructions which require jumps.
+    
+    // Used to generate unique labels for branching commands.
     this.eqCount = 0;
     this.ltCount = 0;
     this.gtCount = 0;
+    
+    this.arithmeticCommands = {
+        
+        add: new Arithmetic(0).binary().add().incSP().out(),
+        
+        sub: new Arithmetic(0).binary().sub().incSP().out(),
+        
+        neg: new Arithmetic(0).unary().neg().incSP().out(),
+        
+        and: new Arithmetic(0).binary().and().incSP().out(),
+        
+        or:  new Arithmetic(0).binary().or().incSP().out(),
+        
+        not: new Arithmetic(0).unary().not().incSP().out(),
+        
+        eq:  function(){
+                return new Arithmetic(this.eqCount++).binary().eq().incSP().out();
+        },
+
+        gt:  function(){
+                return new Arithmetic(this.gtCount++).binary().gt().incSP().out();
+        },
+
+        lt:  function(){
+                return new Arithmetic(this.ltCount++).binary().lt().incSP().out();
+        }
+    }   
 }
 
 Code.prototype = {
@@ -211,163 +388,17 @@ Code.prototype = {
      * command.
      */
      command: function(command){
-
-        var binarySetup, unarySetup, incrementSP, out;
+         var out = this.arithmeticCommands[command];
          
-        // Common setup for binary commands.
-        binarySetup = [
-            '@SP',      // Load the address of the SP
-            'AM=M-1',   // Decrement the SP
-            'D=M',      // Load the second parameter into D 
-            '@SP',
-            'AM=M-1'    // Decrement SP and leave A with the address of the first parameter
-            
-            // The 'A' register now points at the address of the first parameter,
-            // which is also where the output should go.
-        ];
-        
-        unarySetup = [
-            '@SP',      // Load the address of the SP
-            'AM=M-1',   // Load the address of the value it points to
-            'D=M'       // Store the single parameter in D
-            
-            // Leave with the address loaded into the A register to which the output
-            // needs to be saved.
-        ];
-        
-        incrementSP = [
-            '@SP',
-            'M=M+1'
-        ];
-        
-        out = [];
-         
-        switch(command){
-            
-            case 'add':
-                out = out.concat(binarySetup);
-                out = out.concat([
-                    'M=D+M',
-                ]);
-                out = out.concat(incrementSP);
-                break;
-                
-            case 'sub':
-                out = out.concat(binarySetup);
-                out = out.concat([
-                    'M=M-D',
-                ]);
-                out = out.concat(incrementSP);
-                break;
-                
-            case 'neg':
-                out = out.concat(unarySetup);
-                out = out.concat([
-                    'M=-D',
-                ]);
-                out = out.concat(incrementSP);
-                break;
-                
-            case 'eq':
-                out = out.concat(binarySetup);
-                out = out.concat([
-                    'D=D-M',                            // Subtract one from the other. Equal if result == 0.
-                    '@IF_EQ_' + this.eqCount,
-                    'D;JEQ',
-                    
-                    '@SP',
-                    'A=M',
-                    'M=0',                              // Output = false
-                    '@EQ_END_' + this.eqCount,
-                    '0;JMP',                            // Jump to finish
-                    
-                    '(IF_EQ_' + this.eqCount + ')',
-                    '@SP',
-                    'A=M',
-                    'M=-1',                             // Output = true
-                    
-                    '(EQ_END_' + this.eqCount + ')'     // Finish
-                ]);
-                out = out.concat(incrementSP);
-                this.eqCount++;
-                break;
-                
-            case 'gt':
-                out = out.concat(binarySetup);
-                out = out.concat([
-                    'D=D-M',                            // Subtract first from second. GT = True if result < 0.
-
-                    '@IF_GT_' + this.gtCount,
-                    'D;JLT',
-                    
-                    '@SP',
-                    'A=M',
-                    'M=0',                              // Output = false
-                    '@GT_END_' + this.gtCount,
-                    '0;JMP',                            // Jump to finish
-                    
-                    '(IF_GT_' + this.gtCount + ')',
-                    '@SP',
-                    'A=M',
-                    'M=-1',                             // Output = true
-                    
-                    '(GT_END_' + this.gtCount + ')'     // Finish
-                ]);
-                out = out.concat(incrementSP);
-                this.gtCount++;
-                break;
-                
-            case 'lt':
-                out = out.concat(binarySetup);
-                out = out.concat([
-                    'D=D-M',                            // Subtract first from second. LT = True if result > 0.
-                    
-                    '@IF_LT_' + this.ltCount,
-                    'D;JGT',
-                    
-                    '@SP',
-                    'A=M',
-                    'M=0',                              // Output = false
-                    '@LT_END_' + this.ltCount,
-                    '0;JMP',                            // Jump to finish
-                    
-                    '(IF_LT_' + this.ltCount + ')',
-                    '@SP',
-                    'A=M',
-                    'M=-1',                             // Output = true
-                    
-                    '(LT_END_' + this.ltCount + ')'     // Finish
-                ]);
-                out = out.concat(incrementSP);
-                this.ltCount++;
-                break;
-                
-            case 'and':
-                out = out.concat(binarySetup);
-                out = out.concat([
-                    'M=D&M',
-                ]);
-                out = out.concat(incrementSP);
-                break;
-                
-            case 'or':
-                out = out.concat(binarySetup);
-                out = out.concat([
-                    'M=D|M',
-                ]);
-                out = out.concat(incrementSP);
-                break;
-                
-            case 'not':
-                out = out.concat(unarySetup);
-                out = out.concat([
-                    'M=!D',
-                ]);
-                out = out.concat(incrementSP);
-                break;
-        }
-
-        return out.join('\n');
+         if(typeof(out)==='string'){
+             return out;
+             
+         } else if(typeof(out)==='function'){
+            return out.call(this);
+             
+         } else {
+             throw new Error('Cannot generate output for command "' + command + '"');
+         }
      },
      
      /*
