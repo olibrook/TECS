@@ -114,84 +114,80 @@ function Parser(lineReader){
     this.commandParts = null;
 }
 
+/*
+ * Returns true if there are more commands in the input.
+ */
+Parser.prototype.hasMoreCommands = function(){
+    while(!(this.currentLine.match(/\S/)) && (this.lineReader.hasLines())){
 
-Parser.prototype = {
-    
-    /*
-     * Returns true if there are more commands in the input.
-     */
-    hasMoreCommands: function(){
-        while(!(this.currentLine.match(/\S/)) && (this.lineReader.hasLines())){
+        this.currentLine = this.lineReader.next();
+        
+        // Strip comments
+        this.currentLine = this.currentLine.replace(/\/\/.+/, '');
+    }
+    // Return true if line not empty.
+    return (this.currentLine.match(/\S/));
+},
 
-            this.currentLine = this.lineReader.next();
-            
-            // Strip comments
-            this.currentLine = this.currentLine.replace(/\/\/.+/, '');
+/*
+ * Reads the next command and makes it the current command.
+ */
+Parser.prototype.advance = function(){
+    this.currentCommand = this.currentLine;
+    this.currentLine = '';
+    this.commandParts = this.currentCommand.match(/^\s*(\S+)?\s*(\S+)?\s*(\S+)?/).slice(1);
+    this.currentCommandType = this._commandType();
+},
+
+/*
+ * Returns the type of the current command as a string.
+ */
+Parser.prototype.commandType = function(){
+    return this.currentCommandType;
+},
+
+Parser.prototype._commandType = function(){
+    var command, formats, requiredLength, i, re, commandType, partsLength;
+    
+    command = this.commandParts[0];
+    
+    formats = [
+        [1, /^(add|sub|neg|eq|gt|lt|and|or|not)$/, C_ARITHMETIC],
+        [3, /^push$/, C_PUSH],
+        [3, /^pop$/, C_POP],
+    ];
+    
+    partsLength = this.commandParts.filter(function(item){
+            return item !== undefined
+        }).length;
+    
+    for(i=0; i<formats.length; i++){
+        requiredLength = formats[i][0];
+        re = formats[i][1];
+        commandType = formats[i][2];
+        
+        if(command.match(re) && partsLength == requiredLength){
+            return commandType;
         }
-        // Return true if line not empty.
-        return (this.currentLine.match(/\S/));
-    },
-    
-    /*
-     * Reads the next command and makes it the current command.
-     */
-    advance: function(){
-        this.currentCommand = this.currentLine;
-        this.currentLine = '';
-        this.commandParts = this.currentCommand.match(/^\s*(\S+)?\s*(\S+)?\s*(\S+)?/).slice(1);
-        this.currentCommandType = this._commandType();
-    },
-    
-    /*
-     * Returns the type of the current command as a string.
-     */
-    commandType: function(){
-        return this.currentCommandType;
-    },
-    
-    _commandType: function(){
-        var command, formats, requiredLength, i, re, commandType, partsLength;
-        
-        command = this.commandParts[0];
-        
-        formats = [
-            [1, /^(add|sub|neg|eq|gt|lt|and|or|not)$/, C_ARITHMETIC],
-            [3, /^push$/, C_PUSH],
-            [3, /^pop$/, C_POP],
-        ];
-        
-        partsLength = this.commandParts.filter(function(item){
-                return item !== undefined
-            }).length;
-        
-        for(i=0; i<formats.length; i++){
-            requiredLength = formats[i][0];
-            re = formats[i][1];
-            commandType = formats[i][2];
-            
-            if(command.match(re) && partsLength == requiredLength){
-                return commandType;
-            }
-        }
-        throw new Error("Parser error");
-    },
-    
-    /*
-     * Returns the first argument of the current command as a string.
-     */
-    arg1: function(){
-        return this.commandParts[1];
-    },
-    
-    /*
-     * Returns the second argument of the current command as an integer.
-     */
-    arg2: function(){
-        if(!this.commandParts[2].match(/^[0-9]+$/)){
-            throw new Error("Cannot parse '" + this.commandParts[2] + "' as an integer.");
-        } else {
-            return parseInt(this.commandParts[2], 10);
-        }
+    }
+    throw new Error("Parser error");
+},
+
+/*
+ * Returns the first argument of the current command as a string.
+ */
+Parser.prototype.arg1 = function(){
+    return this.commandParts[1];
+},
+
+/*
+ * Returns the second argument of the current command as an integer.
+ */
+Parser.prototype.arg2 = function(){
+    if(!this.commandParts[2].match(/^[0-9]+$/)){
+        throw new Error("Cannot parse '" + this.commandParts[2] + "' as an integer.");
+    } else {
+        return parseInt(this.commandParts[2], 10);
     }
 }
 
@@ -264,159 +260,156 @@ function Code(){
     this.gtCount = 0;
 }
 
-Code.prototype = {
+/*
+ * Writes the assembly code that is the translation of the given arithmentic
+ * command.
+ */
+Code.prototype.command = function(command){
     
-    /*
-     * Writes the assembly code that is the translation of the given arithmentic
-     * command.
-     */
-     command: function(command){
-         
-         if(typeof(this[command])==='string'){
-             return this[command];
-             
-         } else if(typeof(this[command])==='function'){
-            return this[command].call(this);
-             
-         } else {
-             throw new Error('Cannot generate output for command "' + command + '"');
-         }
-     },
-     
-     add: new Command().binary().asm('M=D+M').incSP().toString(),
+    if(typeof(this[command])==='string'){
+        return this[command];
         
-     sub: new Command().binary().asm('M=M-D').incSP().toString(),
+    } else if(typeof(this[command])==='function'){
+       return this[command].call(this);
         
-     neg: new Command().unary().asm('M=-D').incSP().toString(),
+    } else {
+        throw new Error('Cannot generate output for command "' + command + '"');
+    }
+};
+
+Code.prototype.add = new Command().binary().asm('M=D+M').incSP().toString();
+   
+Code.prototype.sub = new Command().binary().asm('M=M-D').incSP().toString();
+   
+Code.prototype.neg = new Command().unary().asm('M=-D').incSP().toString();
+   
+Code.prototype.and = new Command().binary().asm('M=D&M').incSP().toString();
+
+Code.prototype.or = new Command().binary().asm('M=D|M').incSP().toString();
+
+Code.prototype.not = new Command().unary().asm('M=!D').incSP().toString();
+
+Code.prototype.eq = function(){
+    var command = new Command().binary().asm(
+        'D=D-M',                            // Subtract one from the other. Equal if result == 0.
+        '@IF_EQ_' + this.eqCount,
+        'D;JEQ',
+
+        '@SP',
+        'A=M',
+        'M=0',                              // Output = false
+        '@EQ_END_' + this.eqCount,
+        '0;JMP',                            // Jump to finish
+
+        '(IF_EQ_' + this.eqCount + ')',
+        '@SP',
+        'A=M',
+        'M=-1',                             // Output = true
+
+        '(EQ_END_' + this.eqCount + ')'        // Finish
         
-     and: new Command().binary().asm('M=D&M').incSP().toString(),
+        ).incSP();
+    
+    this.eqCount++;
+    return command.toString();
+},
 
-     or:  new Command().binary().asm('M=D|M').incSP().toString(),
+Code.prototype.gt = function(){
+    var command = new Command().binary().asm(
+        'D=D-M',                            // Subtract first from second. GT = True if result < 0.
 
-     not: new Command().unary().asm('M=!D').incSP().toString(),
+        '@IF_GT_' + this.gtCount,
+        'D;JLT',
 
-     eq: function(){
-         var command = new Command().binary().asm(
-                 'D=D-M',                            // Subtract one from the other. Equal if result == 0.
-                 '@IF_EQ_' + this.eqCount,
-                 'D;JEQ',
+        '@SP',
+        'A=M',
+        'M=0',                              // Output = false
+        '@GT_END_' + this.gtCount,
+        '0;JMP',                            // Jump to finish
 
-                 '@SP',
-                 'A=M',
-                 'M=0',                              // Output = false
-                 '@EQ_END_' + this.eqCount,
-                 '0;JMP',                            // Jump to finish
+        '(IF_GT_' + this.gtCount + ')',
+        '@SP',
+        'A=M',
+        'M=-1',                             // Output = true
 
-                 '(IF_EQ_' + this.eqCount + ')',
-                 '@SP',
-                 'A=M',
-                 'M=-1',                             // Output = true
-
-                 '(EQ_END_' + this.eqCount + ')'        // Finish
-                 
-                 ).incSP();
-
-        this.eqCount++;
-        return command.toString();
-     },
-
-     gt: function(){
-         var command = new Command().binary().asm(
-                 'D=D-M',                            // Subtract first from second. GT = True if result < 0.
-
-                 '@IF_GT_' + this.gtCount,
-                 'D;JLT',
-
-                 '@SP',
-                 'A=M',
-                 'M=0',                              // Output = false
-                 '@GT_END_' + this.gtCount,
-                 '0;JMP',                            // Jump to finish
-
-                 '(IF_GT_' + this.gtCount + ')',
-                 '@SP',
-                 'A=M',
-                 'M=-1',                             // Output = true
-
-                 '(GT_END_' + this.gtCount + ')'     // Finish
-                 
-                 ).incSP();
-
-        this.gtCount++;
-        return command.toString();
-     },
-
-     lt: function(){
-         var command = new Command().binary().asm( 
-             'D=D-M',                            // Subtract first from second. LT = True if result > 0.
-
-             '@IF_LT_' + this.ltCount,
-             'D;JGT',
-
-             '@SP',
-             'A=M',
-             'M=0',                              // Output = false
-             '@LT_END_' + this.ltCount,
-             '0;JMP',                            // Jump to finish
-
-             '(IF_LT_' + this.ltCount + ')',
-             '@SP',
-             'A=M',
-             'M=-1',                             // Output = true
-
-             '(LT_END_' + this.ltCount + ')'    // Finish
-             ).incSP();
-             
-        this.ltCount++;
-        return command.toString();
-     },
-     
-     /*
-      * Writes the assembly code that is the translation of the given push or pop
-      * command.
-      */
-    pushPop: function(command, segment, index){
-        var out, incrementStack, saveDToStack;
+        '(GT_END_' + this.gtCount + ')'     // Finish
         
-        out = [];
+        ).incSP();
+
+    this.gtCount++;
+    return command.toString();
+}
+
+Code.prototype.lt = function(){
+    var command = new Command().binary().asm( 
+        'D=D-M',                            // Subtract first from second. LT = True if result > 0.
+
+        '@IF_LT_' + this.ltCount,
+        'D;JGT',
+
+        '@SP',
+        'A=M',
+        'M=0',                              // Output = false
+        '@LT_END_' + this.ltCount,
+        '0;JMP',                            // Jump to finish
+
+        '(IF_LT_' + this.ltCount + ')',
+        '@SP',
+        'A=M',
+        'M=-1',                             // Output = true
+
+        '(LT_END_' + this.ltCount + ')'    // Finish
+        ).incSP();
         
-        incrementStack = [
-            '@SP',
-            'M=M+1',
-        ];
-        
-        saveDToStack = [
-            '@SP',
-            'A=M',
-            'M=D'
-        ];
-        
-        if(command === 'push'){
-            switch(segment){
+    this.ltCount++;
+    return command.toString();
+}
+
+/**
+ * Writes the assembly code that is the translation of the given push or pop
+ * command.
+ */
+Code.prototype.pushPop = function(command, segment, index){
+    var out, incrementStack, saveDToStack;
+    
+    out = [];
+    
+    incrementStack = [
+        '@SP',
+        'M=M+1',
+    ];
+    
+    saveDToStack = [
+        '@SP',
+        'A=M',
+        'M=D'
+    ];
+    
+    if(command === 'push'){
+        switch(segment){
+            
+            case 'constant':
+                out = out.concat([
+                    '@' + index,        // Load constant
+                    'D=A',
+                ]);
+                out = out.concat(saveDToStack);
+                out = out.concat(incrementStack);
+                break;
                 
-                case 'constant':
-                    out = out.concat([
-                        '@' + index,        // Load constant
-                        'D=A',
-                    ]);
-                    out = out.concat(saveDToStack);
-                    out = out.concat(incrementStack);
-                    break;
-                    
-                default:
-                    throw new Error('Push to unimplemented segment.');
-            }
-            
-        } else if(command === 'pop'){
-            
-        } else {
-            throw new Error('Invalid command in pushPop.');
+            default:
+                throw new Error('Push to unimplemented segment.');
         }
         
+    } else if(command === 'pop'){
         
-        return out.join('\n');
+    } else {
+        throw new Error('Invalid command in pushPop.');
     }
+    return out.join('\n');
 }
+
+
 
 
 function main(inputFile, outputFile){
