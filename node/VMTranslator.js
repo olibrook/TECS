@@ -191,47 +191,44 @@ Parser.prototype.arg2 = function(){
     }
 }
 
-
-
-
 /**
- * Code generator class for arithmetic commands.
+ * Represents a bunch of Hack Assembly language commands.
  */
-function Command(){
+function Assembly(){
     this.commands = [];
 }
 
 /**
  * Common setup for binary commands.
  */
-Command.prototype.binary = function(){
-    this.commands = this.commands.concat([
+Assembly.prototype.binary = function(){
+    this.asm(
         '@SP',      // Load the address of the SP
         'AM=M-1',   // Decrement the SP
         'D=M',      // Load the second parameter into D 
         '@SP',
         'AM=M-1'    // Decrement SP and leave A with the address of the first parameter
-    ]);
+    );
     return this;
 }
 
 /**
  * Common setup for unary commands.
  */
-Command.prototype.unary = function(){
-    this.commands = this.commands.concat([
+Assembly.prototype.unary = function(){
+    this.asm(
         '@SP',      // Load the address of the SP
         'AM=M-1',   // Load the address of the value it points to
         'D=M'       // Store the single parameter in D
-    ]);
+    );
     return this;
 }
 
-Command.prototype.incSP = function(){
-    this.commands = this.commands.concat([
+Assembly.prototype.incSP = function(){
+    this.asm(
         '@SP',
         'M=M+1'
-    ]);
+    );
     return this;
 }
 
@@ -240,14 +237,14 @@ Command.prototype.incSP = function(){
  * 
  * Accepts variable length args.
  */
-Command.prototype.asm = function(){
+Assembly.prototype.asm = function(){
     for(var i=0; i<arguments.length; i++){
         this.commands.push(arguments[i]);
     }
     return this;
 }
 
-Command.prototype.toString = function(){
+Assembly.prototype.toString = function(){
     return this.commands.join('\n');
 }
 
@@ -277,20 +274,20 @@ Code.prototype.command = function(command){
     }
 };
 
-Code.prototype.add = new Command().binary().asm('M=D+M').incSP().toString();
+Code.prototype.add = new Assembly().binary().asm('M=D+M').incSP().toString();
    
-Code.prototype.sub = new Command().binary().asm('M=M-D').incSP().toString();
+Code.prototype.sub = new Assembly().binary().asm('M=M-D').incSP().toString();
    
-Code.prototype.neg = new Command().unary().asm('M=-D').incSP().toString();
+Code.prototype.neg = new Assembly().unary().asm('M=-D').incSP().toString();
    
-Code.prototype.and = new Command().binary().asm('M=D&M').incSP().toString();
+Code.prototype.and = new Assembly().binary().asm('M=D&M').incSP().toString();
 
-Code.prototype.or = new Command().binary().asm('M=D|M').incSP().toString();
+Code.prototype.or = new Assembly().binary().asm('M=D|M').incSP().toString();
 
-Code.prototype.not = new Command().unary().asm('M=!D').incSP().toString();
+Code.prototype.not = new Assembly().unary().asm('M=!D').incSP().toString();
 
 Code.prototype.eq = function(){
-    var command = new Command().binary().asm(
+    var command = new Assembly().binary().asm(
         'D=D-M',                            // Subtract one from the other. Equal if result == 0.
         '@IF_EQ_' + this.eqCount,
         'D;JEQ',
@@ -315,7 +312,7 @@ Code.prototype.eq = function(){
 },
 
 Code.prototype.gt = function(){
-    var command = new Command().binary().asm(
+    var command = new Assembly().binary().asm(
         'D=D-M',                            // Subtract first from second. GT = True if result < 0.
 
         '@IF_GT_' + this.gtCount,
@@ -341,7 +338,7 @@ Code.prototype.gt = function(){
 }
 
 Code.prototype.lt = function(){
-    var command = new Command().binary().asm( 
+    var command = new Assembly().binary().asm( 
         'D=D-M',                            // Subtract first from second. LT = True if result > 0.
 
         '@IF_LT_' + this.ltCount,
