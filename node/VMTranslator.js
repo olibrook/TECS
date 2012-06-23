@@ -201,15 +201,14 @@ Parser.prototype = {
 /**
  * Code generator class for arithmetic commands.
  */
-function Arithmetic(commandCount){
+function Command(){
     this.commands = [];
-    this.commandCount = commandCount;
 }
 
 /**
  * Common setup for binary commands.
  */
-Arithmetic.prototype.binary = function(){
+Command.prototype.binary = function(){
     this.commands = this.commands.concat([
         '@SP',      // Load the address of the SP
         'AM=M-1',   // Decrement the SP
@@ -223,7 +222,7 @@ Arithmetic.prototype.binary = function(){
 /**
  * Common setup for unary commands.
  */
-Arithmetic.prototype.unary = function(){
+Command.prototype.unary = function(){
     this.commands = this.commands.concat([
         '@SP',      // Load the address of the SP
         'AM=M-1',   // Load the address of the value it points to
@@ -232,7 +231,7 @@ Arithmetic.prototype.unary = function(){
     return this;
 }
 
-Arithmetic.prototype.incSP = function(){
+Command.prototype.incSP = function(){
     this.commands = this.commands.concat([
         '@SP',
         'M=M+1'
@@ -240,105 +239,105 @@ Arithmetic.prototype.incSP = function(){
     return this;
 }
 
-Arithmetic.prototype.add = function(){
+Command.prototype.add = function(){
     this.commands.push('M=D+M');
     return this;
 }
 
-Arithmetic.prototype.sub = function(){
+Command.prototype.sub = function(){
     this.commands.push('M=M-D');
     return this;
 }
 
-Arithmetic.prototype.neg = function(){
+Command.prototype.neg = function(){
     this.commands.push('M=-D');
     return this;
 }
 
-Arithmetic.prototype.eq = function(){
+Command.prototype.eq = function(offset){
     this.commands = this.commands.concat([
         'D=D-M',                            // Subtract one from the other. Equal if result == 0.
-        '@IF_EQ_' + this.commandCount,
+        '@IF_EQ_' + offset,
         'D;JEQ',
         
         '@SP',
         'A=M',
         'M=0',                              // Output = false
-        '@EQ_END_' + this.commandCount,
+        '@EQ_END_' + offset,
         '0;JMP',                            // Jump to finish
         
-        '(IF_EQ_' + this.commandCount + ')',
+        '(IF_EQ_' + offset + ')',
         '@SP',
         'A=M',
         'M=-1',                             // Output = true
         
-        '(EQ_END_' + this.commandCount + ')'     // Finish
+        '(EQ_END_' + offset + ')'           // Finish
     ]);
     return this;
 }
 
-Arithmetic.prototype.gt = function(){
+Command.prototype.gt = function(offset){
     this.commands = this.commands.concat([
         'D=D-M',                            // Subtract first from second. GT = True if result < 0.
 
-        '@IF_GT_' + this.commandCount,
+        '@IF_GT_' + offset,
         'D;JLT',
         
         '@SP',
         'A=M',
         'M=0',                              // Output = false
-        '@GT_END_' + this.commandCount,
+        '@GT_END_' + offset,
         '0;JMP',                            // Jump to finish
         
-        '(IF_GT_' + this.commandCount + ')',
+        '(IF_GT_' + offset + ')',
         '@SP',
         'A=M',
         'M=-1',                             // Output = true
         
-        '(GT_END_' + this.commandCount + ')'     // Finish
+        '(GT_END_' + offset + ')'     // Finish
     ]);
     return this;
 }
 
-Arithmetic.prototype.lt = function(){
+Command.prototype.lt = function(offset){
     this.commands = this.commands.concat([
         'D=D-M',                            // Subtract first from second. LT = True if result > 0.
         
-        '@IF_LT_' + this.commandCount,
+        '@IF_LT_' + offset,
         'D;JGT',
         
         '@SP',
         'A=M',
         'M=0',                              // Output = false
-        '@LT_END_' + this.commandCount,
+        '@LT_END_' + offset,
         '0;JMP',                            // Jump to finish
         
-        '(IF_LT_' + this.commandCount + ')',
+        '(IF_LT_' + offset + ')',
         '@SP',
         'A=M',
         'M=-1',                             // Output = true
         
-        '(LT_END_' + this.commandCount + ')'// Finish
+        '(LT_END_' + offset + ')'// Finish
     ]);
     return this;
 }
 
-Arithmetic.prototype.and = function(){
+Command.prototype.and = function(){
     this.commands.push('M=D&M');
     return this;
 }
 
-Arithmetic.prototype.or = function(){
+Command.prototype.or = function(){
     this.commands.push('M=D|M');
     return this;
 }
 
-Arithmetic.prototype.not = function(){
+Command.prototype.not = function(){
     this.commands.push('M=!D');
     return this;
 }
 
-Arithmetic.prototype.out = function(){
+Command.prototype.toString = function(){
     return this.commands.join('\n');
 }
 
@@ -352,33 +351,6 @@ function Code(){
     this.eqCount = 0;
     this.ltCount = 0;
     this.gtCount = 0;
-    
-    this.arithmeticCommands = {
-        
-        add: new Arithmetic(0).binary().add().incSP().out(),
-        
-        sub: new Arithmetic(0).binary().sub().incSP().out(),
-        
-        neg: new Arithmetic(0).unary().neg().incSP().out(),
-        
-        and: new Arithmetic(0).binary().and().incSP().out(),
-        
-        or:  new Arithmetic(0).binary().or().incSP().out(),
-        
-        not: new Arithmetic(0).unary().not().incSP().out(),
-        
-        eq:  function(){
-                return new Arithmetic(this.eqCount++).binary().eq().incSP().out();
-        },
-
-        gt:  function(){
-                return new Arithmetic(this.gtCount++).binary().gt().incSP().out();
-        },
-
-        lt:  function(){
-                return new Arithmetic(this.ltCount++).binary().lt().incSP().out();
-        }
-    }   
 }
 
 Code.prototype = {
@@ -388,17 +360,40 @@ Code.prototype = {
      * command.
      */
      command: function(command){
-         var out = this.arithmeticCommands[command];
          
-         if(typeof(out)==='string'){
-             return out;
+         if(typeof(this[command])==='string'){
+             return this[command];
              
-         } else if(typeof(out)==='function'){
-            return out.call(this);
+         } else if(typeof(this[command])==='function'){
+            return this[command].call(this);
              
          } else {
              throw new Error('Cannot generate output for command "' + command + '"');
          }
+     },
+     
+     add: new Command().binary().add().incSP().toString(),
+        
+     sub: new Command().binary().sub().incSP().toString(),
+        
+     neg: new Command().unary().neg().incSP().toString(),
+        
+     and: new Command().binary().and().incSP().toString(),
+
+     or:  new Command().binary().or().incSP().toString(),
+
+     not: new Command().unary().not().incSP().toString(),
+
+     eq:  function(){
+             return new Command().binary().eq(this.eqCount++).incSP().toString();
+     },
+
+     gt:  function(){
+             return new Command().binary().gt(this.gtCount++).incSP().toString();
+     },
+
+     lt:  function(){
+             return new Command().binary().lt(this.ltCount++).incSP().toString();
      },
      
      /*
@@ -484,6 +479,8 @@ function main(inputFile, outputFile){
     
     lineReader.close();
 }
+
+exports.Code = Code;
 
 
 /*
