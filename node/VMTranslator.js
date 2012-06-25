@@ -224,6 +224,58 @@ Assembly.prototype.unary = function(){
     return this;
 }
 
+Assembly.prototype.saveDToStack = function(){
+    this.asm(
+        '@SP',
+        'A=M',
+        'M=D'
+    );
+    return this;
+}
+
+/**
+ * 'base' must be either a numeric base address or a built in
+ * symbol (eg. 'R0');
+ */
+Assembly.prototype.loadToDFromSegment = function(base, offset){
+    this.asm(
+        '@' + base,
+        'D=M',
+        '@' + offset,
+        'A=D+A',
+        'D=M'
+    );
+    return this;
+}
+
+Assembly.prototype.saveToSegmentFromD = function(base, offset){
+    this.asm(
+        '@R13',     // Save D to temp, so that we can calculate the dest
+        'M=D',
+        '@' + base,
+        'D=M',
+        '@' + offset,
+        'D=D+A',    // D holds dest
+        '@R14',
+        'M=D',      // R14 holds dest
+        '@R13',
+        'D=M',
+        '@R14',
+        'A=M',
+        'M=D'
+    )
+    return this;
+}
+
+Assembly.prototype.popToD = function(){
+    this.asm(
+        '@SP',
+        'AM=M-1',
+        'D=M'
+    );
+    return this;
+}
+
 Assembly.prototype.incSP = function(){
     this.asm(
         '@SP',
@@ -367,43 +419,64 @@ Code.prototype.lt = function(){
  * command.
  */
 Code.prototype.pushPop = function(command, segment, index){
-    var out, incrementStack, saveDToStack;
+    var out, incrementStack, saveDToStack, addressMap;
     
-    out = [];
+    addressMap = {
+        'local': 'R1',
+        'argument': 'R2',
+        'this': 'R3',
+        'that': 'R4',
+    }
     
-    incrementStack = [
-        '@SP',
-        'M=M+1',
-    ];
+    var tempBase = 5;
     
-    saveDToStack = [
-        '@SP',
-        'A=M',
-        'M=D'
-    ];
+    out = new Assembly();
     
     if(command === 'push'){
-        switch(segment){
-            
-            case 'constant':
-                out = out.concat([
-                    '@' + index,        // Load constant
-                    'D=A',
-                ]);
-                out = out.concat(saveDToStack);
-                out = out.concat(incrementStack);
-                break;
+        
+        if(segment=== 'constant'){
+            out.asm(
+                '@' + index,        // Load constant
+                'D=A'
+                );
                 
-            default:
-                throw new Error('Push to unimplemented segment.');
+        } else if(segment==='temp'){
+            out.asm(
+                '@' + (tempBase + index),
+                'D=M'
+            );
+          
+        } else {
+            if(addressMap[segment] === undefined){
+                throw new Error('Undefined segment + "' + segment +'"');
+            }
+            else {
+                out.loadToDFromSegment(addressMap[segment], index);
+            }
         }
+        
+        return out.saveDToStack().incSP().toString();
         
     } else if(command === 'pop'){
         
-    } else {
-        throw new Error('Invalid command in pushPop.');
+        out.popToD();
+        
+        if(segment === 'temp'){
+            out.asm(
+                '@' + (tempBase + index),
+                'M=D'
+            );
+            
+        } else {
+            if(addressMap[segment] === undefined){
+                throw new Error('Undefined segment + "' + segment +'"');
+            }
+            else {
+                out.saveToSegmentFromD(addressMap[segment], index);
+            }
+        }
+        return out.toString();
     }
-    return out.join('\n');
 }
 
 
@@ -428,7 +501,7 @@ function main(inputFile, outputFile){
                 break;
             case C_PUSH:
             case C_POP:
-                console.log(code.pushPop(parser.commandParts[0], parser.commandParts[1], parser.commandParts[2]));
+                console.log(code.pushPop(parser.commandParts[0], parser.commandParts[1], parseInt(parser.commandParts[2])));
                 break;
             case C_LABEL:
             case C_GOTO:
