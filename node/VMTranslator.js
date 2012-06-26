@@ -428,7 +428,10 @@ Code.prototype.pushPop = function(command, segment, index){
         'that': 'R4',
     }
     
-    var tempBase = 5;
+    var baseAddresses = {
+        'temp': 5,
+        'pointer': 3
+    };
     
     out = new Assembly();
     
@@ -440,9 +443,10 @@ Code.prototype.pushPop = function(command, segment, index){
                 'D=A'
                 );
                 
-        } else if(segment==='temp'){
+        } else if(segment === 'temp' || segment === 'pointer'){
+            
             out.asm(
-                '@' + (tempBase + index),
+                '@' + (baseAddresses[segment] + index),
                 'D=M'
             );
           
@@ -461,9 +465,10 @@ Code.prototype.pushPop = function(command, segment, index){
         
         out.popToD();
         
-        if(segment === 'temp'){
+        if(segment === 'temp' || segment === 'pointer'){
+            
             out.asm(
-                '@' + (tempBase + index),
+                '@' + (baseAddresses[segment] + index),
                 'M=D'
             );
             
