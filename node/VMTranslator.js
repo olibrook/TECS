@@ -307,6 +307,9 @@ function Code(){
     this.eqCount = 0;
     this.ltCount = 0;
     this.gtCount = 0;
+    
+    // Used to generate labels for the static segment.
+    this.fileName = null;
 }
 
 /*
@@ -419,7 +422,7 @@ Code.prototype.lt = function(){
  * command.
  */
 Code.prototype.pushPop = function(command, segment, index){
-    var out, incrementStack, saveDToStack, addressMap;
+    var assembly, addressMap, baseAddresses;
     
     addressMap = {
         'local': 'R1',
@@ -428,72 +431,101 @@ Code.prototype.pushPop = function(command, segment, index){
         'that': 'R4',
     }
     
-    var baseAddresses = {
+    baseAddresses = {
         'temp': 5,
         'pointer': 3
-    };
+    }
     
-    out = new Assembly();
+    assembly = new Assembly();
     
-    if(command === 'push'){
+    switch(command){
         
-        if(segment=== 'constant'){
-            out.asm(
-                '@' + index,        // Load constant
-                'D=A'
-                );
+        case 'push':
+            
+            switch(segment){
                 
-        } else if(segment === 'temp' || segment === 'pointer'){
+                case 'constant':
+                    assembly.asm(
+                        '@' + index,        // Load constant
+                        'D=A'
+                        );
+                    break;
+                
+                case 'temp':
+                case 'pointer':
+                    assembly.asm(
+                        '@' + (baseAddresses[segment] + index),
+                        'D=M'
+                    );
+                    break;
+                    
+                case 'static':
+                    assembly.asm(
+                        '@' + this.fileName + '.' + index,
+                        'D=M'
+                    );
+                    break;
+                
+                default:
+                    if(addressMap[segment] === undefined){
+                        throw new Error('Undefined segment + "' + segment +'"');
+                    }
+                    else {
+                        assembly.loadToDFromSegment(addressMap[segment], index);
+                    }
+                    break;
+                    
+            }
+            return assembly.saveDToStack().incSP().toString();
             
-            out.asm(
-                '@' + (baseAddresses[segment] + index),
-                'D=M'
-            );
-          
-        } else {
-            if(addressMap[segment] === undefined){
-                throw new Error('Undefined segment + "' + segment +'"');
-            }
-            else {
-                out.loadToDFromSegment(addressMap[segment], index);
-            }
-        }
-        
-        return out.saveDToStack().incSP().toString();
-        
-    } else if(command === 'pop'){
-        
-        out.popToD();
-        
-        if(segment === 'temp' || segment === 'pointer'){
+        case 'pop':
             
-            out.asm(
-                '@' + (baseAddresses[segment] + index),
-                'M=D'
-            );
+            assembly.popToD();
             
-        } else {
-            if(addressMap[segment] === undefined){
-                throw new Error('Undefined segment + "' + segment +'"');
+            switch(segment){
+            
+                case 'temp':
+                case 'pointer':
+                    assembly.asm(
+                        '@' + (baseAddresses[segment] + index),
+                        'M=D'
+                    );
+                    break;
+                
+                case 'static':
+                    assembly.asm(
+                        '@' + this.fileName + '.' + index,
+                        'M=D'
+                    );
+                    break;
+                
+                default:
+                    if(addressMap[segment] === undefined){
+                        throw new Error('Undefined segment + "' + segment +'"');
+                    } else {
+                        assembly.saveToSegmentFromD(addressMap[segment], index);
+                    }
+                    break;
             }
-            else {
-                out.saveToSegmentFromD(addressMap[segment], index);
-            }
-        }
-        return out.toString();
+            return assembly.toString();
+            break;
     }
 }
 
+Code.prototype.setFileName = function(fileName){
+    this.fileName = fileName;
+}
 
 
+function main(inputFile, outputFile, inputBasename){
 
-function main(inputFile, outputFile){
-    
     var lineReader = new lr.LineReader(inputFile),
         parser = new Parser(lineReader),
         code = new Code();
         
     lineReader.open();
+    
+    code.setFileName(inputBasename);
 
     while(parser.hasMoreCommands()){
         parser.advance();
@@ -562,9 +594,10 @@ if(require.main === module){
 
             for (var i=0; i<inputFiles.length; i++) {
                 var inputFile = inputFiles[i],
-                    outputFile = path.join(
-                        path.dirname(inputFile), path.basename(inputFile, '.vm')) + '.asm';
-                main(inputFile, outputFile);
+                    basename = path.basename(inputFile, '.vm'),
+                    outputFile = path.join(path.dirname(inputFile), basename) + '.asm';
+                
+                main(inputFile, outputFile, basename);
             }
             
             process.exit(0);
