@@ -71,7 +71,8 @@ Parser.prototype._commandType = function(){
         [2, /^goto$/, C_GOTO],
         [2, /^if-goto$/, C_IF],
         [3, /^function$/, C_FUNCTION],
-        [1, /^return$/, C_RETURN]
+        [1, /^return$/, C_RETURN],
+        [3, /^call$/, C_CALL]
     ];
     
     partsLength = this.commandParts.filter(function(item){
@@ -87,6 +88,7 @@ Parser.prototype._commandType = function(){
             return commandType;
         }
     }
+    
     throw new Error("Parser error");
 },
 
@@ -557,60 +559,66 @@ Code.prototype.writeFunction = function(functionName, numLocals){
 
 
 
-function main(inputFile, outputFile, inputBasename){
+function main(inputFiles, outputFile){
 
-    var lineReader = new lr.LineReader(inputFile),
-        parser = new Parser(lineReader),
-        code = new Code(),
-        assembly,
-        lineCount = 0;
-        
-    lineReader.open();
+    var lineReader, parser, code, assembly, lineCount, inputFile;
     
-    code.setFileName(inputBasename);
+    lineCount = 0;
+    code = new Code();
+    
+    for(var i=0; i<inputFiles.length; i++){
+        inputFile = inputFiles[i];
+        
+        lineReader = new lr.LineReader(inputFile);
+        parser = new Parser(lineReader);
+        
+        lineReader.open();
 
-    while(parser.hasMoreCommands()){
-        parser.advance();
-        
-        switch(parser.commandType()){
-            case C_ARITHMETIC:
-                assembly = code.command(parser.commandParts[0]);
-                break;
-            case C_PUSH:
-            case C_POP:
-                assembly = code.pushPop(parser.commandParts[0], parser.commandParts[1], parseInt(parser.commandParts[2]));
-                break;
-            case C_LABEL:
-                assembly = code.writeLabel(parser.commandParts[1]);
-                break;
-            case C_GOTO:
-                assembly = code.writeGoto(parser.commandParts[1]);
-                break;
-            case C_IF:
-                assembly = code.writeIf(parser.commandParts[1]);
-                break;
-            case C_FUNCTION:
-                assembly = code.writeFunction(parser.commandParts[1], parser.commandParts[2]);
-                break;
-            case C_RETURN:
-                assembly = code.writeReturn();
-                break;
-            case C_CALL:
-            default:
-                throw new Error("Unknown command type: '" + parser.commandType() + "'");
-                break;
-        }
-        
-        console.log('\n// ' + parser.currentCommand + '\n');
-        for(var i=0; i<assembly.commands.length; i++){
-            while(assembly.commands[i].length < 80){
-                assembly.commands[i] += ' ';
+        code.setFileName(path.basename(inputFile, '.vm'));
+
+        while(parser.hasMoreCommands()){
+            parser.advance();
+
+            switch(parser.commandType()){
+                case C_ARITHMETIC:
+                    assembly = code.command(parser.commandParts[0]);
+                    break;
+                case C_PUSH:
+                case C_POP:
+                    assembly = code.pushPop(parser.commandParts[0], parser.commandParts[1], parseInt(parser.commandParts[2]));
+                    break;
+                case C_LABEL:
+                    assembly = code.writeLabel(parser.commandParts[1]);
+                    break;
+                case C_GOTO:
+                    assembly = code.writeGoto(parser.commandParts[1]);
+                    break;
+                case C_IF:
+                    assembly = code.writeIf(parser.commandParts[1]);
+                    break;
+                case C_FUNCTION:
+                    assembly = code.writeFunction(parser.commandParts[1], parser.commandParts[2]);
+                    break;
+                case C_RETURN:
+                    assembly = code.writeReturn();
+                    break;
+                case C_CALL:
+                default:
+                    throw new Error("Unknown command type: '" + parser.commandType() + "'");
+                    break;
             }
-            console.log(assembly.commands[i] + '// ' + lineCount++);
+
+            console.log('\n// ' + parser.currentCommand + '\n');
+            
+            for(var j=0; j<assembly.commands.length; j++){
+                while(assembly.commands[j].length < 80){
+                    assembly.commands[j] += ' ';
+                }
+                console.log(assembly.commands[j] + '// ' + lineCount++);
+            }
         }
+        lineReader.close();
     }
-    
-    lineReader.close();
 }
 
 exports.Code = Code;
@@ -621,7 +629,7 @@ exports.Code = Code;
  */
 if(require.main === module){
     var argv = optimist.usage('VM language translator for hack platform VM.\n\nUsage: $0 [file or directory]')
-            .argv;
+                    .argv;
 
     if (argv.h || argv.help) {
             optimist.showHelp();
@@ -629,7 +637,7 @@ if(require.main === module){
 
     } else {
         (function(){
-            var stats, inputFiles, fileOrDir;
+            var stats, inputFiles, fileOrDir, basename, outputFile;
 
             if(argv._.length == 0) {
                 fileOrDir = process.cwd();
@@ -644,20 +652,15 @@ if(require.main === module){
             stats = fs.statSync(fileOrDir);
 
             if(stats.isDirectory()) {
-                inputFiles = glob.sync('**/*.vm', {cwd: fileOrDir});
+                inputFiles = glob.sync(fileOrDir + '**/*.vm');
+                outputFile = path.join(path.dirname(fileOrDir), path.basename(fileOrDir)) + '.asm';
 
             } else {
                 inputFiles = [fileOrDir];
-            }
-
-            for (var i=0; i<inputFiles.length; i++) {
-                var inputFile = inputFiles[i],
-                    basename = path.basename(inputFile, '.vm'),
-                    outputFile = path.join(path.dirname(inputFile), basename) + '.asm';
-                
-                main(inputFile, outputFile, basename);
+                outputFile = path.join(path.dirname(fileOrDir), path.basename(fileOrDir, '.vm')) + '.asm';
             }
             
+            main(inputFiles, outputFile);
             process.exit(0);
         })();
     }

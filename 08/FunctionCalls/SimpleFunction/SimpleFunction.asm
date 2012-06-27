@@ -112,51 +112,51 @@ M=M+1                                                                           
 @LCL                                                                            // 81
 D=M                                                                             // 82
 @R13                                                                            // 83
-M=D // R13 holds value of LCL (or FRAME)                                        // 84
+M=D                                                                             // 84
 @5                                                                              // 85
-A=D-A // Address of the return address in the frame                             // 86
-D=M // Dereference return address                                               // 87
+A=D-A                                                                           // 86
+D=M                                                                             // 87
 @R14                                                                            // 88
-M=D // R14 holds return address                                                 // 89
+M=D                                                                             // 89
 @SP                                                                             // 90
 AM=M-1                                                                          // 91
 D=M                                                                             // 92
-@ARG // Reposition return value for the caller.                                 // 93
+@ARG                                                                            // 93
 A=M                                                                             // 94
 M=D                                                                             // 95
-@ARG // Restore SP of the caller                                                // 96
+@ARG                                                                            // 96
 A=M+1                                                                           // 97
 D=A                                                                             // 98
 @SP                                                                             // 99
 M=D                                                                             // 100
-@R13 // Restore THAT of the caller                                              // 101
+@R13                                                                            // 101
 D=M                                                                             // 102
 @1                                                                              // 103
 A=D-A                                                                           // 104
 D=M                                                                             // 105
 @THAT                                                                           // 106
 M=D                                                                             // 107
-@R13 // Restore THIS of the caller                                              // 108
+@R13                                                                            // 108
 D=M                                                                             // 109
 @2                                                                              // 110
 A=D-A                                                                           // 111
 D=M                                                                             // 112
 @THIS                                                                           // 113
 M=D                                                                             // 114
-@R13 // Restore ARG of the caller                                               // 115
+@R13                                                                            // 115
 D=M                                                                             // 116
 @3                                                                              // 117
 A=D-A                                                                           // 118
 D=M                                                                             // 119
 @ARG                                                                            // 120
 M=D                                                                             // 121
-@R13 // Restore LCL of the caller                                               // 122
+@R13                                                                            // 122
 D=M                                                                             // 123
 @4                                                                              // 124
 A=D-A                                                                           // 125
 D=M                                                                             // 126
 @LCL                                                                            // 127
 M=D                                                                             // 128
-@R14 // Jump to return address of caller.                                       // 129
+@R14                                                                            // 129
 A=M                                                                             // 130
 0;JEQ                                                                           // 131
