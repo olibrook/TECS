@@ -155,6 +155,9 @@ Parser.prototype._commandType = function(){
         [1, /^(add|sub|neg|eq|gt|lt|and|or|not)$/, C_ARITHMETIC],
         [3, /^push$/, C_PUSH],
         [3, /^pop$/, C_POP],
+        [2, /^label$/, C_LABEL],
+        [2, /^goto$/, C_GOTO],
+        [2, /^if-goto$/, C_IF]
     ];
     
     partsLength = this.commandParts.filter(function(item){
@@ -510,11 +513,51 @@ Code.prototype.pushPop = function(command, segment, index){
             return assembly.toString();
             break;
     }
-}
+};
 
 Code.prototype.setFileName = function(fileName){
     this.fileName = fileName;
-}
+};
+
+Code.prototype.writeInit = function(){
+    
+};
+
+Code.prototype.writeLabel = function(label){
+    return new Assembly().asm(
+        '(' + label + ')'
+    ).toString();
+};
+
+Code.prototype.writeGoto = function(label){
+    return new Assembly().asm(
+        '@' + label,
+        '0;JEQ'
+    ).toString();
+};
+
+/**
+ * Implements the if-goto command.
+ */
+Code.prototype.writeIf = function(label){
+    return new Assembly().popToD().asm(
+        '@' + label,
+        'D;JNE'
+    ).toString();
+};
+
+Code.prototype.writeCall = function(functionName, numArgs){
+    
+};
+
+Code.prototype.writeReturn = function(){
+    
+};
+
+Code.prototype.writeFunction = function(functionName, numLocals){
+    
+};
+
 
 
 function main(inputFile, outputFile, inputBasename){
@@ -541,8 +584,14 @@ function main(inputFile, outputFile, inputBasename){
                 console.log(code.pushPop(parser.commandParts[0], parser.commandParts[1], parseInt(parser.commandParts[2])));
                 break;
             case C_LABEL:
+                console.log(code.writeLabel(parser.commandParts[1]));
+                break;
             case C_GOTO:
+                console.log(code.writeGoto(parser.commandParts[1]));
+                break;
             case C_IF:
+                console.log(code.writeIf(parser.commandParts[1]));
+                break;
             case C_FUNCTION:
             case C_RETURN:
             case C_CALL:
