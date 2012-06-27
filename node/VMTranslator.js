@@ -36,7 +36,7 @@
             this.currentLine = this.lineReader.next();
         
             // Strip comments
-            this.currentLine = this.currentLine.replace(/\/\/.+/, '');
+            this.currentLine = this.currentLine.replace(/\/\/[\W\w]*/, '');
         }
         // Return true if line not empty.
         return (this.currentLine.match(/\S/));
@@ -49,7 +49,7 @@
         this.currentCommand = this.currentLine;
         this.currentLine = '';
         this.commandParts = this.currentCommand.match(/^\s*(\S+)?\s*(\S+)?\s*(\S+)?/).slice(1);
-        this.currentCommandType = this._commandType();
+        this.currentCommandType = this.doGetCommandType();
     };
 
     /*
@@ -59,7 +59,7 @@
         return this.currentCommandType;
     };
 
-    Parser.prototype._commandType = function(){
+    Parser.prototype.doGetCommandType = function(){
         var command, formats, requiredLength, i, re, commandType, partsLength;
     
         command = this.commandParts[0];
@@ -80,7 +80,7 @@
                 return item !== undefined;
             }).length;
     
-        for(i=0; i<formats.length; i++){
+        for(i=0; i<formats.length; i+=1){
             requiredLength = formats[i][0];
             re = formats[i][1];
             commandType = formats[i][2];
@@ -212,7 +212,7 @@
     Assembly.prototype.asm = function(){
         var i;
     
-        for(i=0; i<arguments.length; i++){
+        for(i=0; i<arguments.length; i+=1){
             this.commands.push(arguments[i]);
         }
         return this;
@@ -306,7 +306,7 @@
         
             ).incSP();
     
-        this.eqCount++;
+        this.eqCount+=1;
         return command;
     };
 
@@ -332,7 +332,7 @@
         
             ).incSP();
 
-        this.gtCount++;
+        this.gtCount+=1;
         return command;
     };
 
@@ -357,7 +357,7 @@
             '(LT_END_' + this.ltCount + ')'    // Finish
             ).incSP();
         
-        this.ltCount++;
+        this.ltCount+=1;
         return command;
     };
 
@@ -492,7 +492,9 @@
     Code.prototype.writeCall = function(functionName, numArgs){
         var returnAddress, pushes, assembly, i;
     
-        returnAddress = 'return-' + this.functionCallCount++;
+        returnAddress = 'return-' + this.functionCallCount;
+        this.functionCallCount+=1;
+        
         pushes = ['LCL', 'ARG', 'THIS', 'THAT'];
     
         assembly = new Assembly().asm(
@@ -501,7 +503,7 @@
         ).saveDToStack()
         .incSP();
     
-        for(i=0; i<pushes.length; i++){
+        for(i=0; i<pushes.length; i+=1){
             assembly.asm(
                 '@' + pushes[i],
                 'D=M'
@@ -602,7 +604,7 @@
     
         assembly = new Assembly().writeLabel(functionName);
     
-        for(i=0; i<numLocals; i++){
+        for(i=0; i<numLocals; i+=1){
             assembly.asm(
                 '@SP',
                 'A=M',
@@ -622,7 +624,7 @@
     
         console.log(code.writeInit().toString());
     
-        for(i=0; i<inputFiles.length; i++){
+        for(i=0; i<inputFiles.length; i+=1){
             inputFile = inputFiles[i];
         
             lineReader = new lr.LineReader(inputFile);
