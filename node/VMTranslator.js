@@ -1,93 +1,5 @@
 #!/usr/bin/env node
 
-/*
-Implementation notes:
-
-Command format
---------------
-Each VM command is of the format:
-
-    - 'command' (eg. add)
-    - 'command arg' (eg. goto loop), or
-    - 'command arg1 arg2' (eg. push local 3)
-
-Commands are seperated from their args by an arbitrary number of
-spaces. Comments are '//' to the end of the line.
-
-Data types
-----------
-
-- One 16 bit data type which can represent ints, booleans or pointers.
-    - True == 0xFFFF (-1)
-    - False == 0x0000 (0)
-
-Commands
---------
-
-Arithmetic and logical commands
-+++++++++++++++++++++++++++++++
-
-
-9 stack-based commands are supported, 2 binary, 2 unary. Commands pop
-args off the stack and push results onto the stack.
-
-Commands are as follows:
-
-Command     Function        
--------------------------------------
-add         x + y
-sub         x - y
-neg         -y
-eq          x == y
-gt          x > y
-lt          x < y
-and         x && y (bitwise)
-or          x || y (bitwise)
-not         ! y    (bitwise)
-
-
-Memory access commands
-++++++++++++++++++++++
-
-- push [segment] [index], pushes the value from the segment[index]
-  onto the stack.
-- pop [segment] [index], pops the value from the stack and stores it
-  in segment[index]
-
-RAM Usage
----------
-
-Addresses       Usage
--------------------------
-0-15            16 Virtual registers
-16-255          Static variables of all the functions in the VM program
-255-2047        Stack
-2048-16483      Heap
-16384-24575     Memory-mapped IO
-
-
-Implementation
---------------
-
-Stage I: Stack arithmetic commands: The first version of your VM translator should
-implement the nine stack arithmetic and logical commands of the VM language as well
-as the “push constant x” command (which, among other things, will help testing the
-nine former commands). Note that the latter is the generic push command for the
-special case where the first argument is “constant” and the second argument is
-some decimal constant.
-
-Stage II: Memory access commands: The next version of your translator should include
-a full implementation of the VM language's push and pop commands, handling all eight
-memory segments. We suggest breaking this stage into the following sub-stages:
-
-   0. You have already handled the constant segment;
-   1. Next, handle the segments local, argument, this, and that;
-   2. Next, handle the pointer and temp segments, in particular allowing modification
-      of the bases of the this and that segments;
-   3. Finally, handle the static segment.
-
-*/
-
 var lr = require('./linereader'),
     optimist = require('optimist'),
     fs = require('fs'),
@@ -157,7 +69,9 @@ Parser.prototype._commandType = function(){
         [3, /^pop$/, C_POP],
         [2, /^label$/, C_LABEL],
         [2, /^goto$/, C_GOTO],
-        [2, /^if-goto$/, C_IF]
+        [2, /^if-goto$/, C_IF],
+        [3, /^function$/, C_FUNCTION],
+        [1, /^return$/, C_RETURN]
     ];
     
     partsLength = this.commandParts.filter(function(item){
@@ -301,7 +215,14 @@ Assembly.prototype.asm = function(){
 
 Assembly.prototype.toString = function(){
     return this.commands.join('\n');
-}
+};
+
+Assembly.prototype.writeLabel = function(label){
+    this.asm(
+        '(' + label + ')'
+    );
+    return this;
+};
 
 
 function Code(){
@@ -332,17 +253,29 @@ Code.prototype.command = function(command){
     }
 };
 
-Code.prototype.add = new Assembly().binary().asm('M=D+M').incSP().toString();
+Code.prototype.add = function(){
+    return new Assembly().binary().asm('M=D+M').incSP();
+}
    
-Code.prototype.sub = new Assembly().binary().asm('M=M-D').incSP().toString();
+Code.prototype.sub = function(){
+    return new Assembly().binary().asm('M=M-D').incSP();
+}
    
-Code.prototype.neg = new Assembly().unary().asm('M=-D').incSP().toString();
+Code.prototype.neg = function(){
+    return new Assembly().unary().asm('M=-D').incSP();
+}
    
-Code.prototype.and = new Assembly().binary().asm('M=D&M').incSP().toString();
+Code.prototype.and = function(){
+    return new Assembly().binary().asm('M=D&M').incSP();
+}
 
-Code.prototype.or = new Assembly().binary().asm('M=D|M').incSP().toString();
+Code.prototype.or = function(){
+    return new Assembly().binary().asm('M=D|M').incSP();
+}
 
-Code.prototype.not = new Assembly().unary().asm('M=!D').incSP().toString();
+Code.prototype.not = function(){
+    return new Assembly().unary().asm('M=!D').incSP();
+}
 
 Code.prototype.eq = function(){
     var command = new Assembly().binary().asm(
@@ -366,7 +299,7 @@ Code.prototype.eq = function(){
         ).incSP();
     
     this.eqCount++;
-    return command.toString();
+    return command;
 },
 
 Code.prototype.gt = function(){
@@ -392,7 +325,7 @@ Code.prototype.gt = function(){
         ).incSP();
 
     this.gtCount++;
-    return command.toString();
+    return command;
 }
 
 Code.prototype.lt = function(){
@@ -417,7 +350,7 @@ Code.prototype.lt = function(){
         ).incSP();
         
     this.ltCount++;
-    return command.toString();
+    return command;
 }
 
 /**
@@ -479,7 +412,7 @@ Code.prototype.pushPop = function(command, segment, index){
                     break;
                     
             }
-            return assembly.saveDToStack().incSP().toString();
+            return assembly.saveDToStack().incSP();
             
         case 'pop':
             
@@ -510,7 +443,7 @@ Code.prototype.pushPop = function(command, segment, index){
                     }
                     break;
             }
-            return assembly.toString();
+            return assembly;
             break;
     }
 };
@@ -524,26 +457,21 @@ Code.prototype.writeInit = function(){
 };
 
 Code.prototype.writeLabel = function(label){
-    return new Assembly().asm(
-        '(' + label + ')'
-    ).toString();
+    return new Assembly().writeLabel(label);
 };
 
 Code.prototype.writeGoto = function(label){
     return new Assembly().asm(
         '@' + label,
         '0;JEQ'
-    ).toString();
+    );
 };
 
-/**
- * Implements the if-goto command.
- */
 Code.prototype.writeIf = function(label){
     return new Assembly().popToD().asm(
         '@' + label,
         'D;JNE'
-    ).toString();
+    );
 };
 
 Code.prototype.writeCall = function(functionName, numArgs){
@@ -551,11 +479,80 @@ Code.prototype.writeCall = function(functionName, numArgs){
 };
 
 Code.prototype.writeReturn = function(){
+    var assembly = new Assembly().asm(
+        '@LCL',
+        'D=M',
+        '@R13',
+        'M=D',              // R13 holds value of LCL (or FRAME)
+        '@5',
+        'A=D-A',            // Address of the return address in the frame
+        'D=M',              // Dereference return address
+        '@R14',
+        'M=D'               // R14 holds return address
+    )
+    .popToD()
+    .asm(
+        '@ARG',             // Reposition return value for the caller.
+        'A=M',
+        'M=D',
+        
+        '@ARG',             // Restore SP of the caller
+        'A=M+1',
+        'D=A',
+        '@SP',
+        'M=D',
+        
+        '@R13',             // Restore THAT of the caller
+        'D=M',
+        '@1',
+        'A=D-A',
+        'D=M',
+        '@THAT',
+        'M=D',
+        
+        '@R13',             // Restore THIS of the caller
+        'D=M',
+        '@2',
+        'A=D-A',
+        'D=M',
+        '@THIS',
+        'M=D',
+        
+        '@R13',             // Restore ARG of the caller
+        'D=M',
+        '@3',
+        'A=D-A',
+        'D=M',
+        '@ARG',
+        'M=D',
+        
+        '@R13',             // Restore LCL of the caller
+        'D=M',
+        '@4',
+        'A=D-A',
+        'D=M',
+        '@LCL',
+        'M=D',
+        
+        '@R14',             // Jump to return address of caller.
+        'A=M',
+        '0;JEQ'
+    );
     
+    return assembly;
 };
 
 Code.prototype.writeFunction = function(functionName, numLocals){
+    var assembly = new Assembly().writeLabel(functionName);
     
+    for(var i=0; i<numLocals; i++){
+        assembly.asm(
+            '@SP',
+            'A=M',
+            'M=0'
+        ).incSP();
+    };
+    return assembly;
 };
 
 
@@ -564,7 +561,9 @@ function main(inputFile, outputFile, inputBasename){
 
     var lineReader = new lr.LineReader(inputFile),
         parser = new Parser(lineReader),
-        code = new Code();
+        code = new Code(),
+        assembly,
+        lineCount = 0;
         
     lineReader.open();
     
@@ -573,31 +572,41 @@ function main(inputFile, outputFile, inputBasename){
     while(parser.hasMoreCommands()){
         parser.advance();
         
-        console.log('\n// ' + parser.currentCommand + '\n');
-        
         switch(parser.commandType()){
             case C_ARITHMETIC:
-                console.log(code.command(parser.commandParts[0]));
+                assembly = code.command(parser.commandParts[0]);
                 break;
             case C_PUSH:
             case C_POP:
-                console.log(code.pushPop(parser.commandParts[0], parser.commandParts[1], parseInt(parser.commandParts[2])));
+                assembly = code.pushPop(parser.commandParts[0], parser.commandParts[1], parseInt(parser.commandParts[2]));
                 break;
             case C_LABEL:
-                console.log(code.writeLabel(parser.commandParts[1]));
+                assembly = code.writeLabel(parser.commandParts[1]);
                 break;
             case C_GOTO:
-                console.log(code.writeGoto(parser.commandParts[1]));
+                assembly = code.writeGoto(parser.commandParts[1]);
                 break;
             case C_IF:
-                console.log(code.writeIf(parser.commandParts[1]));
+                assembly = code.writeIf(parser.commandParts[1]);
                 break;
             case C_FUNCTION:
+                assembly = code.writeFunction(parser.commandParts[1], parser.commandParts[2]);
+                break;
             case C_RETURN:
+                assembly = code.writeReturn();
+                break;
             case C_CALL:
             default:
-                console.log(new Error("Unknown command type: '" + parser.commandType() + "'"));
+                throw new Error("Unknown command type: '" + parser.commandType() + "'");
                 break;
+        }
+        
+        console.log('\n// ' + parser.currentCommand + '\n');
+        for(var i=0; i<assembly.commands.length; i++){
+            while(assembly.commands[i].length < 80){
+                assembly.commands[i] += ' ';
+            }
+            console.log(assembly.commands[i] + '// ' + lineCount++);
         }
     }
     
