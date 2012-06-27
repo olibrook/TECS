@@ -182,7 +182,7 @@ Assembly.prototype.saveToSegmentFromD = function(base, offset){
         '@R14',
         'A=M',
         'M=D'
-    )
+    );
     return this;
 }
 
@@ -296,7 +296,7 @@ Code.prototype.eq = function(){
         'A=M',
         'M=-1',                             // Output = true
 
-        '(EQ_END_' + this.eqCount + ')'        // Finish
+        '(EQ_END_' + this.eqCount + ')'     // Finish
         
         ).incSP();
     
@@ -603,6 +603,8 @@ function main(inputFiles, outputFile){
                     assembly = code.writeReturn();
                     break;
                 case C_CALL:
+                    assembly = code.wrieCall(parser.commandParts[1], parser.commandParts[2]);
+                    break;
                 default:
                     throw new Error("Unknown command type: '" + parser.commandType() + "'");
                     break;
