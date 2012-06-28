@@ -111,17 +111,31 @@
         }
     };
 
-    /**
-     * Represents a bunch of Hack Assembly language commands.
-     */
-    function Assembly(){
-        this.commands = [];
+    function Code(){
+    
+        // Used to generate unique labels for branching commands.
+        this.eqCount = 0;
+        this.ltCount = 0;
+        this.gtCount = 0;
+    
+        // Used to generate labels for the static segment.
+        this.fileName = null;
+    
+        // Used to generate unique labels for return addresses.
+        this.functionCallCount = 0;
+        
+        this.commands = null;
     }
-
+    
+    Code.prototype.newCommand = function(){
+        this.commands = [];
+        return this;
+    };
+    
     /**
      * Common setup for binary commands.
      */
-    Assembly.prototype.binary = function(){
+    Code.prototype.binary = function(){
         this.asm(
             '@SP',      // Load the address of the SP
             'AM=M-1',   // Decrement the SP
@@ -135,7 +149,7 @@
     /**
      * Common setup for unary commands.
      */
-    Assembly.prototype.unary = function(){
+    Code.prototype.unary = function(){
         this.asm(
             '@SP',      // Load the address of the SP
             'AM=M-1',   // Load the address of the value it points to
@@ -144,7 +158,7 @@
         return this;
     };
 
-    Assembly.prototype.saveDToStack = function(){
+    Code.prototype.saveDToStack = function(){
         this.asm(
             '@SP',
             'A=M',
@@ -157,7 +171,7 @@
      * 'base' must be either a numeric base address or a built in
      * symbol (eg. 'R0');
      */
-    Assembly.prototype.loadToDFromSegment = function(base, offset){
+    Code.prototype.loadToDFromSegment = function(base, offset){
         this.asm(
             '@' + base,
             'D=M',
@@ -168,7 +182,7 @@
         return this;
     };
 
-    Assembly.prototype.saveToSegmentFromD = function(base, offset){
+    Code.prototype.saveToSegmentFromD = function(base, offset){
         this.asm(
             '@R13',     // Save D to temp, so that we can calculate the dest
             'M=D',
@@ -187,7 +201,7 @@
         return this;
     };
 
-    Assembly.prototype.popToD = function(){
+    Code.prototype.popToD = function(){
         this.asm(
             '@SP',
             'AM=M-1',
@@ -196,7 +210,7 @@
         return this;
     };
 
-    Assembly.prototype.incSP = function(){
+    Code.prototype.incSP = function(){
         this.asm(
             '@SP',
             'M=M+1'
@@ -209,7 +223,7 @@
      * 
      * Accepts variable length args.
      */
-    Assembly.prototype.asm = function(){
+    Code.prototype.asm = function(){
         var i;
     
         for(i=0; i<arguments.length; i+=1){
@@ -218,32 +232,17 @@
         return this;
     };
 
-    Assembly.prototype.toString = function(){
+    Code.prototype.outputToString = function(){
         return this.commands.join('\n');
     };
 
-    Assembly.prototype.writeLabel = function(label){
+    Code.prototype.writeLabel = function(label){
         this.asm(
             '(' + label + ')'
         );
         return this;
     };
-
-
-    function Code(){
     
-        // Used to generate unique labels for branching commands.
-        this.eqCount = 0;
-        this.ltCount = 0;
-        this.gtCount = 0;
-    
-        // Used to generate labels for the static segment.
-        this.fileName = null;
-    
-        // Used to generate unique labels for return addresses.
-        this.functionCallCount = 0;
-    }
-
     /*
      * Writes the assembly code that is the translation of the given arithmentic
      * command.
@@ -262,31 +261,31 @@
     };
 
     Code.prototype.add = function(){
-        return new Assembly().binary().asm('M=D+M').incSP();
+        this.binary().asm('M=D+M').incSP();
     };
    
     Code.prototype.sub = function(){
-        return new Assembly().binary().asm('M=M-D').incSP();
+        this.binary().asm('M=M-D').incSP();
     };
    
     Code.prototype.neg = function(){
-        return new Assembly().unary().asm('M=-D').incSP();
+        this.unary().asm('M=-D').incSP();
     };
    
     Code.prototype.and = function(){
-        return new Assembly().binary().asm('M=D&M').incSP();
+        this.binary().asm('M=D&M').incSP();
     };
 
     Code.prototype.or = function(){
-        return new Assembly().binary().asm('M=D|M').incSP();
+        this.binary().asm('M=D|M').incSP();
     };
 
     Code.prototype.not = function(){
-        return new Assembly().unary().asm('M=!D').incSP();
+        this.unary().asm('M=!D').incSP();
     };
 
     Code.prototype.eq = function(){
-        var command = new Assembly().binary().asm(
+        this.binary().asm(
             'D=D-M',                            // Subtract one from the other. Equal if result == 0.
             '@IF_EQ_' + this.eqCount,
             'D;JEQ',
@@ -307,11 +306,10 @@
             ).incSP();
     
         this.eqCount+=1;
-        return command;
     };
 
     Code.prototype.gt = function(){
-        var command = new Assembly().binary().asm(
+        this.binary().asm(
             'D=D-M',                            // Subtract first from second. GT = True if result < 0.
 
             '@IF_GT_' + this.gtCount,
@@ -333,11 +331,10 @@
             ).incSP();
 
         this.gtCount+=1;
-        return command;
     };
 
     Code.prototype.lt = function(){
-        var command = new Assembly().binary().asm( 
+        this.binary().asm( 
             'D=D-M',                            // Subtract first from second. LT = True if result > 0.
 
             '@IF_LT_' + this.ltCount,
@@ -358,7 +355,6 @@
             ).incSP();
         
         this.ltCount+=1;
-        return command;
     };
 
     /**
@@ -366,7 +362,7 @@
      * command.
      */
     Code.prototype.pushPop = function(command, segment, index){
-        var assembly, addressMap, baseAddresses;
+        var addressMap, baseAddresses;
     
         addressMap = {
             'local': 'R1',
@@ -380,8 +376,6 @@
             'pointer': 3
         };
     
-        assembly = new Assembly();
-    
         switch(command){
         
             case 'push':
@@ -389,7 +383,7 @@
                 switch(segment){
                 
                     case 'constant':
-                        assembly.asm(
+                        this.asm(
                             '@' + index,        // Load constant
                             'D=A'
                             );
@@ -397,14 +391,14 @@
                 
                     case 'temp':
                     case 'pointer':
-                        assembly.asm(
+                        this.asm(
                             '@' + (baseAddresses[segment] + index),
                             'D=M'
                         );
                         break;
                     
                     case 'static':
-                        assembly.asm(
+                        this.asm(
                             '@' + this.fileName + '.' + index,
                             'D=M'
                         );
@@ -415,29 +409,30 @@
                             throw new Error('Undefined segment + "' + segment +'"');
                         }
                         else {
-                            assembly.loadToDFromSegment(addressMap[segment], index);
+                            this.loadToDFromSegment(addressMap[segment], index);
                         }
                         break;
                     
                 }
-                return assembly.saveDToStack().incSP();
+                this.saveDToStack().incSP();
+                return;
             
             case 'pop':
             
-                assembly.popToD();
+                this.popToD();
             
                 switch(segment){
             
                     case 'temp':
                     case 'pointer':
-                        assembly.asm(
+                        this.asm(
                             '@' + (baseAddresses[segment] + index),
                             'M=D'
                         );
                         break;
                 
                     case 'static':
-                        assembly.asm(
+                        this.asm(
                             '@' + this.fileName + '.' + index,
                             'M=D'
                         );
@@ -447,11 +442,11 @@
                         if(addressMap[segment] === undefined){
                             throw new Error('Undefined segment + "' + segment +'"');
                         } else {
-                            assembly.saveToSegmentFromD(addressMap[segment], index);
+                            this.saveToSegmentFromD(addressMap[segment], index);
                         }
                         break;
                 }
-                return assembly;
+                return;
         }
     };
 
@@ -460,58 +455,54 @@
     };
 
     Code.prototype.writeInit = function(){
-        // TODO: Re-jig so that writeCall can be combined with the Assembly class.
-        var assembly = new Assembly().asm(
+        this.asm(
             '@256',
             'D=A',
             '@SP',
             'M=D'
-        );
-        assembly.commands = assembly.commands.concat(this.writeCall('Sys.init', 0).commands);
-        return assembly;
-    };
-
-    Code.prototype.writeLabel = function(label){
-        return new Assembly().writeLabel(label);
+        ).writeCall('Sys.init', 0);
+        return this;
     };
 
     Code.prototype.writeGoto = function(label){
-        return new Assembly().asm(
+        this.asm(
             '@' + label,
             '0;JEQ'
         );
+        return this;
     };
 
     Code.prototype.writeIf = function(label){
-        return new Assembly().popToD().asm(
+        this.popToD().asm(
             '@' + label,
             'D;JNE'
         );
+        return this;
     };
 
     Code.prototype.writeCall = function(functionName, numArgs){
-        var returnAddress, pushes, assembly, i;
+        var returnAddress, pushes, i;
     
         returnAddress = 'return-' + this.functionCallCount;
         this.functionCallCount+=1;
         
         pushes = ['LCL', 'ARG', 'THIS', 'THAT'];
     
-        assembly = new Assembly().asm(
+        this.asm(
             '@' + returnAddress,
             'D=A'
         ).saveDToStack()
         .incSP();
     
         for(i=0; i<pushes.length; i+=1){
-            assembly.asm(
+            this.asm(
                 '@' + pushes[i],
                 'D=M'
             ).saveDToStack()
             .incSP();
         }
     
-        assembly.asm(
+        this.asm(
             '@SP',                      // Reposition ARG
             'D=M',
             '@' + numArgs,
@@ -532,11 +523,11 @@
             '(' + returnAddress + ')'   // Insert label for the return address
         );
     
-        return assembly;
+        return this;
     };
 
     Code.prototype.writeReturn = function(){
-        var assembly = new Assembly().asm(
+        this.asm(
             '@LCL',
             'D=M',
             '@R13',
@@ -595,34 +586,33 @@
             'A=M',
             '0;JEQ'
         );
-    
-        return assembly;
+        return this;
     };
 
     Code.prototype.writeFunction = function(functionName, numLocals){
-        var assembly, i;
+        var i;
     
-        assembly = new Assembly().writeLabel(functionName);
+        this.writeLabel(functionName);
     
         for(i=0; i<numLocals; i+=1){
-            assembly.asm(
+            this.asm(
                 '@SP',
                 'A=M',
                 'M=0'
             ).incSP();
         }
-        return assembly;
+        return this;
     };
 
 
     function main(inputFiles, outputFile){
 
-        var lineReader, parser, code, assembly, lineCount, inputFile, i, j;
+        var lineReader, parser, code, lineCount, inputFile, i, j;
     
         lineCount = 0;
         code = new Code();
-    
-        console.log(code.writeInit().toString());
+        
+        console.log(code.newCommand().writeInit().outputToString());
     
         for(i=0; i<inputFiles.length; i+=1){
             inputFile = inputFiles[i];
@@ -636,39 +626,40 @@
 
             while(parser.hasMoreCommands()){
                 parser.advance();
+                code.newCommand();
 
                 switch(parser.commandType()){
                     case C_ARITHMETIC:
-                        assembly = code.command(parser.commandParts[0]);
+                        code.command(parser.commandParts[0]);
                         break;
                     case C_PUSH:
                     case C_POP:
-                        assembly = code.pushPop(parser.commandParts[0], parser.commandParts[1], parseInt(parser.commandParts[2], 10));
+                        code.pushPop(parser.commandParts[0], parser.commandParts[1], parseInt(parser.commandParts[2], 10));
                         break;
                     case C_LABEL:
-                        assembly = code.writeLabel(parser.commandParts[1]);
+                        code.writeLabel(parser.commandParts[1]);
                         break;
                     case C_GOTO:
-                        assembly = code.writeGoto(parser.commandParts[1]);
+                        code.writeGoto(parser.commandParts[1]);
                         break;
                     case C_IF:
-                        assembly = code.writeIf(parser.commandParts[1]);
+                        code.writeIf(parser.commandParts[1]);
                         break;
                     case C_FUNCTION:
-                        assembly = code.writeFunction(parser.commandParts[1], parser.commandParts[2]);
+                        code.writeFunction(parser.commandParts[1], parser.commandParts[2]);
                         break;
                     case C_RETURN:
-                        assembly = code.writeReturn();
+                        code.writeReturn();
                         break;
                     case C_CALL:
-                        assembly = code.writeCall(parser.commandParts[1], parser.commandParts[2]);
+                        code.writeCall(parser.commandParts[1], parser.commandParts[2]);
                         break;
                     default:
                         throw new Error("Unknown command type: '" + parser.commandType() + "'");
                 }
                 
                 console.log('\n// ' + parser.currentCommand + '\n');
-                console.log(assembly.toString());
+                console.log(code.outputToString());
             }
             lineReader.close();
         }
