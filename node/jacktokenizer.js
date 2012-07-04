@@ -1,116 +1,117 @@
 #!/usr/bin/env node
 
 (function(){
-    var source, Tokenizer, DFA;
+    var source, Lexer;
     
     source = 'if (x < 153) {let city = "Paris";}';
     
-    
-    
     /**
-     *`DFA` is an implementation of a configurable deterministic finite
+     *`Lexer` is an implementation of a configurable deterministic finite
      * state automaton used for text scanning.
      *
      * As is conventional, this implementation always returns the longest match
      * possible on each call to retrieve the next token.
      */
-    DFA = function(){
+    Lexer = function(stream){
         this.state = null;
         this.transitions = null;
         this.startState = 'INIT';
         this.acceptStates = null;
-        this.reset();
+        this.currentMatch = null;
+        this.resetState();
+        this.position = 0;
+        this.stream = stream;
     };
     
     
-    /**
-     * Given the input `stream` and offset `position`, return a match
-     * object representing the longest possible sequence of matching
-     * characters in the strem from the given offset.
-     * 
-     * The `match` method returns a tuple describing the match if one was
-     * found, otherwise it returns `None`. Match tuples are of the following
-     * form:
-     *
-     *      (token_type, match_string, match_length)
-     *
-     *   eg.
-     *
-     *      ("IDENTIFER", "FOO", 3)
-     */
-    DFA.prototype.match = function(stream, position){
+    Lexer.prototype.match = function(){
 
         // Method:
         // Keep matching, one character at a time until we cannot match any
-        // more charachters or we encounter an error. At this point return the
+        // more characters or we encounter an error. At this point return the
         // previous longest match or None if we have had no matches so far.
         
-        var offset, match, matchOffset, char, matchFound, characters, state, nextState;
+        var scanLength, matchLength, match, char, matchFound, characters,
+            state, nextState, i;
 
-        this.reset()
+        this.resetState();
 
-        offset = 0;
-        matchOffset = 0;
+        scanLength = 0;
+        matchLength = 0;
 
         while(true){
-            if(stream.length > (position + offset)){
-                char = stream.charAt(position + offset);
+            if(this.stream.length > (this.position + scanLength)){
+                char = this.stream.charAt(this.position + scanLength);
             } else {
-                return this._get_match(position, matchOffset, stream);
+                break;
             }
             
             matchFound = false;
             
-            
-            for(var i=0; i<this.transitions.length; i++){
+            for(i=0; i<this.transitions.length; i+=1){
                 
                 characters = this.transitions[i][0];
                 state = this.transitions[i][1];
                 nextState = this.transitions[i][2];
                 
                 if((this.state === state) && (char.match(characters))){
-                    matchOffset += 1;
+                    matchLength += 1;
                     this.state = nextState;
                     matchFound = true;
                     break;
                 }
             }
-            
-            
             if(matchFound === false){
-                return this._get_match(position, matchOffset, stream);
+                break;
             }
-            offset += 1;
+            scanLength += 1;
         }
-    };
-    
-    /*
-     * If the `DFA` is in an accept state build the match object and
-     * return it. Otherwise return null.
-     */
-    DFA.prototype._get_match = function(position, matchOffset, stream){
-        if((matchOffset > 0) && (this.acceptStates.indexOf(this.state) >= 0)){
-            return [this.state, stream.slice(position, position + matchOffset), matchOffset];
+        
+        
+        if((matchLength > 0) && (this.acceptStates.indexOf(this.state) >= 0)){
+            match = [
+                this.state,
+                this.stream.slice(this.position, this.position + matchLength)];
+            this.position += matchLength;
+            return match;
         }
+        
         return null;
     };
     
-    DFA.prototype.reset = function(){
+    Lexer.prototype.resetState = function(){
         this.state = this.startState;
+    };
+
+    Lexer.prototype.setTransitions = function(transitions){
+        this.transitions = transitions;
+    };
+    
+    Lexer.prototype.setAcceptStates = function(acceptStates){
+        this.acceptStates = acceptStates;
+    };
+    
+    Lexer.prototype.hasNext = function(source, position){
+        var match = this.match(source, position);
+        if(match !== null){
+            this.currentMatch = match;
+            return true;
+        }
+        return false;
+    };
+    
+    Lexer.prototype.next = function(){
+        return this.currentMatch;
     };
     
     
-    
     (function(){
-        var dfa = new DFA(),
-            position = 0,
+        var lexer = new Lexer(source),
             matchObj,
             state,
-            match,
-            offset;
+            match;
         
-        
-        dfa.transitions = [
+        lexer.setTransitions([
             [/^[a-z|A-Z]$/, "INIT", "IDENTIFIER"],
             [/^[a-z|A-Z]$/, "IDENTIFIER", "IDENTIFIER"],
             [/^[0-9]$/, "IDENTIFIER", "IDENTIFIER"],
@@ -118,63 +119,37 @@
             [/^[0-9]$/, "INIT", "INTEGER"],
             [/^[0-9]$/, "INTEGER", "INTEGER"],
             
-            [/^\.$/, "INTEGER", "FLOAT"],
-            
-            [/^\.$/, "INIT", "FLOAT"],
-            [/^[0-9]$/, "FLOAT", "FLOAT"],
-            
             [/^\s$/, "INIT", "WHITESPACE"],
             [/^\s$/, "WHITESPACE", "WHITESPACE"],
             
-            [/^\+$/, "INIT", "ADD"],
-            [/^-$/, "INIT", "SUBTRACT"],
-            [/^\*$/, "INIT", "MULTIPLY"],
-            [/^\/$/, "INIT", "DIVIDE"],
-            [/^=$/, "INIT", "ASSIGNMENT"],
-            [/^\<$/, "INIT", "LESS_THAN"],
-            [/^\>$/, "INIT", "GREATER_THAN"],
+            [/^\+|-|\*|\/|\=|<|>$/, "INIT", "OPERATOR"],
             
-            [/^\($/, "INIT", "LPAREN"],
-            [/^\)$/, "INIT", "RPAREN"],
-            
-            [/^\{$/, "INIT", "LBRACE"],
-            [/^\}$/, "INIT", "RBRACE"],
+            [/^\(|\)|\{|\}$/, "INIT", "SYMBOL"],
             
             [/^;$/, "INIT", "END_STATEMENT"],
             
-            [new RegExp('^"$'), "INIT", "DOUBLE_QUOTE"],
-        ];
+            [new RegExp('^"$'), "INIT", "STRING_CONSTANT_BEGIN"],
+            [/^[a-z|A-Z]$/, "STRING_CONSTANT_BEGIN", "STRING_CONSTANT_CONTINUE"],
+            [/^[a-z|A-Z]$/, "STRING_CONSTANT_CONTINUE", "STRING_CONSTANT_CONTINUE"],
+            [new RegExp('^"$'), "STRING_CONSTANT_CONTINUE", "STRING_CONSTANT"]
+        ]);
         
-        dfa.acceptStates = [
+        lexer.setAcceptStates([
             "IDENTIFIER",
             "WHITESPACE",
-            "ADD",
-            "SUBTRACT",
-            "MULTIPLY",
-            "DIVIDE",
-            "ASSIGNMENT",
-            "LPAREN",
-            "RPAREN",
+            "OPERATOR",
             "INTEGER",
-            "FLOAT",
-            "LBRACE",
-            "RBRACE",
+            "SYMBOL",
             "END_STATEMENT",
-            "LESS_THAN",
-            "GREATER_THAN",
-            "DOUBLE_QUOTE"
-        ];
+            "STRING_CONSTANT"
+        ]);
         
-        matchObj = dfa.match(source, position);
-        while(matchObj !== null){
+        while(lexer.hasNext()){
+            matchObj = lexer.next();
             state = matchObj[0];
             match = matchObj[1];
-            offset = matchObj[2];
             
             console.log(matchObj);
-            position += offset;
-            matchObj = dfa.match(source, position);
         }
-        
     }());
 }());
