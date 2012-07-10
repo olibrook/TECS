@@ -1,98 +1,96 @@
 #!/usr/bin/env node
 
 (function(){
-    var source, Lexer;
+    var source, Tokenizer, fs, fd;
     
-    source = 'if (x < 153) {let city = "Paris";}';
+    fs = require('fs');
+    fd = fs.openSync(process.argv[2], 'r');
+    source = fs.readSync(fd, 1024*4, 0, 'ASCII')[0];
     
-    /**
-     *`Lexer` is an implementation of a configurable deterministic finite
-     * state automaton used for text scanning.
-     *
-     * As is conventional, this implementation always returns the longest match
-     * possible on each call to retrieve the next token.
-     */
-    Lexer = function(stream){
-        this.state = null;
-        this.transitions = null;
-        this.startState = 'INIT';
-        this.acceptStates = null;
+    Tokenizer = function(stream){
         this.currentMatch = null;
-        this.resetState();
-        this.position = 0;
         this.stream = stream;
+        
+        this.config = [
+            [/^[a-z|A-Z]+[a-z|A-Z|0-9]*/, 'IDENTIFIER'],
+            [/^[0-9]+/, 'INTEGER'],
+            [/^\s+/, 'WHITESPACE'],
+            [/^\+|-|\*|\/|\=|<|>|\(|\)|\{|\}|;|,|\./, 'SYMBOL'],
+            [/^"(.*)"/, 'STRING'],
+            [/^\/\/.*[\r\n|\r|\n]/, 'SINGLE_LINE_COMMENT'],
+            [/^\/\*\*(.|\r\n|\r|\n)*?\*\//, 'MULTI_LINE_COMMENT']
+        ];
+        
+        this.keywords = [
+            'class',
+            'method',
+            'function',
+            'constructor',
+            'int',
+            'boolean',
+            'char',
+            'void',
+            'var',
+            'static',
+            'field',
+            'let',
+            'do',
+            'if',
+            'else',
+            'while',
+            'return',
+            'true',
+            'false',
+            'null',
+            'this'
+        ];
     };
     
-    
-    Lexer.prototype.match = function(){
-
-        // Method:
-        // Keep matching, one character at a time until we cannot match any
-        // more characters or we encounter an error. At this point return the
-        // previous longest match or None if we have had no matches so far.
+    Tokenizer.prototype.match = function(){
+        var i, match, bestMatch, bestMatchType, bestMatchLength, re, type;
         
-        var scanLength, matchLength, match, char, matchFound, characters,
-            state, nextState, i;
-
-        this.resetState();
-
-        scanLength = 0;
-        matchLength = 0;
-
-        while(true){
-            if(this.stream.length > (this.position + scanLength)){
-                char = this.stream.charAt(this.position + scanLength);
-            } else {
-                break;
-            }
+        bestMatchType = null;
+        bestMatchLength = 0;
+        
+        if(this.stream.length > 0){
             
-            matchFound = false;
-            
-            for(i=0; i<this.transitions.length; i+=1){
+            for(i=0; i<this.config.length; i+=1){
+                re = this.config[i][0];
+                type = this.config[i][1];
+                match = this.stream.match(re);
                 
-                characters = this.transitions[i][0];
-                state = this.transitions[i][1];
-                nextState = this.transitions[i][2];
-                
-                if((this.state === state) && (char.match(characters))){
-                    matchLength += 1;
-                    this.state = nextState;
-                    matchFound = true;
-                    break;
+                if(match !== null){
+                    if(match[0].length > bestMatchLength){
+                        bestMatch = match[0];
+                        bestMatchLength = bestMatch.length;
+                        bestMatchType = type;
+                    }
                 }
             }
-            if(matchFound === false){
-                break;
+            
+            if(bestMatchLength === 0){
+                throw new Error('Could not parse remainder');
             }
-            scanLength += 1;
+            
+            this.stream = this.stream.slice(bestMatchLength);
+            
+            return this.formatMatch(bestMatchType, bestMatch);
         }
-        
-        
-        if((matchLength > 0) && (this.acceptStates.indexOf(this.state) >= 0)){
-            match = [
-                this.state,
-                this.stream.slice(this.position, this.position + matchLength)];
-            this.position += matchLength;
-            return match;
-        }
-        
         return null;
     };
     
-    Lexer.prototype.resetState = function(){
-        this.state = this.startState;
-    };
-
-    Lexer.prototype.setTransitions = function(transitions){
-        this.transitions = transitions;
-    };
-    
-    Lexer.prototype.setAcceptStates = function(acceptStates){
-        this.acceptStates = acceptStates;
+    Tokenizer.prototype.formatMatch = function(matchType, bestMatch){
+        // Eurgh. Clearly this is lame.
+        if((matchType === 'IDENTIFIER') && 
+                (this.keywords.indexOf(bestMatch) >= 0)){
+                    
+            return ['KEYWORD', bestMatch];
+        }
+        return [matchType, bestMatch];
     };
     
-    Lexer.prototype.hasNext = function(source, position){
-        var match = this.match(source, position);
+    Tokenizer.prototype.hasNext = function(){
+        var match = this.match();
         if(match !== null){
             this.currentMatch = match;
             return true;
@@ -100,56 +98,35 @@
         return false;
     };
     
-    Lexer.prototype.next = function(){
+    Tokenizer.prototype.next = function(){
         return this.currentMatch;
     };
     
-    
     (function(){
-        var lexer = new Lexer(source),
+        var tokenizer = new Tokenizer(source),
             matchObj,
-            state,
-            match;
+            type,
+            match,
+            ignoredTokenTypes;
         
-        lexer.setTransitions([
-            [/^[a-z|A-Z]$/, "INIT", "IDENTIFIER"],
-            [/^[a-z|A-Z]$/, "IDENTIFIER", "IDENTIFIER"],
-            [/^[0-9]$/, "IDENTIFIER", "IDENTIFIER"],
-            
-            [/^[0-9]$/, "INIT", "INTEGER"],
-            [/^[0-9]$/, "INTEGER", "INTEGER"],
-            
-            [/^\s$/, "INIT", "WHITESPACE"],
-            [/^\s$/, "WHITESPACE", "WHITESPACE"],
-            
-            [/^\+|-|\*|\/|\=|<|>$/, "INIT", "OPERATOR"],
-            
-            [/^\(|\)|\{|\}$/, "INIT", "SYMBOL"],
-            
-            [/^;$/, "INIT", "END_STATEMENT"],
-            
-            [new RegExp('^"$'), "INIT", "STRING_CONSTANT_BEGIN"],
-            [/^[a-z|A-Z]$/, "STRING_CONSTANT_BEGIN", "STRING_CONSTANT_CONTINUE"],
-            [/^[a-z|A-Z]$/, "STRING_CONSTANT_CONTINUE", "STRING_CONSTANT_CONTINUE"],
-            [new RegExp('^"$'), "STRING_CONSTANT_CONTINUE", "STRING_CONSTANT"]
-        ]);
+        ignoredTokenTypes = [
+            'WHITESPACE',
+            'SINGLE_LINE_COMMENT',
+            'MULTI_LINE_COMMENT'
+        ];
         
-        lexer.setAcceptStates([
-            "IDENTIFIER",
-            "WHITESPACE",
-            "OPERATOR",
-            "INTEGER",
-            "SYMBOL",
-            "END_STATEMENT",
-            "STRING_CONSTANT"
-        ]);
+        console.log('<tokens>');
         
-        while(lexer.hasNext()){
-            matchObj = lexer.next();
-            state = matchObj[0];
+        while(tokenizer.hasNext()){
+            matchObj = tokenizer.next();
+            type = matchObj[0];
             match = matchObj[1];
             
-            console.log(matchObj);
+            if(ignoredTokenTypes.indexOf(type) < 0){
+                console.log('<' + type.toLowerCase() + '> ' + match + ' </' + type.toLowerCase() + '>');
+            }
         }
+        
+        console.log('</tokens>');
     }());
 }());
