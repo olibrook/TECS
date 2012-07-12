@@ -44,15 +44,21 @@
             'null',
             'this'
         ];
+        
+        this.ignoredTokenTypes = [
+            'WHITESPACE',
+            'SINGLE_LINE_COMMENT',
+            'MULTI_LINE_COMMENT'
+        ];
+        
     };
     
     Tokenizer.prototype.match = function(){
         var i, match, bestMatch, bestMatchType, bestMatchLength, re, type;
         
-        bestMatchType = null;
-        bestMatchLength = 0;
-        
-        if(this.stream.length > 0){
+        while(this.stream.length > 0){
+            bestMatch = bestMatchType = null;
+            bestMatchLength = 0;
             
             for(i=0; i<this.config.length; i+=1){
                 re = this.config[i][0];
@@ -74,8 +80,12 @@
             
             this.stream = this.stream.slice(bestMatchLength);
             
+            if(this.ignoredTokenTypes.indexOf(bestMatchType) >= 0){
+                continue;
+            }
             return this.formatMatch(bestMatchType, bestMatch);
         }
+        
         return null;
     };
     
@@ -106,14 +116,7 @@
         var tokenizer = new Tokenizer(source),
             matchObj,
             type,
-            match,
-            ignoredTokenTypes;
-        
-        ignoredTokenTypes = [
-            'WHITESPACE',
-            'SINGLE_LINE_COMMENT',
-            'MULTI_LINE_COMMENT'
-        ];
+            match;
         
         console.log('<tokens>');
         
@@ -122,9 +125,7 @@
             type = matchObj[0];
             match = matchObj[1];
             
-            if(ignoredTokenTypes.indexOf(type) < 0){
-                console.log('<' + type.toLowerCase() + '> ' + match + ' </' + type.toLowerCase() + '>');
-            }
+            console.log('<' + type.toLowerCase() + '> ' + match + ' </' + type.toLowerCase() + '>');
         }
         
         console.log('</tokens>');
