@@ -1,24 +1,29 @@
 #!/usr/bin/env node
 
 (function(){
-    var source, Tokenizer, fs, fd;
+    var Tokenizer,
     
-    fs = require('fs');
-    fd = fs.openSync(process.argv[2], 'r');
-    source = fs.readSync(fd, 1024*4, 0, 'ASCII')[0];
+        IDENTIFIER = 'IDENTIFIER',
+        INT_CONST = 'INT_CONST',
+        WHITESPACE = 'WHITESPACE',
+        SYMBOL = 'SYMBOL',
+        STRING_CONST = 'STRING_CONST',
+        SINGLE_LINE_COMMENT = 'SINGLE_LINE_COMMENT',
+        MULTI_LINE_COMMENT = 'MULTI_LINE_COMMENT',
+        KEYWORD = 'KEYWORD';
     
     Tokenizer = function(stream){
         this.currentMatch = null;
         this.stream = stream;
         
         this.config = [
-            [/^[a-z|A-Z]+[a-z|A-Z|0-9]*/, 'IDENTIFIER'],
-            [/^[0-9]+/, 'INTEGER'],
-            [/^\s+/, 'WHITESPACE'],
-            [/^\+|-|\*|\/|\=|<|>|\(|\)|\{|\}|;|,|\./, 'SYMBOL'],
-            [/^"(.*)"/, 'STRING'],
-            [/^\/\/.*[\r\n|\r|\n]/, 'SINGLE_LINE_COMMENT'],
-            [/^\/\*\*(.|\r\n|\r|\n)*?\*\//, 'MULTI_LINE_COMMENT']
+            [/^[a-z|A-Z]+[a-z|A-Z|0-9]*/, IDENTIFIER],
+            [/^[0-9]+/, INT_CONST],
+            [/^\s+/, WHITESPACE],
+            [/^\+|-|\*|\/|\=|<|>|\(|\)|\{|\}|;|,|\./, SYMBOL],
+            [/^"(.*)"/, STRING_CONST],
+            [/^\/\/.*[\r\n|\r|\n]/, SINGLE_LINE_COMMENT],
+            [/^\/\*\*(.|\r\n|\r|\n)*?\*\//, MULTI_LINE_COMMENT]
         ];
         
         this.keywords = [
@@ -46,9 +51,9 @@
         ];
         
         this.ignoredTokenTypes = [
-            'WHITESPACE',
-            'SINGLE_LINE_COMMENT',
-            'MULTI_LINE_COMMENT'
+            WHITESPACE,
+            SINGLE_LINE_COMMENT,
+            MULTI_LINE_COMMENT
         ];
         
     };
@@ -91,10 +96,10 @@
     
     Tokenizer.prototype.formatMatch = function(matchType, bestMatch){
         // Eurgh. Clearly this is lame.
-        if((matchType === 'IDENTIFIER') && 
+        if((matchType === IDENTIFIER) && 
                 (this.keywords.indexOf(bestMatch) >= 0)){
                     
-            return ['KEYWORD', bestMatch];
+            return [KEYWORD, bestMatch];
         }
         return [matchType, bestMatch];
     };
@@ -112,22 +117,30 @@
         return this.currentMatch;
     };
     
-    (function(){
-        var tokenizer = new Tokenizer(source),
-            matchObj,
-            type,
-            match;
-        
-        console.log('<tokens>');
-        
-        while(tokenizer.hasNext()){
-            matchObj = tokenizer.next();
-            type = matchObj[0];
-            match = matchObj[1];
-            
-            console.log('<' + type.toLowerCase() + '> ' + match + ' </' + type.toLowerCase() + '>');
-        }
-        
-        console.log('</tokens>');
-    }());
+    Tokenizer.prototype.tokenType = function(){
+        return this.currentMatch[0];
+    };
+    
+    Tokenizer.prototype.keyWord = function(){
+        return this.currentMatch[1];
+    };
+
+    Tokenizer.prototype.symbol = function(){
+        return this.currentMatch[1];
+    };
+
+    Tokenizer.prototype.identifier = function(){
+        return this.currentMatch[1];
+    };
+    
+    Tokenizer.prototype.intVal = function(){
+        return parseInt(this.currentMatch[0], 10);
+    };
+
+    Tokenizer.prototype.stringVal = function(){
+        return this.currentMatch[1].slice(1, this.currentMatch.length-1);
+    };
+    
+    exports.Tokenizer = Tokenizer;
+    
 }());
