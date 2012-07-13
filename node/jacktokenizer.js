@@ -20,7 +20,7 @@
             [/^[a-z|A-Z]+[a-z|A-Z|0-9]*/, IDENTIFIER],
             [/^[0-9]+/, INT_CONST],
             [/^\s+/, WHITESPACE],
-            [/^\+|-|\*|\/|\=|<|>|\(|\)|\{|\}|;|,|\./, SYMBOL],
+            [/^\+|-|\*|\/|\=|<|>|\(|\)|\{|\}|;|,|\.|\[|\]/, SYMBOL],
             [/^"(.*)"/, STRING_CONST],
             [/^\/\/.*[\r\n|\r|\n]/, SINGLE_LINE_COMMENT],
             [/^\/\*\*(.|\r\n|\r|\n)*?\*\//, MULTI_LINE_COMMENT]
@@ -134,11 +134,11 @@
     };
     
     Tokenizer.prototype.intVal = function(){
-        return parseInt(this.currentMatch[0], 10);
+        return parseInt(this.currentMatch[1], 10);
     };
 
     Tokenizer.prototype.stringVal = function(){
-        return this.currentMatch[1].slice(1, this.currentMatch.length-1);
+        return this.currentMatch[1].slice(1, this.currentMatch[1].length-1);
     };
     
     exports.Tokenizer = Tokenizer;

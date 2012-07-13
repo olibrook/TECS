@@ -20,24 +20,28 @@
             tokenizer,
             tokenType,
             value,
+            prettyTokenType,
             outputFileName,
             outputFile,
             inputFileName,
             inputFile,
             i,
-            out;
+            out,
+            encoding;
+        
+        encoding = 'ascii';
         
         for(i=0; i<files.length; i++){
             
             inputFileName = files[i];
-            source = fs.readFileSync(inputFileName, 'ASCII');
+            source = fs.readFileSync(inputFileName, encoding);
                         
             outputFileName = path.join(path.dirname(inputFileName), path.basename(inputFileName)) + '.xml';
             outputFile = fs.openSync(outputFileName, "w");
             
             tokenizer = new jackTokenizer.Tokenizer(source);
             
-            fs.writeSync(outputFile, '<tokens>\n', null, 'ascii');
+            fs.writeSync(outputFile, '<tokens>\n', null, encoding);
             
             while(tokenizer.hasNext()){
                 tokenizer.next();
@@ -46,22 +50,27 @@
                 switch(tokenType){
                     case 'KEYWORD':
                         value = tokenizer.keyWord();
+                        prettyTokenType = 'keyword';
                         break;
 
                     case 'SYMBOL':
                         value = tokenizer.symbol();
+                        prettyTokenType = 'symbol';
                         break;
 
                     case 'IDENTIFIER':
                         value = tokenizer.identifier();
+                        prettyTokenType = 'identifier';
                         break;
 
                     case 'INT_CONST':
                         value = tokenizer.intVal();
+                        prettyTokenType = 'integerConstant';
                         break;
 
                     case 'STRING_CONST':
                         value = tokenizer.stringVal();
+                        prettyTokenType = 'stringConstant';
                         break;
 
                     default:
@@ -69,16 +78,16 @@
                                 tokenType +'"');
                 }
                 
-                out = '<' + tokenType.toLowerCase() + '> ';
+                out = '<' + prettyTokenType + '> ';
                 out += value.toString()
                         .replace(/&/g, '&amp;').replace(/</g, '&lt;')
                         .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-                out += ' </' + tokenType.toLowerCase() + '>\n';
+                out += ' </' + prettyTokenType + '>\n';
                 
-                fs.writeSync(outputFile, out, null, 'ascii');
+                fs.writeSync(outputFile, out, null, encoding);
             }
             
-            fs.writeSync(outputFile, '</tokens>\n', null, 'ascii');
+            fs.writeSync(outputFile, '</tokens>\n', null, encoding);
             fs.closeSync(outputFile);
         }
     }
