@@ -50,86 +50,80 @@
         }
     };
     
-    CompilationEngine.prototype.expectTokenType = function(tokenType){
-        var i, match;
-        
-        match = false;
-        
-        this.advance();
-        
-        if(typeof(tokenType) === 'string'){
-            tokenType = [tokenType];
-        }
-        
-        for(var i = 0; i<tokenType.length; i++){
-            if(this.currentTokenType === tokenType[i]){
-                match = true;
-                break;
+    CompilationEngine.prototype.typeMatch = function(){
+        var i;
+        for(i=0; i<arguments.length; i++){
+            if(this.currentTokenType === arguments[i]){
+                return true;
             }
         }
-        
-        if(!match){
-            throw new Error('Unexpected token type "' + this.currentTokenType +'"');
+        return false;
+    };
+    
+    CompilationEngine.prototype.assertTypeMatch = function(){
+        if(!this.typeMatch.apply(this, arguments)){
+            throw new Error('Unexpected token type. Found "' + this.currentTokenType + '", expected one of "' + arguments.toString() + '"');
         }
     };
     
-    CompilationEngine.prototype.expect = function(tokenType, tokenValue){
+    CompilationEngine.prototype.expectTypeMatch = function(){
         this.advance();
-        if(! ((this.currentTokenType === tokenType) && (this.currentTokenValue === tokenValue)) ){
-            throw new Error('Unexpected token "' + this.currentTokenValue +'"');
+        this.assertTypeMatch.apply(this, arguments);
+    };
+    
+    CompilationEngine.prototype.valueMatch = function(){
+        var i;
+        for(i=0; i<arguments.length; i++){
+            if(this.currentTokenValue === arguments[i]){
+                return true;
+            }
+        }
+        return false;
+    };
+    
+    CompilationEngine.prototype.assertValueMatch = function(){
+        if(!this.valueMatch.apply(this, arguments)){
+            throw new Error('Unexpected token type. Found "' + this.currentTokenType + '", expected one of "' + arguments.toString() + '"');
         }
     };
     
-    CompilationEngine.prototype.assertCurrent = function(tokenType, tokenValue){
-        var i, typeMatch, valueMatch;
-        
-        typeMatch = valueMatch = false;
-        
-        if(tokenType !== undefined){
-            if(typeof(tokenType) === 'string'){
-                tokenType = [tokenType];
-            }
-            
-            for(i=0; i<tokenType.length; i++){
-                if(this.currentTokenType === tokenType[i]){
-                    typeMatch = true;
-                    break;
-                }
-            }
-            
-            if(!typeMatch){
-                throw new Error('Expected "' + tokenType + '", found "' + this.currentTokenType + '"');
+    CompilationEngine.prototype.expectValueMatch = function(){
+        this.advance();
+        this.assertValueMatch.apply(this, arguments);
+    }
+    
+    CompilationEngine.prototype.tokenMatch = function(){
+        var i;
+        for(i=0; i<arguments.length; i++){
+            if( (this.currentTokenType === arguments[i][0]) && (this.currentTokenValue === arguments[i][1]) ){
+                return true;
             }
         }
-        
-        if(tokenValue !== undefined){
-            if(typeof(tokenValue) === 'string'){
-                tokenValue = [tokenValue];
-            }
-            
-            for(i=0; i<tokenValue.length; i++){
-                if(this.currentTokenValue === tokenValue[i]){
-                    valueMatch = true;
-                }
-            }
-            
-            if(!valueMatch){
-                throw new Error('Expected "' + tokenValue + '", found "' + this.currentTokenValue + '"');
-            }
+        return false;
+    };
+    
+    CompilationEngine.prototype.assertTokenMatch = function(){
+        if(!this.tokenMatch.apply(this, arguments)){
+            throw new Error('Unexpected token. Found "' + [this.currentTokenType, this.currentTokenValue].toString() + '", expected one of "' + arguments.toString() + '"');
         }
+    };
+    
+    CompilationEngine.prototype.expectTokenMatch = function(){
+        this.advance();
+        this.assertTokenMatch.apply(this, arguments);
     };
     
     CompilationEngine.prototype.compileClass = function(){
 
-        this.expect('KEYWORD', 'class');
+        this.expectTokenMatch(['KEYWORD', 'class']);
         console.log('<class>');
         
         this.writeTag();
         
-        this.expectTokenType('IDENTIFIER');
+        this.expectTypeMatch('IDENTIFIER');
         this.writeTag();
         
-        this.expect('SYMBOL', '{');
+        this.expectTokenMatch(['SYMBOL', '{']);
         this.writeTag();
         
         this.advance();
@@ -151,11 +145,9 @@
                 default:
                     throw new Error('Unexpected keyword: "' + this.currentTokenValue + '"');
             }
-            
-            this.advance();
         }
         
-        this.expect('SYMBOL', '}');
+        this.assertTokenMatch(['SYMBOL', '}']);
         this.writeTag();
         
         console.log('</class>');
@@ -164,6 +156,7 @@
     CompilationEngine.prototype.compileClassVarDec = function(){
         console.log('<classVarDec>');
         console.log('</classVarDec>');
+        this.advance();
     };
     
     CompilationEngine.prototype.compileSubroutine = function(){
@@ -171,7 +164,7 @@
         
         this.writeTag();
         
-        this.expectTokenType(['KEYWORD', 'IDENTIFIER']);
+        this.expectTypeMatch('KEYWORD', 'IDENTIFIER');
         
         switch(this.currentTokenType){
             case 'KEYWORD':
@@ -183,23 +176,39 @@
                 break;
         }
         
-        this.expectTokenType('IDENTIFIER');
+        this.expectTypeMatch('IDENTIFIER');
         this.writeTag();
         
-        this.expect('SYMBOL', '(');
+        this.expectTokenMatch(['SYMBOL', '(']);
         this.writeTag();
         
         this.compileParameterList();
         
-        this.assertCurrent('SYMBOL', ')');
+        this.assertTokenMatch(['SYMBOL', ')']);
         this.writeTag();
         
-        this.expect('SYMBOL', '{');
+        this.expectTokenMatch(['SYMBOL', '{']);
         this.writeTag();
         
+        this.advance();
         
-        this.expect('SYMBOL', '}');
+        if(this.tokenMatch(['KEYWORD', 'var'])){
+            // Variable declarations
+            
+            while(this.tokenMatch(['KEYWORD', 'var'])){
+                this.compileVarDec();
+            }
+        }
+        
+        if(this.typeMatch('KEYWORD') && this.valueMatch('let', 'if', 'while', 'do', 'return')){
+            
+            this.compileStatements();
+        }
+        
+        this.assertTokenMatch(['SYMBOL', '}']);
         this.writeTag();
+        
+        this.advance();
         
         console.log('</subroutineDec>');
     };
@@ -207,34 +216,155 @@
     CompilationEngine.prototype.compileParameterList = function(){
         this.advance();
         
-        while( !((this.currentTokenType == 'SYMBOL') && (this.currentTokenValue == ')')) ){
+        console.log('<parameterList>');
+        
+        while( !this.tokenMatch(['SYMBOL', ')']) ){
             
-            this.assertCurrent(['KEYWORD', 'IDENTIFIER']);
+            this.assertTypeMatch('KEYWORD', 'IDENTIFIER');
             this.writeTag()
             
             this.advance();
             
-            if((this.currentTokenType === 'SYMBOL') && (this.currentTokenValue === ',')){
+            if(this.tokenMatch(['SYMBOL', ','])){
                 this.writeTag();
-                this.expectTokenType('IDENTIFIER');
+                this.expectTypeMatch('IDENTIFIER');
             }
         }
+        
+        console.log('</parameterList>');
     };
     
     CompilationEngine.prototype.compileVarDec = function(){
+        console.log('<varDec>');
+        this.writeTag();
         
+        this.expectTypeMatch('KEYWORD', 'IDENTIFIER');
+        this.writeTag();
+        
+        this.expectTypeMatch('IDENTIFIER');
+        this.writeTag();
+        
+        this.advance();
+        if(this.tokenMatch(['SYMBOL', ','])){
+            while(this.tokenMatch(['SYMBOL', ','])){
+                this.writeTag();
+                this.expectTypeMatch('IDENTIFIER');
+                this.writeTag();
+                this.advance();
+            }
+        }
+        
+        this.assertTokenMatch(['SYMBOL', ';']);
+        this.writeTag();
+        
+        this.advance();
+        console.log('</varDec>');
     };
     
     CompilationEngine.prototype.compileStatements = function(){
+        console.log('<statements>');
         
+        while(this.typeMatch('KEYWORD') && this.valueMatch('let', 'if', 'while', 'do', 'return')){
+            
+            switch(this.currentTokenValue){
+                
+                case 'let':
+                    this.compileLet();
+                    break;
+                //     
+                // case 'if':
+                //     this.compileIf();
+                //     break;
+                //     
+                // case 'while':
+                //     this.compileWhile();
+                //     break;
+                //     
+                case 'do':
+                    this.compileDo();
+                    break;
+                    
+                case 'return':
+                    this.compileReturn();
+                    break;
+                
+                default:
+                    throw new Error('Unimplemented statement type "' + this.currentTokenValue + '"');
+            }
+        }
+        
+        console.log('</statements>');
     };
     
     CompilationEngine.prototype.compileDo = function(){
+        console.log('<doStatement>');
         
+        this.expectTypeMatch('IDENTIFIER');
+        this.writeTag();
+        
+        this.expectTypeMatch('SYMBOL');
+        
+        if(this.valueMatch('.')){
+            this.writeTag();
+            
+            this.expectTypeMatch('IDENTIFIER');
+            this.writeTag();
+            
+            this.expectTokenMatch(['SYMBOL', '(']);
+            this.writeTag();
+            
+        } else if (this.valueMatch('(')) {
+            this.writeTag();
+            
+        } else {
+            throw new Error('Invalid subroutine call');
+        }
+        
+        this.advance();
+        this.compileExpressionList();
+        
+        this.assertTokenMatch(['SYMBOL', ')']);
+        this.writeTag();
+        
+        this.expectTokenMatch(['SYMBOL', ';']);
+        this.writeTag();
+        
+        this.advance();
+        
+        console.log('</doStatement>');
     };
     
     CompilationEngine.prototype.compileLet = function(){
+        console.log('<letStatement>');
         
+        this.expectTypeMatch('IDENTIFIER');
+        this.writeTag();
+        
+        this.advance();
+        
+        // Array access
+        if(this.tokenMatch(['SYMBOL', '['])){
+            this.writeTag();
+            this.advance();
+            
+            this.compileExpression();
+            
+            this.assertTokenMatch(['SYMBOL', ']']);
+            this.writeTag();
+            this.advance();
+        }
+        
+        this.assertTokenMatch(['SYMBOL', '=']);
+        this.writeTag();
+        
+        this.compileExpression();
+        
+        this.expectTokenMatch(['SYMBOL', ';']);
+        this.writeTag();
+        
+        this.advance();
+        
+        console.log('</letStatement>');
     };
     
     CompilationEngine.prototype.compileWhile = function(){
@@ -242,7 +372,24 @@
     };
     
     CompilationEngine.prototype.compileReturn = function(){
+        console.log('<returnStatement>');
         
+        this.writeTag();
+        
+        this.advance();
+        
+        if(this.tokenMatch(['SYMBOL', ';'])){
+            this.writeTag();
+            this.advance();
+            
+        } else {
+            this.compileExpression();
+            this.expectTokenMatch(['SYMBOL', ';'])
+            this.writeTag();
+            this.advance();
+        }
+        
+        console.log('</returnStatement>');
     };
     
     CompilationEngine.prototype.compileIf = function(){
@@ -250,15 +397,46 @@
     };
     
     CompilationEngine.prototype.compileExpression = function(){
+        console.log('<expression>');
+        this.advance();
         
+        while(true){
+            this.compileTerm();
+            
+            if(this.typeMatch('SYMBOL') && this.valueMatch('+', '-', '*', '/', '&', '|', '<', '>', '=')){
+                this.writeTag();
+                this.advance();
+            } else {
+                break;
+            }
+        }
+        
+        console.log('</expression>');
     };
     
     CompilationEngine.prototype.compileTerm = function(){
+        console.log('<term>');
         
+        this.assertTypeMatch('IDENTIFIER');
+        this.writeTag();
+        
+        console.log('</term>');
     };
     
     CompilationEngine.prototype.compileExpressionList = function(){
+        console.log('<expressionList>');
         
+        while(!this.tokenMatch(['SYMBOL', ')'])){
+            this.compileExpression();
+            this.advance()
+            
+            if(this.tokenMatch(['SYMBOL', ','])){
+                this.writeTag();
+                this.advance();
+            }
+        }
+        
+        console.log('</expressionList>');
     };
 
     CompilationEngine.prototype.writeTag = function(tagName, value){
