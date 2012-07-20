@@ -83,7 +83,7 @@
     
     CompilationEngine.prototype.assertValueMatch = function(){
         if(!this.valueMatch.apply(this, arguments)){
-            throw new Error('Unexpected token type. Found "' + this.currentTokenType + '", expected one of "' + arguments.toString() + '"');
+            throw new Error('Unexpected token value. Found "' + this.currentTokenValue + '", expected one of "' + arguments.toString() + '"');
         }
     };
     
@@ -104,7 +104,7 @@
     
     CompilationEngine.prototype.assertTokenMatch = function(){
         if(!this.tokenMatch.apply(this, arguments)){
-            throw new Error('Unexpected token. Found "' + [this.currentTokenType, this.currentTokenValue].toString() + '", expected one of "' + arguments.toString() + '"');
+            throw new Error('Unexpected token. Found "' + [this.currentTokenType, this.currentTokenValue] + '", expected one of "' + arguments + '"');
         }
     };
     
@@ -155,6 +155,37 @@
     
     CompilationEngine.prototype.compileClassVarDec = function(){
         console.log('<classVarDec>');
+        
+        this.writeTag();
+        
+        this.expectTypeMatch('KEYWORD', 'IDENTIFIER');
+        if(this.currentTokenType === 'KEYWORD'){
+            this.assertValueMatch('int', 'char', 'boolean');
+        }
+        this.writeTag();
+        
+        this.expectTypeMatch('IDENTIFIER');
+        this.writeTag();
+        
+        this.advance();
+        
+        if(this.tokenMatch(['SYMBOL', ','])){
+            
+            while(!this.tokenMatch(['SYMBOL', ';'])){
+                
+                this.assertTokenMatch(['SYMBOL', ',']);
+                this.writeTag();
+                
+                this.expectTypeMatch('IDENTIFIER');
+                this.writeTag();
+                
+                this.advance();
+            }
+        }
+        
+        // Expect to write ('SYMBOL', ';');
+        this.writeTag();
+        
         console.log('</classVarDec>');
         this.advance();
     };
