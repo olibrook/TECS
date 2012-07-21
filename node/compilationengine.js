@@ -328,10 +328,10 @@
                     this.compileIf();
                     break;
                     
-                // case 'while':
-                //     this.compileWhile();
-                //     break;
-                //     
+                case 'while':
+                    this.compileWhile();
+                    break;
+                    
                 case 'do':
                     this.compileDo();
                     break;
@@ -424,7 +424,30 @@
     };
     
     CompilationEngine.prototype.compileWhile = function(){
+        console.log('<whileStatement>');
+        this.writeTag();
         
+        this.expectTokenMatch(['SYMBOL', '(']);
+        this.writeTag();
+        
+        this.advance();
+        this.compileExpression();
+        
+        this.expectTokenMatch(['SYMBOL', ')']);
+        this.writeTag();
+        
+        this.expectTokenMatch(['SYMBOL', '{']);
+        this.writeTag();
+        
+        this.advance();
+        this.compileStatements();
+        
+        this.assertTokenMatch(['SYMBOL', '}']);
+        this.writeTag();
+        
+        this.advance();
+        
+        console.log('</whileStatement>');
     };
     
     CompilationEngine.prototype.compileReturn = function(){
