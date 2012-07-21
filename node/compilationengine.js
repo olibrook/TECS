@@ -323,11 +323,11 @@
                 case 'let':
                     this.compileLet();
                     break;
-                //     
-                // case 'if':
-                //     this.compileIf();
-                //     break;
-                //     
+                    
+                case 'if':
+                    this.compileIf();
+                    break;
+                    
                 // case 'while':
                 //     this.compileWhile();
                 //     break;
@@ -412,6 +412,7 @@
         this.assertTokenMatch(['SYMBOL', '=']);
         this.writeTag();
         
+        this.advance();
         this.compileExpression();
         
         this.expectTokenMatch(['SYMBOL', ';']);
@@ -448,12 +449,47 @@
     };
     
     CompilationEngine.prototype.compileIf = function(){
+        console.log('<ifStatement>');
+        this.writeTag();
         
+        this.expectTokenMatch(['SYMBOL', '(']);
+        this.writeTag()
+        
+        this.advance();
+        this.compileExpression();
+        
+        this.expectTokenMatch(['SYMBOL', ')']);
+        this.writeTag();
+        
+        this.expectTokenMatch(['SYMBOL', '{']);
+        this.writeTag();
+        
+        this.advance();
+        this.compileStatements();
+        
+        this.assertTokenMatch(['SYMBOL', '}']);
+        this.writeTag();
+        
+        this.advance();
+        if(this.tokenMatch(['KEYWORD', 'else'])){
+            this.writeTag();
+            
+            this.expectTokenMatch(['SYMBOL', '{']);
+            this.writeTag();
+            
+            this.compileStatements();
+            
+            this.assertTokenMatch(['SYMBOL', '}']);
+            this.writeTag();
+            
+            this.advance();
+        }
+        
+        console.log('</ifStatement>');
     };
     
     CompilationEngine.prototype.compileExpression = function(){
         console.log('<expression>');
-        this.advance();
         
         while(true){
             this.compileTerm();
