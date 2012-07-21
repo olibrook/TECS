@@ -5,6 +5,15 @@
     var CompilationEngine;
     
     CompilationEngine = function(){
+        // Maps token types to methods used to get the token value from the
+        // tokenizer.
+        this.tokenizerMethodMap = {
+            KEYWORD: 'keyWord',
+            SYMBOL: 'symbol',
+            IDENTIFIER: 'identifier',
+            INT_CONST: 'intVal',
+            STRING_CONST: 'stringVal'
+        };
     };
     
     CompilationEngine.prototype.main = function(tokenizer){
@@ -15,36 +24,13 @@
     };
     
     CompilationEngine.prototype.advance = function(){
+        var methodName;
+        
         if(this.tokenizer.hasNext()){
             this.currentTokenType = this.tokenizer.tokenType();
-            
-            switch(this.currentTokenType){
-
-                case 'KEYWORD':
-                    this.currentTokenValue = this.tokenizer.keyWord();
-                    break;
-
-                case 'SYMBOL':
-                    this.currentTokenValue = this.tokenizer.symbol();
-                    break;
-
-                case 'IDENTIFIER':
-                    this.currentTokenValue = this.tokenizer.identifier();
-                    break;
-
-                case 'INT_CONST':
-                    this.currentTokenValue = this.tokenizer.intVal();
-                    break;
-
-                case 'STRING_CONST':
-                    this.currentTokenValue = this.tokenizer.stringVal();
-                    break;
-                
-                default:
-                    throw new Error('Unexpected token type.');
-                    break;
-            }
-            
+            methodName = this.tokenizerMethodMap[this.currentTokenType];
+            this.currentTokenValue = this.tokenizer[methodName]();
+                        
         } else {
             this.currentTokenType = this.currentTokenValue = null;
         }
@@ -52,7 +38,7 @@
     
     CompilationEngine.prototype.typeMatch = function(){
         var i;
-        for(i=0; i<arguments.length; i++){
+        for(i=0; i<arguments.length; i+=1){
             if(this.currentTokenType === arguments[i]){
                 return true;
             }
@@ -62,7 +48,9 @@
     
     CompilationEngine.prototype.assertTypeMatch = function(){
         if(!this.typeMatch.apply(this, arguments)){
-            throw new Error('Unexpected token type. Found "' + this.currentTokenType + '", expected one of "' + this.printArgs(arguments) + '"');
+            throw new Error('Unexpected token type. Found "'
+                    + this.currentTokenType + '", expected one of "'
+                    + this.printArgs(arguments) + '"');
         }
     };
     
@@ -73,7 +61,7 @@
     
     CompilationEngine.prototype.valueMatch = function(){
         var i;
-        for(i=0; i<arguments.length; i++){
+        for(i=0; i<arguments.length; i+=1){
             if(this.currentTokenValue === arguments[i]){
                 return true;
             }
@@ -83,19 +71,22 @@
     
     CompilationEngine.prototype.assertValueMatch = function(){
         if(!this.valueMatch.apply(this, arguments)){
-            throw new Error('Unexpected token value. Found "' + this.currentTokenValue + '", expected one of "' + this.printArgs(arguments) + '"');
+            throw new Error('Unexpected token value. Found "'
+                    + this.currentTokenValue + '", expected one of "'
+                    + this.printArgs(arguments) + '"');
         }
     };
     
     CompilationEngine.prototype.expectValueMatch = function(){
         this.advance();
         this.assertValueMatch.apply(this, arguments);
-    }
+    };
     
     CompilationEngine.prototype.tokenMatch = function(){
         var i;
-        for(i=0; i<arguments.length; i++){
-            if( (this.currentTokenType === arguments[i][0]) && (this.currentTokenValue === arguments[i][1]) ){
+        for(i=0; i<arguments.length; i+=1){
+            if( (this.currentTokenType === arguments[i][0]) && 
+                    (this.currentTokenValue === arguments[i][1]) ){
                 return true;
             }
         }
@@ -104,7 +95,9 @@
     
     CompilationEngine.prototype.assertTokenMatch = function(){
         if(!this.tokenMatch.apply(this, arguments)){
-            throw new Error('Unexpected token. Found "' + [this.currentTokenType, this.currentTokenValue].toString() + '", expected one of "' + this.printArgs(arguments) + '"');
+            throw new Error('Unexpected token. Found "' 
+                    + [this.currentTokenType, this.currentTokenValue].toString()
+                    + '", expected one of "' + this.printArgs(arguments) + '"');
         }
     };
     
@@ -117,7 +110,7 @@
         var i,
             out = '[';
         
-        for(i=0; i<args.length; i++){
+        for(i=0; i<args.length; i+=1){
             out += args[i].toString();
             if(i<args.length -1){
                 out += ', ';
@@ -157,7 +150,8 @@
                     break;
                     
                 default:
-                    throw new Error('Unexpected keyword: "' + this.currentTokenValue + '"');
+                    throw new Error('Unexpected keyword: "' 
+                            + this.currentTokenValue + '"');
             }
         }
         
@@ -247,7 +241,8 @@
             }
         }
         
-        if(this.typeMatch('KEYWORD') && this.valueMatch('let', 'if', 'while', 'do', 'return')){
+        if(this.typeMatch('KEYWORD') && 
+                this.valueMatch('let', 'if', 'while', 'do', 'return')){
             
             this.compileStatements();
         }
@@ -270,7 +265,7 @@
         while( !this.tokenMatch(['SYMBOL', ')']) ){
             
             this.assertTypeMatch('KEYWORD', 'IDENTIFIER');
-            this.writeTag()
+            this.writeTag();
             
             this.expectTypeMatch('IDENTIFIER');
             this.writeTag();
@@ -314,35 +309,18 @@
     };
     
     CompilationEngine.prototype.compileStatements = function(){
+        var methodName;
+        
         console.log('<statements>');
         
-        while(this.typeMatch('KEYWORD') && this.valueMatch('let', 'if', 'while', 'do', 'return')){
+        while(this.typeMatch('KEYWORD') &&
+                this.valueMatch('let', 'if', 'while', 'do', 'return')){
             
-            switch(this.currentTokenValue){
-                
-                case 'let':
-                    this.compileLet();
-                    break;
-                    
-                case 'if':
-                    this.compileIf();
-                    break;
-                    
-                case 'while':
-                    this.compileWhile();
-                    break;
-                    
-                case 'do':
-                    this.compileDo();
-                    break;
-                    
-                case 'return':
-                    this.compileReturn();
-                    break;
-                
-                default:
-                    throw new Error('Unimplemented statement type "' + this.currentTokenValue + '"');
-            }
+            methodName = 'compile'
+                        + this.currentTokenValue.charAt(0).toUpperCase()
+                        + this.currentTokenValue.substr(1);
+            
+            this[methodName]();
         }
         
         console.log('</statements>');
@@ -463,7 +441,7 @@
             
         } else {
             this.compileExpression();
-            this.expectTokenMatch(['SYMBOL', ';'])
+            this.expectTokenMatch(['SYMBOL', ';']);
             this.writeTag();
             this.advance();
         }
@@ -476,7 +454,7 @@
         this.writeTag();
         
         this.expectTokenMatch(['SYMBOL', '(']);
-        this.writeTag()
+        this.writeTag();
         
         this.advance();
         this.compileExpression();
@@ -517,9 +495,12 @@
         while(true){
             this.compileTerm();
             
-            if(this.typeMatch('SYMBOL') && this.valueMatch('+', '-', '*', '/', '&', '|', '<', '>', '=')){
+            if(this.typeMatch('SYMBOL') && this.valueMatch(
+                    '+', '-', '*', '/', '&', '|', '<', '>', '=')){
+                
                 this.writeTag();
                 this.advance();
+                
             } else {
                 break;
             }
@@ -542,7 +523,7 @@
         
         while(!this.tokenMatch(['SYMBOL', ')'])){
             this.compileExpression();
-            this.advance()
+            this.advance();
             
             if(this.tokenMatch(['SYMBOL', ','])){
                 this.writeTag();
