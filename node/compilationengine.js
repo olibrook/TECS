@@ -3,23 +3,20 @@
 (function(){
 
     var jackTokenizer = require('./jacktokenizer'),
-        optimist = require('optimist'),
-        fs = require('fs'),
-        path = require('path'),
-        glob = require('glob'),
         
         CompilationEngine,
         TokenTypes = jackTokenizer.TokenTypes,
         
         IDENTIFIER = TokenTypes.IDENTIFIER,
         INT_CONST = TokenTypes.INT_CONST,
-        WHITESPACE = TokenTypes.WHITESPACE,
         SYMBOL = TokenTypes.SYMBOL,
         STRING_CONST = TokenTypes.STRING_CONST,
-        SINGLE_LINE_COMMENT = TokenTypes.SINGLE_LINE_COMMENT,
-        MULTI_LINE_COMMENT = TokenTypes.MULTI_LINE_COMMENT,
         KEYWORD = TokenTypes.KEYWORD;
-    
+
+    /**
+     * Top-down parser for the Jack programming language.
+     *
+     */
     CompilationEngine = function(){
     };
     
@@ -372,7 +369,7 @@
         this.writeTag();
         
         this.advance();
-    }
+    };
     
     CompilationEngine.prototype.compileLet = function(){
         this.out.write('<letStatement>');

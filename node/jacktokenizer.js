@@ -12,7 +12,7 @@
         SINGLE_LINE_COMMENT: 'singleLineComment',
         MULTI_LINE_COMMENT: 'multiLineComment',
         KEYWORD: 'keyword'
-    }
+    };
     
     Tokenizer = function(stream){
         this.currentMatch = null;
@@ -98,11 +98,13 @@
             }
             
             if(this.ignoredTokenTypes.indexOf(bestMatchType) >= 0){
-                // Advance the stream over ignored token types.
+                // Advance the stream over ignored token types without returning
+                // a match.
                 this.advanceStream(bestMatchLength);
-                continue;
+                
+            } else {
+                return [bestMatchType, bestMatch, bestMatchLength];
             }
-            return [bestMatchType, bestMatch, bestMatchLength];
         }
         
         return null;
@@ -136,16 +138,16 @@
         if(opts !== undefined && opts.peek){
             return this.formatMatch(matchType, matchValue);
             
-        } else {
-            this.currentMatch = this.formatMatch(matchType, matchValue);
-            this.advanceStream(matchLength);
-            return this.currentMatch;
         }
+        
+        this.currentMatch = this.formatMatch(matchType, matchValue);
+        this.advanceStream(matchLength);
+        return this.currentMatch;
     };
     
     Tokenizer.prototype.advanceStream = function(length){
         this.stream = this.stream.slice(length);
-    }
+    };
     
     Tokenizer.prototype.tokenType = function(){
         return this.currentMatch[0];

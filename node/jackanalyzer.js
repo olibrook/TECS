@@ -26,7 +26,7 @@
     
     Out.prototype.write = function(str){
         fs.writeSync(this.fd, str + '\n', null, encoding);
-    }
+    };
     
     function tokenize(files){
 
@@ -46,8 +46,7 @@
         out = new Out();
         
         
-        
-        for(i=0; i<files.length; i++){
+        for(i=0; i<files.length; i+=1){
             
             inputFileName = files[i];
             source = fs.readFileSync(inputFileName, encoding);
@@ -95,7 +94,7 @@
         
         out = new Out();
         
-        for(i=0; i<files.length; i++){
+        for(i=0; i<files.length; i+=1){
             
             inputFileName = files[i];
             source = fs.readFileSync(inputFileName, encoding);
