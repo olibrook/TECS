@@ -567,6 +567,7 @@
                     
                     this.expectTokenMatch([SYMBOL, '[']);
                     this.writeTag();
+                    this.advance();
                     
                     this.compileExpression();
                     
