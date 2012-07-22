@@ -483,6 +483,7 @@
             this.expectTokenMatch([SYMBOL, '{']);
             this.writeTag();
             
+            this.advance();
             this.compileStatements();
             
             this.assertTokenMatch([SYMBOL, '}']);
