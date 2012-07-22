@@ -1,97 +1,117 @@
 #!/usr/bin/env node
 
 (function(){
+        
     var optimist = require('optimist'),
         fs = require('fs'),
         path = require('path'),
         jackTokenizer = require('./jacktokenizer'),
+        compilationengine = require('./compilationengine'),
         glob = require('glob'),
+        
+        encoding = 'ascii',
     
         stats,
         inputFileNames,
         fileOrDir,
         basename,
         outputFileName,
-        argv;
+        argv,
+        
+        Out;
     
-    function main(files){
+    
+    // Used to redirect parser/tokenizer output.
+    Out = function(){};
+    
+    Out.prototype.write = function(str){
+        fs.writeSync(this.fd, str + '\n', null, encoding);
+    }
+    
+    function tokenize(files){
 
         var source,
             tokenizer,
             tokenType,
             value,
-            prettyTokenType,
             outputFileName,
             outputFile,
             inputFileName,
             inputFile,
             i,
+            output,
             out,
-            encoding;
+            methodName;
         
-        encoding = 'ascii';
+        out = new Out();
+        
+        
         
         for(i=0; i<files.length; i++){
             
             inputFileName = files[i];
             source = fs.readFileSync(inputFileName, encoding);
                         
-            outputFileName = path.join(path.dirname(inputFileName), path.basename(inputFileName)) + '.xml';
-            outputFile = fs.openSync(outputFileName, "w");
+            outputFileName = path.join(path.dirname(inputFileName), path.basename(inputFileName)) + '.tokenized.xml';
+            out.fd = fs.openSync(outputFileName, "w");
             
             tokenizer = new jackTokenizer.Tokenizer(source);
             
-            fs.writeSync(outputFile, '<tokens>\n', null, encoding);
+            out.write('<tokens>');
             
             while(tokenizer.hasNext()){
                 tokenizer.next();
                 tokenType = tokenizer.tokenType();
-
-                switch(tokenType){
-                    case 'KEYWORD':
-                        value = tokenizer.keyWord();
-                        prettyTokenType = 'keyword';
-                        break;
-
-                    case 'SYMBOL':
-                        value = tokenizer.symbol();
-                        prettyTokenType = 'symbol';
-                        break;
-
-                    case 'IDENTIFIER':
-                        value = tokenizer.identifier();
-                        prettyTokenType = 'identifier';
-                        break;
-
-                    case 'INT_CONST':
-                        value = tokenizer.intVal();
-                        prettyTokenType = 'integerConstant';
-                        break;
-
-                    case 'STRING_CONST':
-                        value = tokenizer.stringVal();
-                        prettyTokenType = 'stringConstant';
-                        break;
-
-                    default:
-                        throw new Error('Unknown token type: "' + 
-                                tokenType +'"');
-                }
+                methodName = tokenizer.methodMap[tokenType];
+                value = tokenizer[methodName]();
                 
-                out = '<' + prettyTokenType + '> ';
-                out += value.toString()
+                output = '<' + tokenType + '> ';
+                output += value.toString()
                         .replace(/&/g, '&amp;').replace(/</g, '&lt;')
                         .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-                out += ' </' + prettyTokenType + '>\n';
+                output += ' </' + tokenType + '>';
                 
-                fs.writeSync(outputFile, out, null, encoding);
+                out.write(output);
             }
             
-            fs.writeSync(outputFile, '</tokens>\n', null, encoding);
-            fs.closeSync(outputFile);
+            out.write('</tokens>');
+            fs.closeSync(out.fd);
         }
     }
-
+    
+    
+    
+    function parse(files){
+        
+        var source,
+            tokenizer,
+            compilationEngine,
+            outputFileName,
+            outputFile,
+            inputFileName,
+            inputFile,
+            i,
+            out;
+        
+        out = new Out();
+        
+        for(i=0; i<files.length; i++){
+            
+            inputFileName = files[i];
+            source = fs.readFileSync(inputFileName, encoding);
+            
+            outputFileName = path.join(path.dirname(inputFileName), path.basename(inputFileName)) + '.parsed.xml';
+            out.fd = fs.openSync(outputFileName, "w");
+            
+            tokenizer = new jackTokenizer.Tokenizer(source);
+            
+            compilationEngine = new compilationengine.CompilationEngine();
+            compilationEngine.main(tokenizer, out);
+            
+            fs.closeSync(out.fd);
+        }
+    }
+    
     
     if(require.main === module){
         argv = optimist.usage('Syntax analyzer for the Jack programming language.\n\nUsage: $0 [file or directory]')
@@ -122,7 +142,9 @@
                 inputFileNames = [fileOrDir];
             }
             
-            main(inputFileNames);
+            tokenize(inputFileNames);
+            parse(inputFileNames);
+            
             process.exit(0);
         }
     }

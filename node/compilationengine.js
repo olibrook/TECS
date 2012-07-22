@@ -21,18 +21,11 @@
         KEYWORD = TokenTypes.KEYWORD;
     
     CompilationEngine = function(){
-        // Maps token types to methods used to get the token value from the
-        // tokenizer.
-        this.tokenizerMethodMap = {};
-        this.tokenizerMethodMap[KEYWORD] = 'keyWord';
-        this.tokenizerMethodMap[SYMBOL] = 'symbol';
-        this.tokenizerMethodMap[IDENTIFIER] = 'identifier';
-        this.tokenizerMethodMap[INT_CONST] = 'intVal';
-        this.tokenizerMethodMap[STRING_CONST] = 'stringVal';
     };
     
-    CompilationEngine.prototype.main = function(tokenizer){
+    CompilationEngine.prototype.main = function(tokenizer, out){
         this.tokenizer = tokenizer;
+        this.out = out;
         this.currentTokenType = null;
         this.currentTokenValue = null;
         this.compileClass();
@@ -44,7 +37,7 @@
         if(this.tokenizer.hasNext()){
             this.tokenizer.next();
             this.currentTokenType = this.tokenizer.tokenType();
-            methodName = this.tokenizerMethodMap[this.currentTokenType];
+            methodName = this.tokenizer.methodMap[this.currentTokenType];
             this.currentTokenValue = this.tokenizer[methodName]();
                         
         } else {
@@ -139,7 +132,7 @@
     CompilationEngine.prototype.compileClass = function(){
 
         this.expectTokenMatch([KEYWORD, 'class']);
-        console.log('<class>');
+        this.out.write('<class>');
         
         this.writeTag();
         
@@ -174,11 +167,11 @@
         this.assertTokenMatch([SYMBOL, '}']);
         this.writeTag();
         
-        console.log('</class>');
+        this.out.write('</class>');
     };
     
     CompilationEngine.prototype.compileClassVarDec = function(){
-        console.log('<classVarDec>');
+        this.out.write('<classVarDec>');
         
         this.writeTag();
         
@@ -210,12 +203,12 @@
         // Expect to write (SYMBOL, ';');
         this.writeTag();
         
-        console.log('</classVarDec>');
+        this.out.write('</classVarDec>');
         this.advance();
     };
     
     CompilationEngine.prototype.compileSubroutine = function(){
-        console.log('<subroutineDec>');
+        this.out.write('<subroutineDec>');
         
         this.writeTag();
         
@@ -233,7 +226,7 @@
         this.assertTokenMatch([SYMBOL, ')']);
         this.writeTag();
         
-        console.log('<subroutineBody>');
+        this.out.write('<subroutineBody>');
         
         this.expectTokenMatch([SYMBOL, '{']);
         this.writeTag();
@@ -257,17 +250,17 @@
         this.assertTokenMatch([SYMBOL, '}']);
         this.writeTag();
         
-        console.log('</subroutineBody>');
+        this.out.write('</subroutineBody>');
         
         this.advance();
         
-        console.log('</subroutineDec>');
+        this.out.write('</subroutineDec>');
     };
     
     CompilationEngine.prototype.compileParameterList = function(){
         this.advance();
         
-        console.log('<parameterList>');
+        this.out.write('<parameterList>');
         
         while( !this.tokenMatch([SYMBOL, ')']) ){
             
@@ -285,11 +278,11 @@
             }
         }
         
-        console.log('</parameterList>');
+        this.out.write('</parameterList>');
     };
     
     CompilationEngine.prototype.compileVarDec = function(){
-        console.log('<varDec>');
+        this.out.write('<varDec>');
         this.writeTag();
         
         this.expectTypeMatch(KEYWORD, IDENTIFIER);
@@ -312,13 +305,13 @@
         this.writeTag();
         
         this.advance();
-        console.log('</varDec>');
+        this.out.write('</varDec>');
     };
     
     CompilationEngine.prototype.compileStatements = function(){
         var methodName;
         
-        console.log('<statements>');
+        this.out.write('<statements>');
         
         while(this.typeMatch(KEYWORD) &&
                 this.valueMatch('let', 'if', 'while', 'do', 'return')){
@@ -330,11 +323,11 @@
             this[methodName]();
         }
         
-        console.log('</statements>');
+        this.out.write('</statements>');
     };
     
     CompilationEngine.prototype.compileDo = function(){
-        console.log('<doStatement>');
+        this.out.write('<doStatement>');
         
         this.writeTag();
         this.expectTypeMatch(IDENTIFIER);
@@ -346,7 +339,7 @@
         
         this.advance();
         
-        console.log('</doStatement>');
+        this.out.write('</doStatement>');
     };
     
     
@@ -382,7 +375,7 @@
     }
     
     CompilationEngine.prototype.compileLet = function(){
-        console.log('<letStatement>');
+        this.out.write('<letStatement>');
         this.writeTag();
         
         this.expectTypeMatch(IDENTIFIER);
@@ -413,11 +406,11 @@
         
         this.advance();
         
-        console.log('</letStatement>');
+        this.out.write('</letStatement>');
     };
     
     CompilationEngine.prototype.compileWhile = function(){
-        console.log('<whileStatement>');
+        this.out.write('<whileStatement>');
         this.writeTag();
         
         this.expectTokenMatch([SYMBOL, '(']);
@@ -440,11 +433,11 @@
         
         this.advance();
         
-        console.log('</whileStatement>');
+        this.out.write('</whileStatement>');
     };
     
     CompilationEngine.prototype.compileReturn = function(){
-        console.log('<returnStatement>');
+        this.out.write('<returnStatement>');
         
         this.writeTag();
         
@@ -461,11 +454,11 @@
             this.advance();
         }
         
-        console.log('</returnStatement>');
+        this.out.write('</returnStatement>');
     };
     
     CompilationEngine.prototype.compileIf = function(){
-        console.log('<ifStatement>');
+        this.out.write('<ifStatement>');
         this.writeTag();
         
         this.expectTokenMatch([SYMBOL, '(']);
@@ -501,11 +494,11 @@
             this.advance();
         }
         
-        console.log('</ifStatement>');
+        this.out.write('</ifStatement>');
     };
     
     CompilationEngine.prototype.compileExpression = function(){
-        console.log('<expression>');
+        this.out.write('<expression>');
         
         while(true){
             this.compileTerm();
@@ -522,13 +515,13 @@
             }
         }
         
-        console.log('</expression>');
+        this.out.write('</expression>');
     };
     
     CompilationEngine.prototype.compileTerm = function(){
         var lookAheadMatch, lookAheadType, lookAheadValue, termType;
         
-        console.log('<term>');
+        this.out.write('<term>');
         
         if(this.typeMatch(STRING_CONST, INT_CONST) || (this.typeMatch(KEYWORD) &&
                 this.valueMatch('true', 'false', 'null', 'this'))){
@@ -603,11 +596,11 @@
             throw new Error('Invalid term. ' + this.currentTokenType + ' ' + this.currentTokenValue);
         }
         
-        console.log('</term>');
+        this.out.write('</term>');
     };
     
     CompilationEngine.prototype.compileExpressionList = function(){
-        console.log('<expressionList>');
+        this.out.write('<expressionList>');
         
         while(!this.tokenMatch([SYMBOL, ')'])){
             this.compileExpression();
@@ -618,7 +611,7 @@
             }
         }
         
-        console.log('</expressionList>');
+        this.out.write('</expressionList>');
     };
 
     CompilationEngine.prototype.writeTag = function(tagName, value){
@@ -633,21 +626,9 @@
         value = value.toString().replace(/&/g, '&amp;').replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         
-        console.log('<' + tagName + '> ' + value + ' </' + tagName + '>');
+        this.out.write('<' + tagName + '> ' + value + ' </' + tagName + '>');
     };
     
     exports.CompilationEngine = CompilationEngine;
-    
-    
-    (function(){
-        var source,
-            tokenizer,
-            compilationEngine;
-    
-            source = fs.readFileSync(process.argv[2], 'ascii');
-            tokenizer = new jackTokenizer.Tokenizer(source);
-            compilationEngine = new CompilationEngine();
-            compilationEngine.main(tokenizer);
-    }());
     
 }());

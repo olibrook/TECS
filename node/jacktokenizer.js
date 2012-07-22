@@ -62,6 +62,14 @@
             TokenTypes.MULTI_LINE_COMMENT
         ];
         
+        // Maps token types to methods used to get the token value from the
+        // tokenizer (for use by other classes).
+        this.methodMap = {};
+        this.methodMap[TokenTypes.KEYWORD] = 'keyWord';
+        this.methodMap[TokenTypes.SYMBOL] = 'symbol';
+        this.methodMap[TokenTypes.IDENTIFIER] = 'identifier';
+        this.methodMap[TokenTypes.INT_CONST] = 'intVal';
+        this.methodMap[TokenTypes.STRING_CONST] = 'stringVal';
     };
     
     Tokenizer.prototype.match = function(){
