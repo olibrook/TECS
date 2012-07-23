@@ -7,6 +7,7 @@
         path = require('path'),
         jackTokenizer = require('./jacktokenizer'),
         compilationengine = require('./compilationengine'),
+        symbolTable = require('./symboltable'),
         glob = require('glob'),
         
         encoding = 'ascii',
@@ -23,9 +24,9 @@
     
     // Used to redirect parser/tokenizer output.
     Out = function(){};
-    
+
     Out.prototype.write = function(str){
-        fs.writeSync(this.fd, str + '\n', null, encoding);
+            fs.writeSync(this.fd, str + '\n', null, encoding);
     };
     
     function tokenize(files){
@@ -105,7 +106,7 @@
             tokenizer = new jackTokenizer.Tokenizer(source);
             
             compilationEngine = new compilationengine.CompilationEngine();
-            compilationEngine.main(tokenizer, out);
+            compilationEngine.main(tokenizer, out, new symbolTable.SymbolTable(), true);
             
             fs.closeSync(out.fd);
         }

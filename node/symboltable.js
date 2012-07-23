@@ -5,7 +5,15 @@
         ARG = 'arg',
         VAR = 'var',
         
-        SymbolTable;
+        SymbolTable,
+        SymbolKinds,
+    
+    SymbolKinds = {};
+    SymbolKinds.STATIC = STATIC;
+    SymbolKinds.FIELD = FIELD;
+    SymbolKinds.ARG = ARG;
+    SymbolKinds.VAR = VAR;
+    
     
     SymbolTable = function(){
         this.staticScope = {};
@@ -47,7 +55,7 @@
      * ARG and VAR have subroutine scope.
      */
     SymbolTable.prototype.define = function(name, type, kind){
-        var scope;
+        var scope, symbolObj;
         switch(kind){
             
             case STATIC:
@@ -59,10 +67,16 @@
             case VAR:
                 scope = this.subroutineScope;
                 break;
+            
+            default:
+                throw new Error('Invalid scope kind:"'+ kind + '"');
+                break;
         }
         
-        scope[name] = {type: type, kind:kind, index: this.counts[kind]};
+        symbolObj = {type: type, kind:kind, index: this.counts[kind]};
+        scope[name] = symbolObj;
         this.counts[kind] +=1;
+        return symbolObj;
     };
     
     /**
@@ -107,5 +121,6 @@
     };
     
     exports.SymbolTable = SymbolTable;
+    exports.SymbolKinds = SymbolKinds;
     
 }());
