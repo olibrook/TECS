@@ -24,10 +24,11 @@
     
     // Used to redirect parser/tokenizer output.
     Out = function(){};
+    Out.prototype.write = console.log;
 
-    Out.prototype.write = function(str){
-            fs.writeSync(this.fd, str + '\n', null, encoding);
-    };
+    // Out.prototype.write = function(str){
+    //         fs.writeSync(this.fd, str + '\n', null, encoding);
+    // };
     
     function tokenize(files){
 
@@ -142,7 +143,7 @@
                 inputFileNames = [fileOrDir];
             }
             
-            tokenize(inputFileNames);
+            // tokenize(inputFileNames);
             parse(inputFileNames);
             
             process.exit(0);
