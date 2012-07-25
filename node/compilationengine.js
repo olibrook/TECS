@@ -351,9 +351,6 @@
         this.usage(subroutineName);
         
         this.write('call ' + subroutineName + ' ' + numExpressions);
-        for(i=0; i<numExpressions; i+=1){
-            this.write('pop temp ' + i);
-        }
         
         this.advance();
     };
@@ -409,16 +406,22 @@
         
         if(this.tokenMatch([SYMBOL, ';'])){
             
-            // A return value is always required, so push null onto the stack.
+            // A return value is always required, but the function is
+            // terminating without returning a value. A return value is always
+            // required, however, so we pop the top of the stack to temp 0,
+            // ignoring what would be the return value otherwise and replace
+            // it with a null.
             
             this.advance();
-            this.write('push constant 0');
+            this.write(
+                'pop temp 0',
+                'push constant 0'
+            );
             
         } else {
-            
-            // We are returning the value of the expression, which we assume
-            // is at the top of the stack - we don't need to push a return
-            // value.
+            // If the return statement has an expression, evaluate it and
+            // leave the result of its evaluation at the top of the stack,
+            // which becomes the value returned from this function.
             
             this.compileExpression();
             this.assertTokenMatch([SYMBOL, ';']);

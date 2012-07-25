@@ -24,11 +24,11 @@
     
     // Used to redirect parser/tokenizer output.
     Out = function(){};
-    Out.prototype.write = console.log;
+    // Out.prototype.write = console.log;
 
-    // Out.prototype.write = function(str){
-    //         fs.writeSync(this.fd, str + '\n', null, encoding);
-    // };
+    Out.prototype.write = function(str){
+            fs.writeSync(this.fd, str + '\n', null, encoding);
+    };
     
     function tokenize(files){
 
