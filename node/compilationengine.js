@@ -20,6 +20,12 @@
      *
      */
     CompilationEngine = function(){
+        this.constants = {
+            'true': 'true',
+            'false': 'false',
+            'null': '0',
+            'this': 'this'
+        };
     };
     
     CompilationEngine.prototype.main = function(tokenizer, out, symbolTable, includeSymbolComments){
@@ -208,7 +214,9 @@
     };
     
     CompilationEngine.prototype.compileSubroutine = function(){
-        var type, subroutineName, numArgs;
+        var type, subroutineName;
+        
+        numLocals = 0;
         
         type = this.currentTokenValue;
         
@@ -221,12 +229,11 @@
         
         this.expectTokenMatch([SYMBOL, '(']);
         
-        numArgs = this.compileParameterList();
+        this.compileParameterList();
         
         this.assertTokenMatch([SYMBOL, ')']);
         
         this.define(subroutineName, type, SymbolKinds.STATIC);
-        this.write('function ' + subroutineName + ' ' + numArgs);
         
         this.expectTokenMatch([SYMBOL, '{']);
         
@@ -239,6 +246,8 @@
                 this.compileVarDec();
             }
         }
+        
+        this.write('function ' + subroutineName + ' ' + this.symbolTable.varCount(SymbolKinds.VAR));
         
         if(this.typeMatch(KEYWORD) && 
                 this.valueMatch('let', 'if', 'while', 'do', 'return')){
@@ -356,9 +365,14 @@
     };
     
     CompilationEngine.prototype.compileLet = function(){
+        var symbolName, symbolKind, symbolIndex;
         
         this.expectTypeMatch(IDENTIFIER);
         this.usage(this.currentTokenValue);
+        
+        symbolName = this.currentTokenValue;
+        symbolKind = this.symbolTable.kindOf(symbolName);
+        symbolIndex = this.symbolTable.indexOf(symbolName);
         
         this.advance();
         
@@ -378,6 +392,8 @@
         this.compileExpression();
         
         this.assertTokenMatch([SYMBOL, ';']);
+        
+        this.write('pop ' + symbolKind + ' ' + symbolIndex);
         
         this.advance();
     };
@@ -406,11 +422,10 @@
         
         if(this.tokenMatch([SYMBOL, ';'])){
             
-            // A return value is always required, but the function is
-            // terminating without returning a value. A return value is always
-            // required, however, so we pop the top of the stack to temp 0,
-            // ignoring what would be the return value otherwise and replace
-            // it with a null.
+            // The function is terminating without returning a value. A return
+            // value is always required, however, so we pop the top of the
+            // stack to temp 0, which is ignored, and push a null on to the
+            // stack which becomes the new return value.
             
             this.advance();
             this.write(
@@ -468,8 +483,8 @@
             '/': '',
             '&': '',
             '|': '',
-            '<': '',
-            '>': '',
+            '<': 'lt',
+            '>': 'gt',
             '=': ''
         }
         
@@ -479,16 +494,35 @@
             operator = operatorMap[this.currentTokenValue];
             this.advance();
             this.compileTerm();
+            this.write(operator);
         }
-        this.write(operator);
     };
     
     CompilationEngine.prototype.compileTerm = function(){
-        var lookAheadMatch, lookAheadType, lookAheadValue, termType;
+        var lookAheadMatch, lookAheadType, lookAheadValue, termType, i,
+            symbolName, symbolKind, symbolIndex;
         
-        if(this.typeMatch(STRING_CONST, INT_CONST) || (this.typeMatch(KEYWORD) &&
-                this.valueMatch('true', 'false', 'null', 'this'))){
-            this.write('push ' + this.currentTokenValue);
+        if(this.typeMatch(STRING_CONST)){
+            this.write(
+                'push constant ' + this.currentTokenValue.length,
+                'call String.new 1'
+            );
+            for(i=0; i<this.currentTokenValue.length; i++){
+                this.write(
+                    'push constant ' + this.currentTokenValue.charCodeAt(i),
+                    'call String.appendChar 2'
+                );
+            }
+            this.advance();
+            
+        } else if(this.typeMatch(INT_CONST)){
+            
+            this.write('push constant ' + this.currentTokenValue);
+            this.advance();
+            
+        } else if((this.typeMatch(KEYWORD) && this.valueMatch('true', 'false', 'null', 'this'))){
+                    
+            this.write('push constant ' + this.constants[this.currentTokenValue]);
             this.advance();
                     
         } else if(this.typeMatch(IDENTIFIER)){
@@ -513,7 +547,11 @@
             switch(termType){
                 
                 case 'variable':
+                    symbolName = this.currentTokenValue;
+                    symbolKind = this.symbolTable.kindOf(symbolName);
+                    symbolIndex = this.symbolTable.indexOf(symbolName);
                     this.usage(this.currentTokenValue);
+                    this.write('push ' + symbolKind + ' ' + symbolIndex);
                     this.advance();
                     break;
                     
@@ -564,7 +602,7 @@
     
     CompilationEngine.prototype.writeComment = function(value){
         if(this.includeSymbolComments){
-            this.write('// ' + value);
+            // this.write('// ' + value);
         }
     };
     
