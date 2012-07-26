@@ -20,12 +20,46 @@
      *
      */
     CompilationEngine = function(){
-        this.constants = {
-            'true': 'true',
-            'false': 'false',
-            'null': '0',
-            'this': 'this'
+        
+        // Maps symbol kinds to the corresponding segment at the VM level.
+        this.kindMap = {
+            'var': 'local',
+            'arg': 'argument'
         };
+        
+        // Maps operators to the corresponding VM/OS operations.
+        this.operatorMap = {
+            '+': 'add',
+            '-': 'sub',
+            '*': 'call Math.multiply 2',
+            '/': 'call Math.divide 2',
+            '&': 'and',
+            '|': '',
+            '<': 'lt',
+            '>': 'gt',
+            '=': 'eq'
+        };
+        
+        // Maps unary operators to corresponding VM operations (note that
+        // '-' exists as a unary and a binary operation).
+        this.unaryOperatorMap = {
+            '-': 'neg',
+            '~': 'not',
+        };
+        
+        // Maps constants to the VM code used to push the constant onto the
+        // stack.
+        this.constants = {
+            'true': ['push constant 0', 'not'],
+            'false': ['push constant 0'],
+            'null': ['push constant 0'],
+            'this': ['push constant this']
+        };
+        
+        // Counters used to generate unique labels in the VM code for looping
+        // constructs.
+        this.whileStatementCount = 0;
+        this.ifStatementCount = 0;
     };
     
     CompilationEngine.prototype.main = function(tokenizer, out, symbolTable, includeSymbolComments){
@@ -221,6 +255,8 @@
         type = this.currentTokenValue;
         
         this.symbolTable.startSubroutine();
+        this.ifStatementCount = 0;
+        this.whileStatementCount = 0;
         
         this.expectTypeMatch(KEYWORD, IDENTIFIER);
         
@@ -322,9 +358,15 @@
         }
     };
     
+    /*
+     * Compiles a do-statement, which is a subroutine call without an
+     * assignment. The return value of the subroutine call must be popped off
+     * the stack and ignored.
+     */
     CompilationEngine.prototype.compileDo = function(){
         this.expectTypeMatch(IDENTIFIER);
         this.compileSubroutineCall();
+        this.write('pop temp 0');
         this.assertTokenMatch([SYMBOL, ';']);
         this.advance();
     };
@@ -393,12 +435,14 @@
         
         this.assertTokenMatch([SYMBOL, ';']);
         
-        this.write('pop ' + symbolKind + ' ' + symbolIndex);
+        this.write('pop ' + this.getSegment(symbolKind) + ' ' + symbolIndex);
         
         this.advance();
     };
     
     CompilationEngine.prototype.compileWhile = function(){
+        
+        this.write('label WHILE_EXP' + this.whileStatementCount);
         
         this.expectTokenMatch([SYMBOL, '(']);
         
@@ -407,6 +451,11 @@
         
         this.assertTokenMatch([SYMBOL, ')']);
         
+        this.write(
+            'not',
+            'if-goto WHILE_END' + this.whileStatementCount
+        )
+        
         this.expectTokenMatch([SYMBOL, '{']);
         
         this.advance();
@@ -414,7 +463,14 @@
         
         this.assertTokenMatch([SYMBOL, '}']);
         
+        this.write(
+            'goto WHILE_EXP' + this.whileStatementCount,
+            'label WHILE_END' + this.whileStatementCount
+        )
+        
         this.advance();
+        
+        this.whileStatementCount += 1;
     };
     
     CompilationEngine.prototype.compileReturn = function(){
@@ -429,7 +485,6 @@
             
             this.advance();
             this.write(
-                'pop temp 0',
                 'push constant 0'
             );
             
@@ -446,21 +501,35 @@
     };
     
     CompilationEngine.prototype.compileIf = function(){
+        
+        // Need to cache the if statement count so that unique labels can
+        // be generated correctly for nested if statements.
+        
+        var cachedCount = this.ifStatementCount;
+        this.ifStatementCount += 1;
+        
         this.expectTokenMatch([SYMBOL, '(']);
         
         this.advance();
         this.compileExpression();
+        this.write('if-goto IF_TRUE' + cachedCount);
+        this.write('goto IF_FALSE' + cachedCount);
         
         this.assertTokenMatch([SYMBOL, ')']);
-        
         this.expectTokenMatch([SYMBOL, '{']);
+        
+        this.write('label IF_TRUE' + cachedCount);
         
         this.advance();
         this.compileStatements();
         
-        this.assertTokenMatch([SYMBOL, '}']);
+        this.write('goto IF_END' + cachedCount);
         
+        this.write('label IF_FALSE' + cachedCount);
+        
+        this.assertTokenMatch([SYMBOL, '}']);
         this.advance();
+        
         if(this.tokenMatch([KEYWORD, 'else'])){
             this.expectTokenMatch([SYMBOL, '{']);
             
@@ -471,27 +540,17 @@
             
             this.advance();
         }
+        
+        this.write('label IF_END' + cachedCount);
     };
     
     CompilationEngine.prototype.compileExpression = function(){
-        var operatorMap, operator;
-        
-        operatorMap = {
-            '+': 'add',
-            '-': 'sub',
-            '*': 'call Math.multiply 2',
-            '/': '',
-            '&': '',
-            '|': '',
-            '<': 'lt',
-            '>': 'gt',
-            '=': ''
-        }
+        var operator;
         
         this.compileTerm();
         
         if(this.typeMatch(SYMBOL) && this.valueMatch('+', '-', '*', '/', '&', '|', '<', '>', '=')){
-            operator = operatorMap[this.currentTokenValue];
+            operator = this.operatorMap[this.currentTokenValue];
             this.advance();
             this.compileTerm();
             this.write(operator);
@@ -500,7 +559,7 @@
     
     CompilationEngine.prototype.compileTerm = function(){
         var lookAheadMatch, lookAheadType, lookAheadValue, termType, i,
-            symbolName, symbolKind, symbolIndex;
+            symbolName, symbolKind, symbolIndex, constants, kindMap, operator;
         
         if(this.typeMatch(STRING_CONST)){
             this.write(
@@ -521,8 +580,8 @@
             this.advance();
             
         } else if((this.typeMatch(KEYWORD) && this.valueMatch('true', 'false', 'null', 'this'))){
-                    
-            this.write('push constant ' + this.constants[this.currentTokenValue]);
+
+            this.write.apply(this, this.constants[this.currentTokenValue]);
             this.advance();
                     
         } else if(this.typeMatch(IDENTIFIER)){
@@ -547,11 +606,17 @@
             switch(termType){
                 
                 case 'variable':
+                    
                     symbolName = this.currentTokenValue;
                     symbolKind = this.symbolTable.kindOf(symbolName);
                     symbolIndex = this.symbolTable.indexOf(symbolName);
+                    
+                    if(symbolKind === undefined){
+                        throw new Error();
+                    }
+                    
                     this.usage(this.currentTokenValue);
-                    this.write('push ' + symbolKind + ' ' + symbolIndex);
+                    this.write('push ' + this.getSegment(symbolKind) + ' ' + symbolIndex);
                     this.advance();
                     break;
                     
@@ -580,8 +645,10 @@
             this.advance();
             
         } else if(this.typeMatch(SYMBOL) && this.valueMatch('-', '~')){
+            operator = this.currentTokenValue;
             this.advance();
             this.compileTerm();
+            this.write(this.unaryOperatorMap[operator]);
         
         } else {
             throw new Error('Invalid term. ' + this.currentTokenType + ' ' + this.currentTokenValue);
@@ -598,6 +665,15 @@
             }
         }
         return numExpressions;
+    };
+    
+    CompilationEngine.prototype.getSegment = function(kind){
+        var segment;
+        segment = this.kindMap[kind];
+        if(segment === undefined){
+            throw new Error('No segement mapped for kind: "' + kind + '"');
+        }
+        return segment;
     };
     
     CompilationEngine.prototype.writeComment = function(value){
@@ -622,7 +698,7 @@
                 str += k + ': ' + symbolObj[k] + ', ';
             }
         }
-        str+='}';
+        str += '}';
         return str;
     };
     
