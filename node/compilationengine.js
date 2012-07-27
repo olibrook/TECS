@@ -407,7 +407,9 @@
     };
     
     CompilationEngine.prototype.compileLet = function(){
-        var symbolName, symbolKind, symbolIndex;
+        var symbolName, symbolKind, symbolIndex, isPointerAssignment;
+        
+        isPointerAssignment = false;
         
         this.expectTypeMatch(IDENTIFIER);
         this.usage(this.currentTokenValue);
@@ -418,31 +420,63 @@
         
         this.advance();
         
-        // Array access
         if(this.tokenMatch([SYMBOL, '['])){
+            
+            // For an Array assignment we have the current symbol which is a
+            // pointer to the Array, plus an offset, which is the result of
+            // evaluating the expression between the square brackets, eg.
+            // a[1+1].
+            
+            // In the VM code we need to evaluate the offset expression...
             this.advance();
-            
             this.compileExpression();
-            
             this.assertTokenMatch([SYMBOL, ']']);
             this.advance();
+            
+            // ... and then add that to the base address of the Array.
+            this.write('push ' + this.getSegment(symbolKind) + ' ' + symbolIndex);
+            this.write('add');
+            
+            // This will be used later on to conditionally treat the Assigment
+            // as an assignement to a pointer, or an assignment to a local
+            // variable of some kind.
+            isPointerAssignment = true;
         }
         
         this.assertTokenMatch([SYMBOL, '=']);
-        
         this.advance();
         this.compileExpression();
-        
         this.assertTokenMatch([SYMBOL, ';']);
         
-        this.write('pop ' + this.getSegment(symbolKind) + ' ' + symbolIndex);
+        if(isPointerAssignment){
+            
+            // The topmost element on the stack is the value of the assignemnt
+            // and the element directly beneath is a pointer to the location
+            // in memory where the value should be saved.
+            
+            this.write(
+                'pop temp 0',       // Pop the value to temp
+                'pop pointer 1',    // Pop the pointer
+                'push temp 0',      // Push the value back
+                'pop that 0'        // Pop the value using the pointer
+            );
+            
+        } else {
+            
+            // This is an assignment to one of the local or static segments,
+            // and we can simply pop the value off the stack.
+            
+            this.write('pop ' + this.getSegment(symbolKind) + ' ' + symbolIndex);
+        }
         
         this.advance();
     };
     
     CompilationEngine.prototype.compileWhile = function(){
+        var currentWhileCount = this.whileStatementCount;
+        this.whileStatementCount += 1;
         
-        this.write('label WHILE_EXP' + this.whileStatementCount);
+        this.write('label WHILE_EXP' + currentWhileCount);
         
         this.expectTokenMatch([SYMBOL, '(']);
         
@@ -453,7 +487,7 @@
         
         this.write(
             'not',
-            'if-goto WHILE_END' + this.whileStatementCount
+            'if-goto WHILE_END' + currentWhileCount
         )
         
         this.expectTokenMatch([SYMBOL, '{']);
@@ -464,13 +498,11 @@
         this.assertTokenMatch([SYMBOL, '}']);
         
         this.write(
-            'goto WHILE_EXP' + this.whileStatementCount,
-            'label WHILE_END' + this.whileStatementCount
+            'goto WHILE_EXP' + currentWhileCount,
+            'label WHILE_END' + currentWhileCount
         )
         
         this.advance();
-        
-        this.whileStatementCount += 1;
     };
     
     CompilationEngine.prototype.compileReturn = function(){
@@ -606,7 +638,6 @@
             switch(termType){
                 
                 case 'variable':
-                    
                     symbolName = this.currentTokenValue;
                     symbolKind = this.symbolTable.kindOf(symbolName);
                     symbolIndex = this.symbolTable.indexOf(symbolName);
@@ -621,10 +652,20 @@
                     break;
                     
                 case 'arrayEntry':
+                    symbolName = this.currentTokenValue;
+                    symbolKind = this.symbolTable.kindOf(symbolName);
+                    symbolIndex = this.symbolTable.indexOf(symbolName);
+                    
+                    this.write('push ' + this.getSegment(symbolKind) + ' ' + symbolIndex);
                     this.expectTokenMatch([SYMBOL, '[']);
                     this.advance();
-                    
                     this.compileExpression();
+                    
+                    // this.write(
+                    //     'add',
+                    //     'pop pointer 1',
+                    //     'push that 0'
+                    // );
                     
                     this.assertTokenMatch([SYMBOL, ']']);
                     
