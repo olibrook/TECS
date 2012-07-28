@@ -656,16 +656,19 @@
                     symbolKind = this.symbolTable.kindOf(symbolName);
                     symbolIndex = this.symbolTable.indexOf(symbolName);
                     
-                    this.write('push ' + this.getSegment(symbolKind) + ' ' + symbolIndex);
+                    // Compile the expression, giving the array offset.
                     this.expectTokenMatch([SYMBOL, '[']);
                     this.advance();
                     this.compileExpression();
                     
-                    // this.write(
-                    //     'add',
-                    //     'pop pointer 1',
-                    //     'push that 0'
-                    // );
+                    // Push the base address of the array
+                    this.write('push ' + this.getSegment(symbolKind) + ' ' + symbolIndex);
+                    
+                    this.write(
+                        'add',              // Base + offset
+                        'pop pointer 1',    // Pop the address to the pointer segment
+                        'push that 0'       // Push the value of the Array element using the pointer.
+                    );
                     
                     this.assertTokenMatch([SYMBOL, ']']);
                     
