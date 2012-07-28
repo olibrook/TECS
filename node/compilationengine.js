@@ -403,36 +403,63 @@
     
     
     CompilationEngine.prototype.compileSubroutineCall = function(){
-        var subroutineName, numExpressions, i;
+        var classOrInstanceName, subroutineName, numExpressions, i,
+            classOrInstanceKind, fullSubroutineName, instanceIndex, functionKind, instanceType, extraArgsCount;
+        
+        extraArgsCount = 0;
         
         this.assertTypeMatch(IDENTIFIER);
+        
         subroutineName = this.currentTokenValue;
         
         this.expectTypeMatch(SYMBOL);
         
         if(this.valueMatch('.')){
-            subroutineName += this.currentTokenValue;
+            
+            classOrInstanceName = subroutineName;
+            instanceKind = this.symbolTable.kindOf(classOrInstanceName);
             
             this.expectTypeMatch(IDENTIFIER);
-            subroutineName += this.currentTokenValue;
-            
+            subroutineName = this.currentTokenValue;
             this.expectTokenMatch([SYMBOL, '(']);
+        }
+        
+        
+        if(classOrInstanceName === undefined){
+            // Assume method call on current class, adjust this arg.
+            fullSubroutineName = this.currentClassName + '.' + subroutineName;
+            this.write('push pointer 0');
+            extraArgsCount += 1;
             
-        } else if (this.valueMatch('(')) {
-            // Local function
+        } else if(
+            instanceKind == SymbolKinds.ARG ||
+            instanceKind === SymbolKinds.VAR ||
+            instanceKind === SymbolKinds.FIELD ||
+            instanceKind === SymbolKinds.STATIC){
+            
+            // Assume method call on an instance, adjust this arg.
+            instanceType = this.symbolTable.typeOf(classOrInstanceName);
+            instanceIndex = this.symbolTable.indexOf(classOrInstanceName);
+            instanceKind = this.symbolTable.kindOf(classOrInstanceName);
+            
+            fullSubroutineName = instanceType + '.' + subroutineName;
+            this.write('push ' + this.kindMap[instanceKind] + ' ' + instanceIndex);
+            extraArgsCount += 1;
+            
+        } else if(instanceKind === null){
+            // Assume call for a method/function on a class which has not yet been compiled.
+            fullSubroutineName = classOrInstanceName + '.' + subroutineName;
             
         } else {
-            throw new Error('Invalid subroutine call');
+            throw new Error('Subroutine call error! ' + instanceKind);
         }
         
         this.advance();
         numExpressions = this.compileExpressionList();
-        
         this.assertTokenMatch([SYMBOL, ')']);
-        this.usage(subroutineName);
+        this.usage(fullSubroutineName);
         
-        this.write('call ' + subroutineName + ' ' + numExpressions);
-        
+        this.write('call ' + fullSubroutineName + ' ' + (numExpressions + extraArgsCount));
         this.advance();
     };
     
@@ -585,14 +612,13 @@
         this.advance();
         this.compileStatements();
         
-        this.write('goto IF_END' + cachedCount);
-        
-        this.write('label IF_FALSE' + cachedCount);
-        
         this.assertTokenMatch([SYMBOL, '}']);
         this.advance();
         
         if(this.tokenMatch([KEYWORD, 'else'])){
+            this.write('goto IF_END' + cachedCount);
+            this.write('label IF_FALSE' + cachedCount);
+            
             this.expectTokenMatch([SYMBOL, '{']);
             
             this.advance();
@@ -601,9 +627,10 @@
             this.assertTokenMatch([SYMBOL, '}']);
             
             this.advance();
+            this.write('label IF_END' + cachedCount);
+        } else {
+            this.write('label IF_FALSE' + cachedCount);
         }
-        
-        this.write('label IF_END' + cachedCount);
     };
     
     CompilationEngine.prototype.compileExpression = function(){
