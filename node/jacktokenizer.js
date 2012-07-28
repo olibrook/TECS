@@ -23,10 +23,10 @@
         this.stream = stream;
         
         this.config = [
-            [/^[a-z|A-Z]+[a-z|A-Z|0-9]*/, TokenTypes.IDENTIFIER],
+            [/^[a-zA-Z]+[a-zA-Z0-9]*/, TokenTypes.IDENTIFIER],
             [/^[0-9]+/, TokenTypes.INT_CONST],
             [/^\s+/, TokenTypes.WHITESPACE],
-            [/^\+|-|\*|\/|\=|<|>|\(|\)|\{|\}|;|,|\.|\[|\]|~|\&/, TokenTypes.SYMBOL],
+            [/^\+|-|\*|\/|\=|<|>|\(|\)|\{|\}|;|,|\.|\[|\]|~|\&|\|/, TokenTypes.SYMBOL],
             [/^"(.*)"/, TokenTypes.STRING_CONST],
             [/^\/\/.*[\r\n|\r|\n]/, TokenTypes.SINGLE_LINE_COMMENT],
             [/^\/\*\*(.|\r\n|\r|\n)*?\*\//, TokenTypes.MULTI_LINE_COMMENT]

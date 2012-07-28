@@ -117,7 +117,7 @@
                 return this.scopes[i][name][attr];
             }
         }
-        return null;
+        throw new Error('Undefined symbol: "' + name + '"');
     };
     
     exports.SymbolTable = SymbolTable;

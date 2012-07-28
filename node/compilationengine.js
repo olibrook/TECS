@@ -24,7 +24,9 @@
         // Maps symbol kinds to the corresponding segment at the VM level.
         this.kindMap = {
             'var': 'local',
-            'arg': 'argument'
+            'arg': 'argument',
+            'field': 'this',
+            'static': 'static'
         };
         
         // Maps operators to the corresponding VM/OS operations.
@@ -34,7 +36,7 @@
             '*': 'call Math.multiply 2',
             '/': 'call Math.divide 2',
             '&': 'and',
-            '|': '',
+            '|': 'or',
             '<': 'lt',
             '>': 'gt',
             '=': 'eq'
@@ -53,7 +55,7 @@
             'true': ['push constant 0', 'not'],
             'false': ['push constant 0'],
             'null': ['push constant 0'],
-            'this': ['push constant this']
+            'this': ['push pointer 0']
         };
         
         // Counters used to generate unique labels in the VM code for looping
@@ -226,8 +228,7 @@
         type = this.currentTokenValue;
         
         this.expectTypeMatch(IDENTIFIER);
-        name = this.currentClassName + '.' + this.currentTokenValue;
-        this.define(name, type, kind);
+        this.define(this.currentTokenValue, type, kind);
         
         this.advance();
         
@@ -238,8 +239,7 @@
                 this.assertTokenMatch([SYMBOL, ',']);
                 
                 this.expectTypeMatch(IDENTIFIER);
-                name = this.currentClassName + '.' + this.currentTokenValue;
-                this.define(name, type, kind);
+                this.define(this.currentTokenValue, type, kind);
                 
                 this.advance();
             }
@@ -263,6 +263,16 @@
         this.expectTypeMatch(IDENTIFIER);
         subroutineName = this.currentClassName + '.' + this.currentTokenValue;
         
+        
+        if(type === 'method'){
+            // Methods are always called with an implicit first argument which
+            // is the 'this' object and is an instance of this class.
+            
+            this.define('this', this.currentClassName, SymbolKinds.ARG);
+        }
+        
+        
+        
         this.expectTokenMatch([SYMBOL, '(']);
         
         this.compileParameterList();
@@ -284,6 +294,26 @@
         }
         
         this.write('function ' + subroutineName + ' ' + this.symbolTable.varCount(SymbolKinds.VAR));
+
+        if(type === 'constructor'){
+            // Need to allocate memory space for the class' fields
+            this.write(
+                'push constant ' + this.symbolTable.varCount(SymbolKinds.FIELD),
+                'call Memory.alloc 1',
+                'pop pointer 0'
+            );
+        }
+        
+        if(type === 'method'){
+            // Need to adjust the pointer to the 'this' object, which is passed
+            // as argument 0.
+            
+            this.write(
+                'push argument 0',
+                'pop pointer 0'
+            );
+        }
+        
         
         if(this.typeMatch(KEYWORD) && 
                 this.valueMatch('let', 'if', 'while', 'do', 'return')){
@@ -715,7 +745,7 @@
         var segment;
         segment = this.kindMap[kind];
         if(segment === undefined){
-            throw new Error('No segement mapped for kind: "' + kind + '"');
+            throw new Error('No segment mapped for kind: "' + kind + '"');
         }
         return segment;
     };
