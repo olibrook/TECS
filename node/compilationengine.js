@@ -638,10 +638,12 @@
         
         this.compileTerm();
         
-        if(this.typeMatch(SYMBOL) && this.valueMatch('+', '-', '*', '/', '&', '|', '<', '>', '=')){
+        while(this.typeMatch(SYMBOL) && this.valueMatch('+', '-', '*', '/', '&', '|', '<', '>', '=')){
             operator = this.operatorMap[this.currentTokenValue];
+            
             this.advance();
             this.compileTerm();
+            
             this.write(operator);
         }
     };
