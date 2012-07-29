@@ -182,7 +182,6 @@
         
         this.expectTypeMatch(IDENTIFIER);
         this.currentClassName = this.currentTokenValue;
-        this.define(this.currentTokenValue, 'class', SymbolKinds.STATIC);
         
         this.expectTokenMatch([SYMBOL, '{']);
         
@@ -404,54 +403,55 @@
     
     CompilationEngine.prototype.compileSubroutineCall = function(){
         var classOrInstanceName, subroutineName, numExpressions, i,
-            classOrInstanceKind, fullSubroutineName, instanceIndex, functionKind, instanceType, extraArgsCount;
+            classOrInstanceKind, fullSubroutineName, instanceIndex, functionKind,
+            instanceType, extraArgsCount, implicitThis;
+        
         
         extraArgsCount = 0;
+        implicitThis = false;
         
         this.assertTypeMatch(IDENTIFIER);
-        
         subroutineName = this.currentTokenValue;
-        
         this.expectTypeMatch(SYMBOL);
         
         if(this.valueMatch('.')){
-            
             classOrInstanceName = subroutineName;
-            instanceKind = this.symbolTable.kindOf(classOrInstanceName);
-            
             this.expectTypeMatch(IDENTIFIER);
             subroutineName = this.currentTokenValue;
             this.expectTokenMatch([SYMBOL, '(']);
+        } else {
+            implicitThis = true;
         }
         
+        instanceType = this.symbolTable.typeOf(classOrInstanceName);
         
-        if(classOrInstanceName === undefined){
-            // Assume method call on current class, adjust this arg.
-            fullSubroutineName = this.currentClassName + '.' + subroutineName;
-            this.write('push pointer 0');
-            extraArgsCount += 1;
+        if(implicitThis || instanceType !== null){
             
-        } else if(
-            instanceKind == SymbolKinds.ARG ||
-            instanceKind === SymbolKinds.VAR ||
-            instanceKind === SymbolKinds.FIELD ||
-            instanceKind === SymbolKinds.STATIC){
+            // Looks like this is a method call, so fix the 'this' argument.
             
-            // Assume method call on an instance, adjust this arg.
-            instanceType = this.symbolTable.typeOf(classOrInstanceName);
-            instanceIndex = this.symbolTable.indexOf(classOrInstanceName);
-            instanceKind = this.symbolTable.kindOf(classOrInstanceName);
-            
-            fullSubroutineName = instanceType + '.' + subroutineName;
-            this.write('push ' + this.kindMap[instanceKind] + ' ' + instanceIndex);
-            extraArgsCount += 1;
-            
-        } else if(instanceKind === null){
-            // Assume call for a method/function on a class which has not yet been compiled.
-            fullSubroutineName = classOrInstanceName + '.' + subroutineName;
+            if(implicitThis){
+                
+                fullSubroutineName = this.currentClassName + '.' + subroutineName;
+                this.write('push pointer 0');
+                extraArgsCount += 1;
+                
+            } else {
+                
+                instanceIndex = this.symbolTable.indexOf(classOrInstanceName);
+                instanceKind = this.symbolTable.kindOf(classOrInstanceName);
+                
+                fullSubroutineName = instanceType + '.' + subroutineName;
+                this.write('push ' + this.kindMap[instanceKind] + ' ' + instanceIndex);
+                extraArgsCount += 1;
+            }
             
         } else {
-            throw new Error('Subroutine call error! ' + instanceKind);
+            
+            // Assume call to a class function. Since the compiler doesn't pre-scan
+            // source files to be able to check for undefined symbols, just assume
+            // the names in the source code are correct.
+            
+            fullSubroutineName = classOrInstanceName + '.' + subroutineName;
         }
         
         this.advance();
