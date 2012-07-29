@@ -46,7 +46,7 @@
         // '-' exists as a unary and a binary operation).
         this.unaryOperatorMap = {
             '-': 'neg',
-            '~': 'not',
+            '~': 'not'
         };
         
         // Maps constants to the VM code used to push the constant onto the
@@ -65,7 +65,6 @@
     };
     
     CompilationEngine.prototype.main = function(tokenizer, out, symbolTable, includeSymbolComments){
-        var self = this;
         this.tokenizer = tokenizer;
         this.out = out;
         this.currentTokenType = null;
@@ -176,8 +175,6 @@
     };
     
     CompilationEngine.prototype.compileClass = function(){
-        var symbolObj;
-        
         this.expectTokenMatch([KEYWORD, 'class']);
         
         this.expectTypeMatch(IDENTIFIER);
@@ -211,7 +208,7 @@
     };
     
     CompilationEngine.prototype.compileClassVarDec = function(){
-        var type, kind, name;
+        var type, kind;
         
         if(this.valueMatch('static')){
             kind = SymbolKinds.STATIC;
@@ -249,8 +246,6 @@
     CompilationEngine.prototype.compileSubroutine = function(){
         var type, subroutineName;
         
-        numLocals = 0;
-        
         type = this.currentTokenValue;
         
         this.symbolTable.startSubroutine();
@@ -269,8 +264,6 @@
             
             this.define('this', this.currentClassName, SymbolKinds.ARG);
         }
-        
-        
         
         this.expectTokenMatch([SYMBOL, '(']);
         
@@ -402,10 +395,9 @@
     
     
     CompilationEngine.prototype.compileSubroutineCall = function(){
-        var classOrInstanceName, subroutineName, numExpressions, i,
-            classOrInstanceKind, fullSubroutineName, instanceIndex, functionKind,
-            instanceType, extraArgsCount, implicitThis;
-        
+        var classOrInstanceName, subroutineName, numExpressions,
+            fullSubroutineName, instanceIndex, instanceType, extraArgsCount,
+            implicitThis, instanceKind;
         
         extraArgsCount = 0;
         implicitThis = false;
@@ -457,7 +449,6 @@
         this.advance();
         numExpressions = this.compileExpressionList();
         this.assertTokenMatch([SYMBOL, ')']);
-        this.usage(fullSubroutineName);
         
         this.write('call ' + fullSubroutineName + ' ' + (numExpressions + extraArgsCount));
         this.advance();
@@ -469,7 +460,6 @@
         isPointerAssignment = false;
         
         this.expectTypeMatch(IDENTIFIER);
-        this.usage(this.currentTokenValue);
         
         symbolName = this.currentTokenValue;
         symbolKind = this.symbolTable.kindOf(symbolName);
@@ -545,7 +535,7 @@
         this.write(
             'not',
             'if-goto WHILE_END' + currentWhileCount
-        )
+        );
         
         this.expectTokenMatch([SYMBOL, '{']);
         
@@ -557,7 +547,7 @@
         this.write(
             'goto WHILE_EXP' + currentWhileCount,
             'label WHILE_END' + currentWhileCount
-        )
+        );
         
         this.advance();
     };
@@ -650,14 +640,14 @@
     
     CompilationEngine.prototype.compileTerm = function(){
         var lookAheadMatch, lookAheadType, lookAheadValue, termType, i,
-            symbolName, symbolKind, symbolIndex, constants, kindMap, operator;
+            symbolName, symbolKind, symbolIndex, operator;
         
         if(this.typeMatch(STRING_CONST)){
             this.write(
                 'push constant ' + this.currentTokenValue.length,
                 'call String.new 1'
             );
-            for(i=0; i<this.currentTokenValue.length; i++){
+            for(i=0; i<this.currentTokenValue.length; i+=1){
                 this.write(
                     'push constant ' + this.currentTokenValue.charCodeAt(i),
                     'call String.appendChar 2'
@@ -705,7 +695,6 @@
                         throw new Error();
                     }
                     
-                    this.usage(this.currentTokenValue);
                     this.write('push ' + this.getSegment(symbolKind) + ' ' + symbolIndex);
                     this.advance();
                     break;
@@ -779,35 +768,14 @@
         return segment;
     };
     
-    CompilationEngine.prototype.writeComment = function(value){
-        if(this.includeSymbolComments){
-            // this.write('// ' + value);
-        }
-    };
-    
     CompilationEngine.prototype.define = function(name, type, kind){
-        var symbolObj = this.symbolTable.define(name, type, kind);
-        this.writeComment('[DEFINE] Name: "' + name + '", ' + this.printSymbolObj(symbolObj));
-    };
-    
-    CompilationEngine.prototype.usage = function(name){
-        this.writeComment('[USAGE] Name: "' + name + '"');
-    };
-    
-    CompilationEngine.prototype.printSymbolObj = function(symbolObj){
-        var str = '{', k;
-        for(k in symbolObj){
-            if(symbolObj.hasOwnProperty(k)){
-                str += k + ': ' + symbolObj[k] + ', ';
-            }
-        }
-        str += '}';
-        return str;
+        this.symbolTable.define(name, type, kind);
+        // this.write('// [DEFINE] Name: "' + name);
     };
     
     CompilationEngine.prototype.write = function(){
         var i;
-        for(i=0; i<arguments.length; i++){
+        for(i=0; i<arguments.length; i+=1){
             this.out.write(arguments[i]);
         }
     };
