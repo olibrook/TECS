@@ -16,8 +16,7 @@
         KEYWORD = TokenTypes.KEYWORD;
     
     /**
-     * Top-down parser for the Jack programming language.
-     *
+     * Top-down parser and compiler for the Jack programming language.
      */
     CompilationEngine = function(){
         
@@ -64,6 +63,10 @@
         this.ifStatementCount = 0;
     };
     
+    /**
+     * Compile a class using the supplied tokenizer and symbol table.
+     *
+     */
     CompilationEngine.prototype.main = function(tokenizer, out, symbolTable, includeSymbolComments){
         this.tokenizer = tokenizer;
         this.out = out;
@@ -76,6 +79,10 @@
         this.compileClass();
     };
     
+    /**
+     * Advances the tokenizer.
+     *
+     */
     CompilationEngine.prototype.advance = function(){
         var methodName;
         
@@ -90,6 +97,10 @@
         }
     };
     
+    /**
+     * Returns true if the current token type matches on of the supplied
+     * arguments.
+     */
     CompilationEngine.prototype.typeMatch = function(){
         var i;
         for(i=0; i<arguments.length; i+=1){
@@ -100,6 +111,10 @@
         return false;
     };
     
+    /**
+     * Raises an exception of the current token type does not match one of the
+     * supplied arguments.
+     */
     CompilationEngine.prototype.assertTypeMatch = function(){
         if(!this.typeMatch.apply(this, arguments)){
             throw new Error('Unexpected token type. Found "'
@@ -108,11 +123,19 @@
         }
     };
     
+    /**
+     * Advances the tokenizer and asserts that new token type matches one of
+     * the supplied arguments.
+     */
     CompilationEngine.prototype.expectTypeMatch = function(){
         this.advance();
         this.assertTypeMatch.apply(this, arguments);
     };
     
+    /**
+     * Returns true if the current token value matches one of the supplied
+     * arguments.
+     */
     CompilationEngine.prototype.valueMatch = function(){
         var i;
         for(i=0; i<arguments.length; i+=1){
@@ -123,6 +146,10 @@
         return false;
     };
     
+    /**
+     * Raises an exception of the current token value does not match one of the
+     * supplied arguments.
+     */
     CompilationEngine.prototype.assertValueMatch = function(){
         if(!this.valueMatch.apply(this, arguments)){
             throw new Error('Unexpected token value. Found "'
@@ -131,11 +158,21 @@
         }
     };
     
+    /**
+     * Advances the tokenizer and asserts that new token value matches one of
+     * the supplied arguments.
+     */
     CompilationEngine.prototype.expectValueMatch = function(){
         this.advance();
         this.assertValueMatch.apply(this, arguments);
     };
     
+    /**
+     * Returns true if the current token type and value match one of the
+     * supplied arguments.
+     *
+     * Arguments are two element arrays of the form [TYPE, VALUE]
+     */
     CompilationEngine.prototype.tokenMatch = function(){
         var i;
         for(i=0; i<arguments.length; i+=1){
@@ -147,6 +184,12 @@
         return false;
     };
     
+    /**
+     * Raises an exception if the current token type and value do not match
+     * one of the supplied arguments.
+     *
+     * Arguments are two element arrays of the form [TYPE, VALUE]
+     */
     CompilationEngine.prototype.assertTokenMatch = function(){
         if(!this.tokenMatch.apply(this, arguments)){
             throw new Error('Unexpected token. Found "' 
@@ -155,11 +198,21 @@
         }
     };
     
+    /**
+     * Advances the tokenizer and asserts that the new token type and value
+     * match one of the supplied arguments.
+     *
+     * Arguments are two element arrays of the form [TYPE, VALUE]
+     */
     CompilationEngine.prototype.expectTokenMatch = function(){
         this.advance();
         this.assertTokenMatch.apply(this, arguments);
     };
     
+    /**
+     * Converts a JS arguments object to a readable string, suitable for
+     * logging.
+     */
     CompilationEngine.prototype.printArgs = function(args){
         var i,
             out = '[';
@@ -174,6 +227,11 @@
         return out;
     };
     
+    
+    /**
+     * Compiles a class, the top-level structure in a Jack program, and
+     * therefore the main method on the compiler.
+     */
     CompilationEngine.prototype.compileClass = function(){
         this.expectTokenMatch([KEYWORD, 'class']);
         
@@ -207,6 +265,9 @@
         this.assertTokenMatch([SYMBOL, '}']);
     };
     
+    /**
+     * Compiles a class variable declaration, either static or a field.
+     */
     CompilationEngine.prototype.compileClassVarDec = function(){
         var type, kind;
         
@@ -243,6 +304,11 @@
         this.advance();
     };
     
+    /*
+     * Compiles a subroutine declaration, (method, function, constructor),
+     * making adjustments in the output VM code for the 'this' argument if the
+     * subroutine is a method.
+     */
     CompilationEngine.prototype.compileSubroutine = function(){
         var type, subroutineName;
         
@@ -317,6 +383,10 @@
         this.advance();
     };
     
+    /**
+     * Compiles a parameter list in a subroutine declaration, returning the
+     * number of parameters which were encountered.
+     */
     CompilationEngine.prototype.compileParameterList = function(){
         var type, numArgs;
         
@@ -343,6 +413,9 @@
         return numArgs;
     };
     
+    /**
+     * Compiles a variable declaration inside of a subroutine.
+     */
     CompilationEngine.prototype.compileVarDec = function(){
         var type;
         
@@ -366,6 +439,9 @@
         this.advance();
     };
     
+    /**
+     * Compiles a statement.
+     */
     CompilationEngine.prototype.compileStatements = function(){
         var methodName;
         
@@ -380,10 +456,8 @@
         }
     };
     
-    /*
-     * Compiles a do-statement, which is a subroutine call without an
-     * assignment. The return value of the subroutine call must be popped off
-     * the stack and ignored.
+    /**
+     * Compiles a do-statement - subroutine call without using the return value.
      */
     CompilationEngine.prototype.compileDo = function(){
         this.expectTypeMatch(IDENTIFIER);
@@ -393,7 +467,10 @@
         this.advance();
     };
     
-    
+    /**
+     * Compiles subroutine call, respecting setting of the 'this' argument
+     * to the subroutine in the event that the subroutine is a method.
+     */
     CompilationEngine.prototype.compileSubroutineCall = function(){
         var classOrInstanceName, subroutineName, numExpressions,
             fullSubroutineName, instanceIndex, instanceType, extraArgsCount,
@@ -454,6 +531,10 @@
         this.advance();
     };
     
+    /**
+     * Compiles a let statement, including assignments to Array elements using
+     * base addresses, offsets and pointers.
+     */
     CompilationEngine.prototype.compileLet = function(){
         var symbolName, symbolKind, symbolIndex, isPointerAssignment;
         
@@ -519,6 +600,10 @@
         this.advance();
     };
     
+    /**
+     * Compiles a while statement, creating unique labels and gotos in the
+     * output VM code.
+     */
     CompilationEngine.prototype.compileWhile = function(){
         var currentWhileCount = this.whileStatementCount;
         this.whileStatementCount += 1;
@@ -552,6 +637,10 @@
         this.advance();
     };
     
+    /**
+     * Compiles a return statement, returning null in the event that the
+     * statement does not explicitly return a value.
+     */
     CompilationEngine.prototype.compileReturn = function(){
         this.advance();
         
@@ -579,6 +668,10 @@
         this.write('return');
     };
     
+    /**
+     * Compiles an if statement, complete with labels and gotos in the output
+     * VM code.
+     */
     CompilationEngine.prototype.compileIf = function(){
         
         // Need to cache the if statement count so that unique labels can
@@ -623,6 +716,11 @@
         }
     };
     
+    /**
+     * Compiles an expression, defined as:
+     * 
+     * expression: term (op term)*
+     */
     CompilationEngine.prototype.compileExpression = function(){
         var operator;
         
@@ -638,6 +736,9 @@
         }
     };
     
+    /**
+     * Compiles a term - the trickiest part of the compiler.
+     */
     CompilationEngine.prototype.compileTerm = function(){
         var lookAheadMatch, lookAheadType, lookAheadValue, termType, i,
             symbolName, symbolKind, symbolIndex, operator;
@@ -747,6 +848,9 @@
         }
     };
     
+    /**
+     * Compiles an expression list, as in the arguments to a subroutine call.
+     */
     CompilationEngine.prototype.compileExpressionList = function(){
         var numExpressions = 0;
         while(!this.tokenMatch([SYMBOL, ')'])){
@@ -759,6 +863,10 @@
         return numExpressions;
     };
     
+    /**
+     * Returns the name of the segment which is used to store symbols of the
+     * given kind in the underlying VM implementation.
+     */
     CompilationEngine.prototype.getSegment = function(kind){
         var segment;
         segment = this.kindMap[kind];
@@ -768,11 +876,17 @@
         return segment;
     };
     
+    /**
+     * Defines a new symbol in the symbol table.
+     */
     CompilationEngine.prototype.define = function(name, type, kind){
         this.symbolTable.define(name, type, kind);
         // this.write('// [DEFINE] Name: "' + name);
     };
     
+    /**
+     * Writes strings to the output.
+     */
     CompilationEngine.prototype.write = function(){
         var i;
         for(i=0; i<arguments.length; i+=1){
