@@ -82,7 +82,7 @@
     
     
     
-    function parse(files){
+    function compile(files){
         
         var source,
             tokenizer,
@@ -101,7 +101,7 @@
             inputFileName = files[i];
             source = fs.readFileSync(inputFileName, encoding);
             
-            outputFileName = path.join(path.dirname(inputFileName), path.basename(inputFileName)) + '.parsed.xml';
+            outputFileName = path.join(path.dirname(inputFileName), path.basename(inputFileName, '.jack')) + '.vm';
             out.fd = fs.openSync(outputFileName, "w");
             
             tokenizer = new jackTokenizer.Tokenizer(source);
@@ -143,8 +143,7 @@
                 inputFileNames = [fileOrDir];
             }
             
-            // tokenize(inputFileNames);
-            parse(inputFileNames);
+            compile(inputFileNames);
             
             process.exit(0);
         }
