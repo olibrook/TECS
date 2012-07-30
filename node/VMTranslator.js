@@ -170,15 +170,6 @@
         );
         return this;
     };
-
-    Code.prototype.saveDToStack = function(){
-        this.asm(
-            '@SP',
-            'A=M',
-            'M=D'
-        );
-        return this;
-    };
     
     Code.prototype.saveDToStackAndIncSP = function(){
         this.asm(
