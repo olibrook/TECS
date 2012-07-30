@@ -512,18 +512,17 @@
         );
         return this;
     };
-
-    Code.prototype.writeCall = function(functionName, numArgs){
-        var returnAddress, pushes, i;
     
-        returnAddress = 'return-' + this.functionCallCount;
-        this.functionCallCount+=1;
+    
+    Code.prototype.writeCallInternal = function(){
+        var pushes, i;
         
         pushes = ['LCL', 'ARG', 'THIS', 'THAT'];
     
         this.asm(
-            '@' + returnAddress,
-            'D=A'
+            '(CALL)',                   // Label for the CALL routine
+            '@R15',                     // Return address
+            'D=M'
         ).saveDToStackAndIncSP();
     
         for(i=0; i<pushes.length; i+=1){
@@ -536,8 +535,8 @@
         this.asm(
             '@SP',                      // Reposition ARG
             'D=M',
-            '@' + numArgs,
-            'D=D-A',
+            '@13',                      // Num args
+            'D=D-M',
             '@5',
             'D=D-A',
             '@ARG',
@@ -548,10 +547,39 @@
             '@LCL',
             'M=D',
         
-            '@' + functionName,         // Jump to function
-            '0;JEQ',
+            '@14',         // Function address
+            'A=M',
+            '0;JEQ'
+        );
         
-            '(' + returnAddress + ')'   // Insert label for the return address
+        return this;
+    };
+
+    Code.prototype.writeCall = function(functionName, numArgs){
+        var returnAddress;
+    
+        returnAddress = 'return-' + this.functionCallCount;
+        this.functionCallCount+=1;
+        
+        this.asm(
+            '@' + numArgs,
+            'D=A',
+            '@R13',
+            'M=D',
+            
+            '@' + functionName,
+            'D=A',
+            '@R14',
+            'M=D',
+            
+            '@' + returnAddress,
+            'D=A',
+            '@R15',
+            'M=D',
+            
+            '@CALL',
+            '0;JEQ',
+            '(' + returnAddress + ')'
         );
     
         return this;
@@ -644,6 +672,7 @@
         code = new Code();
         
         console.log(code.newCommand().writeInit().outputToString());
+        console.log(code.newCommand().writeCallInternal().outputToString());
     
         for(i=0; i<inputFiles.length; i+=1){
             inputFile = inputFiles[i];
