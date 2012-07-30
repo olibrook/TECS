@@ -585,8 +585,9 @@
         return this;
     };
 
-    Code.prototype.writeReturn = function(){
+    Code.prototype.writeReturnInternal = function(){
         this.asm(
+            '(RETURN)',
             '@LCL',
             'D=M',
             '@R13',
@@ -647,7 +648,15 @@
         );
         return this;
     };
-
+    
+    Code.prototype.writeReturn = function(){
+        this.asm(
+            '@RETURN',
+            '0;JEQ'
+        );
+        return this;
+    };
+    
     Code.prototype.writeFunction = function(functionName, numLocals){
         var i;
     
@@ -673,6 +682,7 @@
         
         console.log(code.newCommand().writeInit().outputToString());
         console.log(code.newCommand().writeCallInternal().outputToString());
+        console.log(code.newCommand().writeReturnInternal().outputToString());
     
         for(i=0; i<inputFiles.length; i+=1){
             inputFile = inputFiles[i];
