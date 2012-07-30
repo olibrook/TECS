@@ -520,10 +520,12 @@
         pushes = ['LCL', 'ARG', 'THIS', 'THAT'];
     
         this.asm(
-            '(CALL)',                   // Label for the CALL routine
-            '@R15',                     // Return address
-            'D=M'
-        ).saveDToStackAndIncSP();
+            '(CALL)'                   // Label for the CALL routine
+        );
+        
+        // D holds return address by convention (see writeCall). Push this
+        // onto the stack.
+        this.saveDToStackAndIncSP();
     
         for(i=0; i<pushes.length; i+=1){
             this.asm(
@@ -547,7 +549,7 @@
             '@LCL',
             'M=D',
         
-            '@14',         // Function address
+            '@14',                      // Function address
             'A=M',
             '0;JEQ'
         );
@@ -562,20 +564,18 @@
         this.functionCallCount+=1;
         
         this.asm(
-            '@' + numArgs,
+            '@' + numArgs,              // Num args lands in R13
             'D=A',
             '@R13',
             'M=D',
             
-            '@' + functionName,
+            '@' + functionName,         // Function address lands in R14
             'D=A',
             '@R14',
             'M=D',
             
-            '@' + returnAddress,
+            '@' + returnAddress,        // Return address lands in D
             'D=A',
-            '@R15',
-            'M=D',
             
             '@CALL',
             '0;JEQ',
