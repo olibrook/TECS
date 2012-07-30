@@ -179,6 +179,16 @@
         );
         return this;
     };
+    
+    Code.prototype.saveDToStackAndIncSP = function(){
+        this.asm(
+            '@SP',
+            'M=M+1',
+            'A=M-1',
+            'M=D'
+        );
+        return this;
+    }
 
     /**
      * 'base' must be either a numeric base address or a built in
@@ -442,7 +452,11 @@
                         break;
                     
                 }
-                this.saveDToStack().incSP();
+                
+                this.asm(
+                );
+                
+                this.saveDToStackAndIncSP();
                 return;
             
             case 'pop':
@@ -519,15 +533,13 @@
         this.asm(
             '@' + returnAddress,
             'D=A'
-        ).saveDToStack()
-        .incSP();
+        ).saveDToStackAndIncSP();
     
         for(i=0; i<pushes.length; i+=1){
             this.asm(
                 '@' + pushes[i],
                 'D=M'
-            ).saveDToStack()
-            .incSP();
+            ).saveDToStackAndIncSP();
         }
     
         this.asm(
