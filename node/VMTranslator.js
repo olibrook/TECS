@@ -396,6 +396,21 @@
                 switch(segment){
                 
                     case 'constant':
+                        
+                        // If the constant is a 0 or a 1, we can cut down the number
+                        // of instructions output because we dont need to load the
+                        // constant into the a register with an @ command.
+
+                        if((index === 0) || (index === 1)) {
+                            this.asm(
+                                '@SP',          // Load SP
+                                'M=M+1',         // Increment SP
+                                'A=M-1',        // Address of value is old SP value
+                                'M=' + index    // Store value
+                            );
+                            return;
+                        }
+                        
                         this.asm(
                             '@' + index,        // Load constant
                             'D=A'
