@@ -152,7 +152,7 @@
     Code.prototype.unary = function(){
         this.asm(
             '@SP',      // Load the address of the SP
-            'AM=M-1',   // Load the address of the value it points to
+            'M=M-1',    // Load the address of the value it points to
             'D=M'       // Store the single parameter in D
         );
         return this;
@@ -269,7 +269,7 @@
     };
    
     Code.prototype.neg = function(){
-        this.unary().asm('M=-D').incSP();
+        this.unary().asm('M=-D');
     };
    
     Code.prototype.and = function(){
@@ -281,7 +281,7 @@
     };
 
     Code.prototype.not = function(){
-        this.unary().asm('M=!D').incSP();
+        this.unary().asm('M=!D');
     };
 
     Code.prototype.eq = function(){
