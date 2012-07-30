@@ -278,7 +278,7 @@
     };
    
     Code.prototype.sub = function(){
-        this.binary().asm('M=M-D').incSP();
+        this.shortBinary().asm('M=M-D');
     };
    
     Code.prototype.neg = function(){
@@ -286,11 +286,11 @@
     };
    
     Code.prototype.and = function(){
-        this.binary().asm('M=D&M').incSP();
+        this.shortBinary().asm('M=D&M');
     };
 
     Code.prototype.or = function(){
-        this.binary().asm('M=D|M').incSP();
+        this.shortBinary().asm('M=D|M');
     };
 
     Code.prototype.not = function(){
@@ -671,8 +671,8 @@
                         throw new Error("Unknown command type: '" + parser.commandType() + "'");
                 }
                 
-                console.log('\n// ' + parser.currentCommand + '\n');
-                console.log(code.outputToString());
+                // console.log('\n// ' + parser.currentCommand + '\n');
+                console.log(code.outputToString() + '// ' + parser.currentCommand);
             }
             lineReader.close();
         }
