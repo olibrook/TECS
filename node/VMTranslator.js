@@ -145,7 +145,20 @@
         );
         return this;
     };
-
+    
+    /**
+     * Common setup for binary commands.
+     */
+    Code.prototype.shortBinary = function(){
+        this.asm(
+            '@SP',      // Load the address of the SP
+            'AM=M-1',   // Decrement the SP
+            'D=M',      // Load the second parameter into D 
+            'A=A-1'     // Leave A with the address of the first parameter
+        );
+        return this;
+    };
+    
     /**
      * Common setup for unary commands.
      */
@@ -261,7 +274,7 @@
     };
 
     Code.prototype.add = function(){
-        this.binary().asm('M=D+M').incSP();
+        this.shortBinary().asm('M=D+M');
     };
    
     Code.prototype.sub = function(){
