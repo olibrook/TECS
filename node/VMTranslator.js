@@ -416,7 +416,7 @@
                                 
                             } else if (index === 1){
                                 
-                                this.asm('M=0');
+                                this.asm('M=1');
                                 
                             } else if (index === 2){
                                 
