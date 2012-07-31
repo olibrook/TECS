@@ -297,78 +297,130 @@
     Code.prototype.not = function(){
         this.unary().asm('M=!D');
     };
-
-    Code.prototype.eq = function(){
-        this.binary().asm(
-            'D=D-M',                            // Subtract one from the other. Equal if result == 0.
-            '@IF_EQ_' + this.eqCount,
+    
+    Code.prototype.internalEq = function(){
+        this.asm(
+            '(INTERNAL_EQ)',
+            '@IF_EQ',
             'D;JEQ',
 
             '@SP',
-            'A=M',
+            'A=M-1',
             'M=0',                              // Output = false
-            '@EQ_END_' + this.eqCount,
+            '@EQ_END',
             '0;JMP',                            // Jump to finish
 
-            '(IF_EQ_' + this.eqCount + ')',
+            '(IF_EQ)',
             '@SP',
-            'A=M',
+            'A=M-1',
             'M=-1',                             // Output = true
 
-            '(EQ_END_' + this.eqCount + ')'     // Finish
-        
-            ).incSP();
-    
-        this.eqCount+=1;
+            '(EQ_END)',
+            '@R13',
+            'A=M',
+            '0;JEQ'
+        );
+        return this;
     };
 
-    Code.prototype.gt = function(){
-        this.binary().asm(
-            'D=D-M',                            // Subtract first from second. GT = True if result < 0.
-
-            '@IF_GT_' + this.gtCount,
+    Code.prototype.eq = function(){
+        this.asm(
+            '@CONTINUE_EQ_' + this.eqCount,         // Save continue address to R13
+            'D=A',
+            '@R13',
+            'M=D'
+        ).shortBinary().asm(
+            'D=D-M',                                // Save compare value in D
+            
+            '@INTERNAL_EQ',                         // Jump to INTERNAL_EQ routine
+            '0;JEQ',
+            '(CONTINUE_EQ_' + this.eqCount + ')'
+        );
+        this.eqCount+=1;
+    };
+    
+    Code.prototype.internalGt = function(){
+        this.asm(
+            '(INTERNAL_GT)',
+            '@IF_GT',
             'D;JLT',
 
             '@SP',
-            'A=M',
+            'A=M-1',
             'M=0',                              // Output = false
-            '@GT_END_' + this.gtCount,
+            '@GT_END',
             '0;JMP',                            // Jump to finish
 
-            '(IF_GT_' + this.gtCount + ')',
+            '(IF_GT)',
             '@SP',
-            'A=M',
+            'A=M-1',
             'M=-1',                             // Output = true
 
-            '(GT_END_' + this.gtCount + ')'     // Finish
-        
-            ).incSP();
-
-        this.gtCount+=1;
+            '(GT_END)',
+            '@R13',
+            'A=M',
+            '0;JEQ'
+        );
+        return this;
     };
 
-    Code.prototype.lt = function(){
-        this.binary().asm( 
-            'D=D-M',                            // Subtract first from second. LT = True if result > 0.
-
-            '@IF_LT_' + this.ltCount,
+    Code.prototype.gt = function(){
+        this.asm(
+            '@CONTINUE_GT_' + this.gtCount,         // Save continue address to R13
+            'D=A',
+            '@R13',
+            'M=D'
+        ).shortBinary().asm(
+            'D=D-M',                                // Save compare value in D. GT = True if result < 0.
+            
+            '@INTERNAL_GT',                         // Jump to INTERNAL_EQ routine
+            '0;JEQ',
+            '(CONTINUE_GT_' + this.gtCount + ')'
+        );
+        this.gtCount+=1;
+        return this;
+    };
+    
+    Code.prototype.internalLt = function(){
+        this.asm(
+            '(INTERNAL_LT)',
+            '@IF_LT',
             'D;JGT',
 
             '@SP',
-            'A=M',
+            'A=M-1',
             'M=0',                              // Output = false
-            '@LT_END_' + this.ltCount,
+            '@LT_END',
             '0;JMP',                            // Jump to finish
 
-            '(IF_LT_' + this.ltCount + ')',
+            '(IF_LT)',
             '@SP',
-            'A=M',
+            'A=M-1',
             'M=-1',                             // Output = true
 
-            '(LT_END_' + this.ltCount + ')'    // Finish
-            ).incSP();
-        
+            '(LT_END)',
+            '@R13',
+            'A=M',
+            '0;JEQ'
+        );
+        return this;
+    };
+
+    Code.prototype.lt = function(){
+        this.asm(
+            '@CONTINUE_LT_' + this.ltCount,         // Save continue address to R13
+            'D=A',
+            '@R13',
+            'M=D'
+        ).shortBinary().asm(
+            'D=D-M',                                // Save compare value in D. GT = True if result < 0.
+            
+            '@INTERNAL_LT',                         // Jump to INTERNAL_EQ routine
+            '0;JEQ',
+            '(CONTINUE_LT_' + this.ltCount + ')'
+        );
         this.ltCount+=1;
+        return this;
     };
 
     /**
@@ -700,6 +752,14 @@
         
         console.log(code.newCommand().writeInit().outputToString());
         
+        console.log(code.newCommand().asm('@END_INTERNAL_FUNCTIONS', '0;JEQ').outputToString());
+        console.log(code.newCommand().writeCallInternal().outputToString());
+        console.log(code.newCommand().writeReturnInternal().outputToString());
+        console.log(code.newCommand().internalEq().outputToString());
+        console.log(code.newCommand().internalGt().outputToString());
+        console.log(code.newCommand().internalLt().outputToString());
+        console.log(code.newCommand().asm('(END_INTERNAL_FUNCTIONS)').outputToString());
+        
         for(i=0; i<inputFiles.length; i+=1){
             inputFile = inputFiles[i];
         
@@ -749,8 +809,6 @@
             }
             lineReader.close();
         }
-        console.log(code.newCommand().writeCallInternal().outputToString());
-        console.log(code.newCommand().writeReturnInternal().outputToString());
     }
     
     exports.Code = Code;
