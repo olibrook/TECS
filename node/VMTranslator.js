@@ -398,17 +398,35 @@
                 
                     case 'constant':
                         
-                        // If the constant is a 0 or a 1, we can cut down the number
+                        // If the constant is a 0, 1 or 2 we can cut down the number
                         // of instructions output because we dont need to load the
                         // constant into the a register with an @ command.
 
-                        if((index === 0) || (index === 1)) {
+                        if((index === 0) || (index === 1) || (index === 2)) {
                             this.asm(
-                                '@SP',          // Load SP
+                                '@SP',           // Load SP
                                 'M=M+1',         // Increment SP
-                                'A=M-1',        // Address of value is old SP value
-                                'M=' + index    // Store value
+                                'A=M-1'          // Address of value is old SP value
                             );
+                            
+                            
+                            if(index === 0){
+                                
+                                this.asm('M=0');
+                                
+                            } else if (index === 1){
+                                
+                                this.asm('M=0');
+                                
+                            } else if (index === 2){
+                                
+                                // Still better than using the D register!
+                                
+                                this.asm(
+                                    'M=1',
+                                    'M=M+1'
+                                );
+                            }
                             return;
                         }
                         
