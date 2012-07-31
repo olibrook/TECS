@@ -165,7 +165,7 @@
     Code.prototype.unary = function(){
         this.asm(
             '@SP',      // Load the address of the SP
-            'M=M-1',    // Load the address of the value it points to
+            'A=M-1',    // Load the address of the value it points to
             'D=M'       // Store the single parameter in D
         );
         return this;
@@ -699,9 +699,7 @@
         code = new Code();
         
         console.log(code.newCommand().writeInit().outputToString());
-        console.log(code.newCommand().writeCallInternal().outputToString());
-        console.log(code.newCommand().writeReturnInternal().outputToString());
-    
+        
         for(i=0; i<inputFiles.length; i+=1){
             inputFile = inputFiles[i];
         
@@ -751,6 +749,8 @@
             }
             lineReader.close();
         }
+        console.log(code.newCommand().writeCallInternal().outputToString());
+        console.log(code.newCommand().writeReturnInternal().outputToString());
     }
     
     exports.Code = Code;
