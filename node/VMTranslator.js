@@ -431,10 +431,10 @@
         var addressMap, baseAddresses;
     
         addressMap = {
-            'local': 'R1',
-            'argument': 'R2',
-            'this': 'R3',
-            'that': 'R4'
+            'local': 'LCL',
+            'argument': 'ARG',
+            'this': 'THIS',
+            'that': 'THAT'
         };
     
         baseAddresses = {
@@ -513,9 +513,6 @@
                         break;
                     
                 }
-                
-                this.asm(
-                );
                 
                 this.saveDToStackAndIncSP();
                 return;
@@ -744,21 +741,34 @@
 
 
     function main(inputFiles, outputFile){
+        
+        function formatCommand(commands, commandName){
+            var i, asmString;
+            for(i=0; i<commands.length; i+=1){
+                asmString = commands[i];
+                
+                if( (asmString.charAt(0) === '(' && asmString.charAt(asmString.length -1) === ')') ){
+                    console.log(pad(asmString, 60) + ' // [' + pad('', 5) + '] ' + commandName);
+                } else {
+                    console.log(pad(asmString, 60) + ' // [' + pad(lineCount.toString(), 5) + '] ' + commandName);
+                    lineCount += 1;
+                }
+            }
+        }
 
         var lineReader, parser, code, lineCount, inputFile, i, j, commandType;
     
         lineCount = 0;
         code = new Code();
         
-        console.log(code.newCommand().writeInit().outputToString());
-        
-        console.log(code.newCommand().asm('@END_INTERNAL_FUNCTIONS', '0;JEQ').outputToString());
-        console.log(code.newCommand().writeCallInternal().outputToString());
-        console.log(code.newCommand().writeReturnInternal().outputToString());
-        console.log(code.newCommand().internalEq().outputToString());
-        console.log(code.newCommand().internalGt().outputToString());
-        console.log(code.newCommand().internalLt().outputToString());
-        console.log(code.newCommand().asm('(END_INTERNAL_FUNCTIONS)').outputToString());
+        formatCommand(code.newCommand().writeInit().commands, 'Init');
+        formatCommand(code.newCommand().asm('@END_INTERNAL_FUNCTIONS', '0;JEQ').commands, 'Start internal');
+        formatCommand(code.newCommand().writeCallInternal().commands, 'Internal call');
+        formatCommand(code.newCommand().writeReturnInternal().commands, 'Internal return');
+        formatCommand(code.newCommand().internalEq().commands, 'Internal EQ');
+        formatCommand(code.newCommand().internalGt().commands, 'Internal GT');
+        formatCommand(code.newCommand().internalLt().commands, 'Internal LT');
+        formatCommand(code.newCommand().asm('(END_INTERNAL_FUNCTIONS)').commands, 'End internal');
         
         for(i=0; i<inputFiles.length; i+=1){
             inputFile = inputFiles[i];
@@ -813,14 +823,6 @@
                 // console.log(code.outputToString() + '// ' + parser.currentCommand);
             }
             lineReader.close();
-        }
-    }
-    
-    function formatCommand(commands, commandName){
-        var i, asmString;
-        for(i=0; i<commands.length; i+=1){
-            asmString = commands[i];
-            console.log(asmString + ' // ' + pad(commandName, 20));
         }
     }
     
