@@ -745,7 +745,7 @@
 
     function main(inputFiles, outputFile){
 
-        var lineReader, parser, code, lineCount, inputFile, i, j;
+        var lineReader, parser, code, lineCount, inputFile, i, j, commandType;
     
         lineCount = 0;
         code = new Code();
@@ -769,12 +769,15 @@
             lineReader.open();
 
             code.setFileName(path.basename(inputFile, '.vm'));
+            
 
             while(parser.hasMoreCommands()){
                 parser.advance();
                 code.newCommand();
+                
+                commandType = parser.commandType();
 
-                switch(parser.commandType()){
+                switch(commandType){
                     case C_ARITHMETIC:
                         code.command(parser.commandParts[0]);
                         break;
@@ -804,11 +807,28 @@
                         throw new Error("Unknown command type: '" + parser.commandType() + "'");
                 }
                 
+                formatCommand(code.commands, parser.currentCommand);
+                
                 // console.log('\n// ' + parser.currentCommand + '\n');
-                console.log(code.outputToString() + '// ' + parser.currentCommand);
+                // console.log(code.outputToString() + '// ' + parser.currentCommand);
             }
             lineReader.close();
         }
+    }
+    
+    function formatCommand(commands, commandName){
+        var i, asmString;
+        for(i=0; i<commands.length; i+=1){
+            asmString = commands[i];
+            console.log(asmString + ' // ' + pad(commandName, 20));
+        }
+    }
+    
+    function pad(s, amount){
+        while(s.length < amount){
+            s += ' ';
+        }
+        return s;
     }
     
     exports.Code = Code;
