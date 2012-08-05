@@ -19,7 +19,7 @@ paths_and_args = [
     [os.path.join(ROOT, '08', 'ProgramFlow', 'BasicLoop'), ['--skip-init']],
     [os.path.join(ROOT, '08', 'ProgramFlow', 'FibonacciSeries'), ['--skip-init']],
     [os.path.join(ROOT, '08', 'FunctionCalls', 'SimpleFunction'), ['--skip-init']],
-        
+    
     [os.path.join(ROOT, '08', 'FunctionCalls', 'FibonacciElement'), []],
     [os.path.join(ROOT, '08', 'FunctionCalls', 'StaticsTest'), []],
 ]
