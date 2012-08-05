@@ -11,7 +11,7 @@
         glob = require('glob'),
         
         encoding = 'ascii',
-    
+        
         stats,
         inputFileNames,
         fileOrDir,

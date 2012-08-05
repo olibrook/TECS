@@ -502,7 +502,7 @@
                             'D=M'
                         );
                         break;
-                
+                    
                     default:
                         if(addressMap[segment] === undefined){
                             throw new Error('Undefined segment + "' + segment +'"');
@@ -519,34 +519,31 @@
             
             case 'pop':
             
-                this.popToD();
-            
                 switch(segment){
             
                     case 'temp':
                     case 'pointer':
-                        this.asm(
+                        this.popToD().asm(
                             '@' + (baseAddresses[segment] + index),
                             'M=D'
                         );
                         break;
                 
                     case 'static':
-                        this.asm(
+                        this.popToD().asm(
                             '@' + this.fileName + '.' + index,
                             'M=D'
                         );
                         break;
-                
+                    
                     default:
                         if(addressMap[segment] === undefined){
                             throw new Error('Undefined segment + "' + segment +'"');
                         } else {
-                            this.saveToSegmentFromD(addressMap[segment], index);
+                            this.popToD().saveToSegmentFromD(addressMap[segment], index);
                         }
                         break;
                 }
-                return;
         }
     };
 
@@ -741,22 +738,28 @@
 
 
     function main(inputFiles, outputFile){
+
+        var lineReader, parser, code, lineCount, inputFile, i, j, commandType, outputFD, encoding;
+
+        encoding = 'ascii';        
+        outputFD = fs.openSync(outputFile, "w");
         
         function formatCommand(commands, commandName){
-            var i, asmString;
+            var i, asmString, outString;
             for(i=0; i<commands.length; i+=1){
                 asmString = commands[i];
                 
                 if( (asmString.charAt(0) === '(' && asmString.charAt(asmString.length -1) === ')') ){
-                    console.log(pad(asmString, 60) + ' // [' + pad('', 5) + '] ' + commandName);
+                    outString = pad(asmString, 60) + ' // [' + pad('', 5) + '] ' + commandName;
+                    fs.writeSync(outputFD, outString + '\n', null, encoding);
+                    
                 } else {
-                    console.log(pad(asmString, 60) + ' // [' + pad(lineCount.toString(), 5) + '] ' + commandName);
+                    outString = pad(asmString, 60) + ' // [' + pad(lineCount.toString(), 5) + '] ' + commandName;
+                    fs.writeSync(outputFD, outString + '\n', null, encoding);
                     lineCount += 1;
                 }
             }
         }
-
-        var lineReader, parser, code, lineCount, inputFile, i, j, commandType;
     
         lineCount = 0;
         code = new Code();
@@ -823,6 +826,7 @@
                 // console.log(code.outputToString() + '// ' + parser.currentCommand);
             }
             lineReader.close();
+            fs.closeSync(outputFD);
         }
     }
     
@@ -865,7 +869,7 @@
 
                 if(stats.isDirectory()) {
                     inputFiles = glob.sync(fileOrDir + '**/*.vm');
-                    outputFile = path.join(path.dirname(fileOrDir), path.basename(fileOrDir)) + '.asm';
+                    outputFile = path.join(fileOrDir, path.basename(fileOrDir)) + '.asm';
 
                 } else {
                     inputFiles = [fileOrDir];
