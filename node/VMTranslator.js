@@ -737,7 +737,7 @@
     };
 
 
-    function main(inputFiles, outputFile){
+    function main(inputFiles, outputFile, skipInit){
 
         var lineReader, parser, code, lineCount, inputFile, i, j, commandType, outputFD, encoding;
 
@@ -764,7 +764,9 @@
         lineCount = 0;
         code = new Code();
         
-        formatCommand(code.newCommand().writeInit().commands, 'Init');
+        if(!skipInit){
+            formatCommand(code.newCommand().writeInit().commands, 'Init');
+        }
         formatCommand(code.newCommand().asm('@END_INTERNAL_FUNCTIONS', '0;JEQ').commands, 'Start internal');
         formatCommand(code.newCommand().writeCallInternal().commands, 'Internal call');
         formatCommand(code.newCommand().writeReturnInternal().commands, 'Internal return');
@@ -819,15 +821,11 @@
                     default:
                         throw new Error("Unknown command type: '" + parser.commandType() + "'");
                 }
-                
                 formatCommand(code.commands, parser.currentCommand);
-                
-                // console.log('\n// ' + parser.currentCommand + '\n');
-                // console.log(code.outputToString() + '// ' + parser.currentCommand);
             }
             lineReader.close();
-            fs.closeSync(outputFD);
         }
+        fs.closeSync(outputFD);
     }
     
     function pad(s, amount){
@@ -847,6 +845,9 @@
          */
         if(require.main === module){
             argv = optimist.usage('VM language translator for hack platform VM.\n\nUsage: $0 [file or directory]')
+                            .boolean(['s'])
+                            .default('s', false)
+                            .alias('s', 'skip-init')
                             .argv;
 
             if (argv.h || argv.help) {
@@ -876,7 +877,7 @@
                     outputFile = path.join(path.dirname(fileOrDir), path.basename(fileOrDir, '.vm')) + '.asm';
                 }
         
-                main(inputFiles, outputFile);
+                main(inputFiles, outputFile, argv.s);
                 process.exit(0);
             }
         }

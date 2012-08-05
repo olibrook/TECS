@@ -8,24 +8,34 @@ import subprocess
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
 
-dirs = [
-    os.path.join(ROOT, '07', 'MemoryAccess', 'BasicTest'),
-    os.path.join(ROOT, '07', 'MemoryAccess', 'PointerTest'),
-    os.path.join(ROOT, '07', 'MemoryAccess', 'StaticTest'),
+paths_and_args = [
+    [os.path.join(ROOT, '07', 'MemoryAccess', 'BasicTest'), ['--skip-init']],
+    [os.path.join(ROOT, '07', 'MemoryAccess', 'PointerTest'), ['--skip-init']],
+    [os.path.join(ROOT, '07', 'MemoryAccess', 'StaticTest'), ['--skip-init']],
     
-    os.path.join(ROOT, '07', 'StackArithmetic', 'SimpleAdd'),
-    os.path.join(ROOT, '07', 'StackArithmetic', 'StackTest'),
+    [os.path.join(ROOT, '07', 'StackArithmetic', 'SimpleAdd'), ['--skip-init']],
+    [os.path.join(ROOT, '07', 'StackArithmetic', 'StackTest'), ['--skip-init']],
     
-    os.path.join(ROOT, '08', 'FunctionCalls', 'FibonacciElement'),
-    os.path.join(ROOT, '08', 'FunctionCalls', 'SimpleFunction'),
-    os.path.join(ROOT, '08', 'FunctionCalls', 'StaticsTest'),
-    
-    os.path.join(ROOT, '08', 'ProgramFlow', 'BasicLoop'),
-    os.path.join(ROOT, '08', 'ProgramFlow', 'FibonacciSeries'),
+    [os.path.join(ROOT, '08', 'ProgramFlow', 'BasicLoop'), ['--skip-init']],
+    [os.path.join(ROOT, '08', 'ProgramFlow', 'FibonacciSeries'), ['--skip-init']],
+    [os.path.join(ROOT, '08', 'FunctionCalls', 'SimpleFunction'), ['--skip-init']],
+        
+    [os.path.join(ROOT, '08', 'FunctionCalls', 'FibonacciElement'), []],
+    [os.path.join(ROOT, '08', 'FunctionCalls', 'StaticsTest'), []],
 ]
 
-for dirname in dirs:
-    d = os.path.abspath(dirname)
-    print d
-    vmtranslator = os.path.join(ROOT, 'node', 'VMTranslator.js')
-    subprocess.call([vmtranslator, d])
+vm_translator = os.path.join(ROOT, 'node', 'VMTranslator.js')
+cpu_emulator = os.path.expanduser(os.path.join('~', 'tecs-software-suite-2.5', 'CPUEmulator.sh'))
+
+
+for path, args in paths_and_args:
+    d = os.path.abspath(path)
+    
+    print(d)
+    
+    vm_translator_args = [vm_translator] + args + [d]
+    subprocess.call(vm_translator_args)
+    
+    test_script = os.path.split(d)[-1]
+    test_script = os.path.join(d, test_script + '.tst')
+    subprocess.call([cpu_emulator, test_script])
