@@ -422,6 +422,56 @@
         this.ltCount+=1;
         return this;
     };
+    
+    /**
+     * Ouputs optimized assembly code for push constant commands.
+     */
+    Code.prototype.pushConstant = function(command, segment, index){
+
+        if((index >= 0) & (index <= 2)) {
+            
+            // Optimized cases:
+            //
+            // If the constant is a 0, 1 or 2 we can cut down the number
+            // of instructions output because we don't need to load the
+            // constant into the A register with an @ command.
+            
+            this.asm(
+                '@SP',           // Load SP
+                'M=M+1',         // Increment SP
+                'A=M-1'          // Address of value is old SP value
+            );
+            
+            
+            if((index === 0) || (index === 1)){
+                
+                this.asm('M=' + index);
+                
+            } else if (index === 2){
+                
+                // This is (just) more efficient than loading a constant through
+                // the A and D registers.
+                
+                this.asm(
+                    'M=1',
+                    'M=M+1'
+                );
+            }
+            
+            return;
+            
+        } else {
+            
+            // Ordinary case - load the constant through the A and D registers.
+            
+            this.asm(
+                '@' + index,
+                'D=A'
+            ).saveDToStackAndIncSP()
+            
+            return;
+        }
+    };
 
     /**
      * Writes the assembly code that is the translation of the given push or pop
@@ -449,44 +499,8 @@
                 switch(segment){
                 
                     case 'constant':
-                        
-                        // If the constant is a 0, 1 or 2 we can cut down the number
-                        // of instructions output because we dont need to load the
-                        // constant into the a register with an @ command.
-
-                        if((index === 0) || (index === 1) || (index === 2)) {
-                            this.asm(
-                                '@SP',           // Load SP
-                                'M=M+1',         // Increment SP
-                                'A=M-1'          // Address of value is old SP value
-                            );
-                            
-                            
-                            if(index === 0){
-                                
-                                this.asm('M=0');
-                                
-                            } else if (index === 1){
-                                
-                                this.asm('M=1');
-                                
-                            } else if (index === 2){
-                                
-                                // Still better than using the D register!
-                                
-                                this.asm(
-                                    'M=1',
-                                    'M=M+1'
-                                );
-                            }
-                            return;
-                        }
-                        
-                        this.asm(
-                            '@' + index,        // Load constant
-                            'D=A'
-                            );
-                        break;
+                        this.pushConstant(command, segment, index);
+                        return;
                 
                     case 'temp':
                     case 'pointer':
@@ -494,14 +508,16 @@
                             '@' + (baseAddresses[segment] + index),
                             'D=M'
                         );
-                        break;
+                        this.saveDToStackAndIncSP();
+                        return;
                     
                     case 'static':
                         this.asm(
                             '@' + this.fileName + '.' + index,
                             'D=M'
                         );
-                        break;
+                        this.saveDToStackAndIncSP();
+                        return;
                     
                     default:
                         if(addressMap[segment] === undefined){
@@ -509,13 +525,11 @@
                         }
                         else {
                             this.loadToDFromSegment(addressMap[segment], index);
+                            this.saveDToStackAndIncSP();
+                            return;
+                            
                         }
-                        break;
-                    
                 }
-                
-                this.saveDToStackAndIncSP();
-                return;
             
             case 'pop':
             
