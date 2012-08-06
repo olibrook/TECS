@@ -125,6 +125,18 @@
         this.functionCallCount = 0;
         
         this.commands = null;
+        
+        this.addressMap = {
+            'local': 'LCL',
+            'argument': 'ARG',
+            'this': 'THIS',
+            'that': 'THAT'
+        };
+    
+        this.baseAddresses = {
+            'temp': 5,
+            'pointer': 3
+        };
     }
     
     Code.prototype.newCommand = function(){
@@ -422,9 +434,42 @@
         this.ltCount+=1;
         return this;
     };
+
+    /**
+     * Writes the assembly code that is the translation of the given push or pop
+     * command.
+     */
+    Code.prototype.pushPop = function(command, segment, index){
+        var callMap;
+        
+        callMap = {
+            'push': {
+                'constant': this.pushConstant,
+                'temp'    : this.pushTempOrPointer,
+                'pointer' : this.pushTempOrPointer,
+                'static'  : this.pushStatic,
+                'local'   : this.pushOther,
+                'argument': this.pushOther,
+                'this'    : this.pushOther,
+                'that'    : this.pushOther
+            },
+            'pop' : {
+                'temp'    : this.popTempOrPointer,
+                'pointer' : this.popTempOrPointer,
+                'static'  : this.popStatic,
+                'local'   : this.popOther,
+                'argument': this.popOther,
+                'this'    : this.popOther,
+                'that'    : this.popOther
+            }
+        };
+        
+        f = callMap[command][segment].call(this, command, segment, index);
+    };
+    
     
     /**
-     * Ouputs optimized assembly code for push constant commands.
+     * Outputs optimized assembly code for push constant commands.
      */
     Code.prototype.pushConstant = function(command, segment, index){
 
@@ -435,131 +480,84 @@
             // If the constant is a 0, 1 or 2 we can cut down the number
             // of instructions output because we don't need to load the
             // constant into the A register with an @ command.
-            
+
             this.asm(
                 '@SP',           // Load SP
                 'M=M+1',         // Increment SP
                 'A=M-1'          // Address of value is old SP value
             );
-            
-            
+
             if((index === 0) || (index === 1)){
-                
+
                 this.asm('M=' + index);
-                
+
             } else if (index === 2){
-                
+
                 // This is (just) more efficient than loading a constant through
                 // the A and D registers.
-                
+
                 this.asm(
                     'M=1',
                     'M=M+1'
                 );
             }
-            
-            return;
-            
+
         } else {
-            
+
             // Ordinary case - load the constant through the A and D registers.
-            
+
             this.asm(
                 '@' + index,
                 'D=A'
-            ).saveDToStackAndIncSP()
-            
-            return;
+            ).saveDToStackAndIncSP();
         }
     };
-
-    /**
-     * Writes the assembly code that is the translation of the given push or pop
-     * command.
-     */
-    Code.prototype.pushPop = function(command, segment, index){
-        var addressMap, baseAddresses;
     
-        addressMap = {
-            'local': 'LCL',
-            'argument': 'ARG',
-            'this': 'THIS',
-            'that': 'THAT'
-        };
-    
-        baseAddresses = {
-            'temp': 5,
-            'pointer': 3
-        };
-    
-        switch(command){
-        
-            case 'push':
-            
-                switch(segment){
-                
-                    case 'constant':
-                        this.pushConstant(command, segment, index);
-                        return;
-                
-                    case 'temp':
-                    case 'pointer':
-                        this.asm(
-                            '@' + (baseAddresses[segment] + index),
-                            'D=M'
-                        );
-                        this.saveDToStackAndIncSP();
-                        return;
-                    
-                    case 'static':
-                        this.asm(
-                            '@' + this.fileName + '.' + index,
-                            'D=M'
-                        );
-                        this.saveDToStackAndIncSP();
-                        return;
-                    
-                    default:
-                        if(addressMap[segment] === undefined){
-                            throw new Error('Undefined segment + "' + segment +'"');
-                        }
-                        else {
-                            this.loadToDFromSegment(addressMap[segment], index);
-                            this.saveDToStackAndIncSP();
-                            return;
-                            
-                        }
-                }
-            
-            case 'pop':
-            
-                switch(segment){
-            
-                    case 'temp':
-                    case 'pointer':
-                        this.popToD().asm(
-                            '@' + (baseAddresses[segment] + index),
-                            'M=D'
-                        );
-                        break;
-                
-                    case 'static':
-                        this.popToD().asm(
-                            '@' + this.fileName + '.' + index,
-                            'M=D'
-                        );
-                        break;
-                    
-                    default:
-                        if(addressMap[segment] === undefined){
-                            throw new Error('Undefined segment + "' + segment +'"');
-                        } else {
-                            this.popToD().saveToSegmentFromD(addressMap[segment], index);
-                        }
-                        break;
-                }
-        }
+    Code.prototype.pushTempOrPointer = function(command, segment, index){
+        this.asm(
+            '@' + (this.baseAddresses[segment] + index),
+            'D=M'
+        );
+        this.saveDToStackAndIncSP();
     };
+    
+    Code.prototype.pushStatic = function(command, segment, index){
+        this.asm(
+            '@' + this.fileName + '.' + index,
+            'D=M'
+        );
+        this.saveDToStackAndIncSP();
+    };
+    
+    Code.prototype.pushOther = function(command, segment, index){
+        if(this.addressMap[segment] === undefined){
+            throw new Error('Undefined segment + "' + segment +'"');
+        }
+        this.loadToDFromSegment(this.addressMap[segment], index);
+        this.saveDToStackAndIncSP();
+    };
+    
+    Code.prototype.popTempOrPointer = function(command, segment, index){
+        this.popToD().asm(
+            '@' + (this.baseAddresses[segment] + index),
+            'M=D'
+        );
+    };
+    
+    Code.prototype.popStatic = function(command, segment, index){
+        this.popToD().asm(
+            '@' + this.fileName + '.' + index,
+            'M=D'
+        );
+    };
+    
+    Code.prototype.popOther = function(command, segment, index){
+        if(this.addressMap[segment] === undefined){
+            throw new Error('Undefined segment + "' + segment +'"');
+        }
+        this.popToD().saveToSegmentFromD(this.addressMap[segment], index);
+    };
+    
 
     Code.prototype.setFileName = function(fileName){
         this.fileName = fileName;
