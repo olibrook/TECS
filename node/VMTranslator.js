@@ -464,7 +464,7 @@
             }
         };
         
-        f = callMap[command][segment].call(this, command, segment, index);
+        callMap[command][segment].call(this, command, segment, index);
     };
     
     
