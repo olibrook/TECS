@@ -747,110 +747,155 @@
         }
         return this;
     };
-
-
-    function main(inputFiles, outputFile, skipInit){
-
-        var lineReader, parser, code, lineCount, inputFile, i, j, commandType, outputFD, encoding;
-
-        encoding = 'ascii';        
-        outputFD = fs.openSync(outputFile, "w");
-        
-        function formatCommand(commands, commandName){
-            var i, asmString, outString;
-            for(i=0; i<commands.length; i+=1){
-                asmString = commands[i];
-                
-                if( (asmString.charAt(0) === '(' && asmString.charAt(asmString.length -1) === ')') ){
-                    outString = pad(asmString, 60) + ' // [' + pad('', 5) + '] ' + commandName;
-                    fs.writeSync(outputFD, outString + '\n', null, encoding);
-                    
-                } else {
-                    outString = pad(asmString, 60) + ' // [' + pad(lineCount.toString(), 5) + '] ' + commandName;
-                    fs.writeSync(outputFD, outString + '\n', null, encoding);
-                    lineCount += 1;
-                }
-            }
-        }
     
-        lineCount = 0;
-        code = new Code();
+    Code.prototype.writeInternals = function(){
+        this.asm(
+            
+            // Make sure the program doesn't try to execute the internal
+            // functions without an explicit jump
+            
+            '@END_INTERNAL_FUNCTIONS',      // Load end address and skip the interals
+            '0;JEQ'
+            ).writeCallInternal()
+            .writeReturnInternal()
+            .internalEq()
+            .internalGt()
+            .internalLt()
+            .asm(
+                '(END_INTERNAL_FUNCTIONS)'
+        );
+        return this;
+    };
+
+
+    function VMTranslator(inputFiles, outputFile, skipInit){
+        this.inputFiles = inputFiles;
+        this.outputFile = outputFile;
+        this.skipInit = skipInit;
         
-        if(!skipInit){
-            formatCommand(code.newCommand().writeInit().commands, 'Init');
-        }
-        formatCommand(code.newCommand().asm('@END_INTERNAL_FUNCTIONS', '0;JEQ').commands, 'Start internal');
-        formatCommand(code.newCommand().writeCallInternal().commands, 'Internal call');
-        formatCommand(code.newCommand().writeReturnInternal().commands, 'Internal return');
-        formatCommand(code.newCommand().internalEq().commands, 'Internal EQ');
-        formatCommand(code.newCommand().internalGt().commands, 'Internal GT');
-        formatCommand(code.newCommand().internalLt().commands, 'Internal LT');
-        formatCommand(code.newCommand().asm('(END_INTERNAL_FUNCTIONS)').commands, 'End internal');
+        this.lineCount = 0;
+        this.encoding = 'ascii';
+        this.outputFD = null;
+        this.code = null;
+    }
+    
+    
+    VMTranslator.prototype.run = function(){
+        var i, inputFile, lineReader, parser, code, outputFD;
         
-        for(i=0; i<inputFiles.length; i+=1){
-            inputFile = inputFiles[i];
+        this.outputFD = fs.openSync(this.outputFile, "w");
+        this.code = new Code();
+        this.writeInitial();
+        
+        for(i=0; i<this.inputFiles.length; i+=1){
+            
+            inputFile = this.inputFiles[i];
         
             lineReader = new lr.LineReader(inputFile);
             parser = new Parser(lineReader);
         
             lineReader.open();
 
-            code.setFileName(path.basename(inputFile, '.vm'));
+            this.code.setFileName(path.basename(inputFile, '.vm'));
             
+            callMap = {
+                C_ARITHMETIC:
+                    function(){
+                        this.code.command(parser.commandParts[0]);
+                    },
+
+                C_PUSH:
+                    function(){
+                        this.code.pushPop(parser.commandParts[0],
+                                parser.commandParts[1], parseInt(parser.commandParts[2], 10));
+                    },
+
+                C_POP:
+                    function(){
+                        this.code.pushPop(parser.commandParts[0],
+                                parser.commandParts[1], parseInt(parser.commandParts[2], 10));
+                    },
+                C_LABEL:
+                    function(){
+                        this.code.writeLabel(parser.commandParts[1]);
+                    },
+
+                C_GOTO:
+                    function(){
+                        this.code.writeGoto(parser.commandParts[1]);
+                    },
+
+                C_IF:
+                    function(){
+                        this.code.writeIf(parser.commandParts[1]);
+                    },
+
+                C_FUNCTION:
+                    function(){
+                        this.code.writeFunction(parser.commandParts[1], parser.commandParts[2]);
+                    },
+
+                C_RETURN:
+                    function(){
+                        this.code.writeReturn();
+                    },
+
+                C_CALL:
+                    function(){
+                        this.code.writeCall(parser.commandParts[1], parser.commandParts[2]);
+                    }
+            };
 
             while(parser.hasMoreCommands()){
                 parser.advance();
-                code.newCommand();
+                this.code.newCommand();
                 
-                commandType = parser.commandType();
-
-                switch(commandType){
-                    case C_ARITHMETIC:
-                        code.command(parser.commandParts[0]);
-                        break;
-                    case C_PUSH:
-                    case C_POP:
-                        code.pushPop(parser.commandParts[0], parser.commandParts[1], parseInt(parser.commandParts[2], 10));
-                        break;
-                    case C_LABEL:
-                        code.writeLabel(parser.commandParts[1]);
-                        break;
-                    case C_GOTO:
-                        code.writeGoto(parser.commandParts[1]);
-                        break;
-                    case C_IF:
-                        code.writeIf(parser.commandParts[1]);
-                        break;
-                    case C_FUNCTION:
-                        code.writeFunction(parser.commandParts[1], parser.commandParts[2]);
-                        break;
-                    case C_RETURN:
-                        code.writeReturn();
-                        break;
-                    case C_CALL:
-                        code.writeCall(parser.commandParts[1], parser.commandParts[2]);
-                        break;
-                    default:
-                        throw new Error("Unknown command type: '" + parser.commandType() + "'");
-                }
-                formatCommand(code.commands, parser.currentCommand);
+                callMap[parser.commandType()].call(this);
+                
+                this.formatCommand(this.code.commands, parser.currentCommand);
             }
             lineReader.close();
         }
-        fs.closeSync(outputFD);
-    }
+        fs.closeSync(this.outputFD);
+    };
     
-    function pad(s, amount){
+    VMTranslator.prototype.writeInitial = function(){
+        if(!this.skipInit){
+            this.formatCommand(this.code.newCommand().writeInit().commands, 'Init');
+        }
+        this.formatCommand(this.code.newCommand().writeInternals().commands, 'VM Internals');
+    };
+    
+    VMTranslator.prototype.formatCommand = function(commands, commandName){
+        var i, asmString, outString;
+        
+        for(i=0; i<commands.length; i+=1){
+            asmString = commands[i];
+            
+            if( (asmString.charAt(0) === '(' && asmString.charAt(asmString.length -1) === ')') ){
+                outString = this.pad(asmString, 60) + ' // [' + this.pad('', 5) + '] ' + commandName;
+                fs.writeSync(this.outputFD, outString + '\n', null, this.encoding);
+                
+            } else {
+                outString = this.pad(asmString, 60) + ' // [' + this.pad(this.lineCount.toString(), 5) + '] ' + commandName;
+                fs.writeSync(this.outputFD, outString + '\n', null, this.encoding);
+                this.lineCount += 1;
+            }
+        }
+    };
+    
+    VMTranslator.prototype.pad = function(s, amount){
         while(s.length < amount){
             s += ' ';
         }
         return s;
-    }
+    };
+    
     
     exports.Code = Code;
     
     (function(){
-        var stats, inputFiles, fileOrDir, basename, outputFile, argv;
+        var stats, inputFiles, fileOrDir, basename, outputFile, argv, vmtranslator;
         
         /*
          * Configure and run the VMTranslator if run as a script.
@@ -888,12 +933,11 @@
                     inputFiles = [fileOrDir];
                     outputFile = path.join(path.dirname(fileOrDir), path.basename(fileOrDir, '.vm')) + '.asm';
                 }
-        
-                main(inputFiles, outputFile, argv.s);
+                vmtranslator = new VMTranslator(inputFiles, outputFile, argv.s)
+                vmtranslator.run();
+                
                 process.exit(0);
             }
         }
-        
     }());
-    
 }());
