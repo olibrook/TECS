@@ -370,36 +370,42 @@
          * Configure and run the assembler if run as a script.
          */
         if(require.main === module){
-
-            argv = optimist.usage('Assembler for hack platform assembly language.\n\nUsage: $0')
-                    .options('f', {
-                            'alias': 'file',
-                            'default': process.cwd()
-                    }).argv;
-
+            argv = optimist.usage('Assembler for hack platform assembly language.\n')
+                            .argv;
 
             if (argv.h || argv.help) {
-                optimist.showHelp();
-                process.exit(0);
+                    optimist.showHelp();
+                    process.exit(0);
 
             } else {
 
-                stats = fs.statSync(argv.f);
+                if(argv._.length === 0) {
+                    fileOrDir = process.cwd();
 
-                if(stats.isDirectory()) {
-                    inputFiles = glob.sync('**/*.asm', {cwd: argv.f});
+                } else if(argv._.length === 1) {
+                    fileOrDir = argv._[0];
 
                 } else {
-                    inputFiles = [argv.f];
+                    optimist.showHelp();
+                    process.exit(1);
                 }
+                stats = fs.statSync(fileOrDir);
 
-                for (i=0; i<inputFiles.length; i+=1) {
-                    inputFile = inputFiles[i];
+                if(stats.isDirectory()) {
+                    inputFileNames = glob.sync(fileOrDir + '**/*.asm');
+
+                } else {
+                    inputFileNames = [fileOrDir];
+                }
+                
+                for (i=0; i<inputFileNames.length; i+=1) {
+                    inputFile = inputFileNames[i];
                     outputFile = path.join(path.dirname(inputFile),
                                         path.basename(inputFile, '.asm')) + '.hack';
 
                     new Assembler(inputFile, outputFile).main();
                 }
+
                 process.exit(0);
             }
         }

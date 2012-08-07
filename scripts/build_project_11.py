@@ -13,6 +13,7 @@ paths = glob.glob(os.path.join(ROOT, '11', '*'))
 
 jackanalyzer = os.path.join(ROOT, 'node', 'jackanalyzer.js')
 vm_translator = os.path.join(ROOT, 'node', 'VMTranslator.js')
+assembler = os.path.join(ROOT, 'node', 'Assembler.js')
 
 os_files = glob.glob(os.path.expanduser(os.path.join('~', 'tecs-software-suite-2.5', 'OS', '*.*')))
 
@@ -30,4 +31,7 @@ for path in paths:
     
     print('Compiling VM sources')
     subprocess.call([vm_translator, path])
+    
+    print('Assembling ASM sources')
+    subprocess.call([assembler, path])
     print('\n')
