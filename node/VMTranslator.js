@@ -120,6 +120,10 @@
     
         // Used to generate labels for the static segment.
         this.fileName = null;
+        
+        // Used to generate unique labels used inside of a function or method
+        // (everything happens inside of a function or method).
+        this.functionName = 'NO_FUNCTION';
     
         // Used to generate unique labels for return addresses.
         this.functionCallCount = 0;
@@ -262,7 +266,8 @@
         return this.commands.join('\n');
     };
 
-    Code.prototype.writeLabel = function(label){
+    Code.prototype.writeLabel = function(label, addPrefix){
+        label = addPrefix ? this.prefix(label) : label;
         this.asm(
             '(' + label + ')'
         );
@@ -575,7 +580,7 @@
 
     Code.prototype.writeGoto = function(label){
         this.asm(
-            '@' + label,
+            '@' + this.prefix(label),
             '0;JEQ'
         );
         return this;
@@ -583,7 +588,7 @@
 
     Code.prototype.writeIf = function(label){
         this.popToD().asm(
-            '@' + label,
+            '@' + this.prefix(label),
             'D;JNE'
         );
         return this;
@@ -735,8 +740,9 @@
     
     Code.prototype.writeFunction = function(functionName, numLocals){
         var i;
-    
-        this.writeLabel(functionName);
+        
+        this.functionName = functionName;
+        this.writeLabel(functionName, false);
     
         for(i=0; i<numLocals; i+=1){
             this.asm(
@@ -766,8 +772,11 @@
         );
         return this;
     };
-
-
+    
+    Code.prototype.prefix = function(label){
+        return this.functionName + '$' + label;
+    };
+    
     function VMTranslator(inputFiles, outputFile, skipInit){
         this.inputFiles = inputFiles;
         this.outputFile = outputFile;
@@ -817,7 +826,7 @@
                     },
                 C_LABEL:
                     function(){
-                        this.code.writeLabel(parser.commandParts[1]);
+                        this.code.writeLabel(parser.commandParts[1], true);
                     },
 
                 C_GOTO:

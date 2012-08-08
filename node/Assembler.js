@@ -219,33 +219,6 @@
         return this.defined(mnemonic, this.jumpMap[mnemonic]);
     };
 
-
-    function createSymbolTable(){
-        var symbolTable, symbol, i, k;
-        
-        symbolTable = {};
-
-        for(i = 0; i<=15; i+=1){
-            symbol = 'R' + i;
-            symbolTable[symbol] = i;
-        }
-
-        symbolTable.SP     = 0x0000;
-        symbolTable.LCL    = 0x0001;
-        symbolTable.ARG    = 0x0002;
-        symbolTable.THIS   = 0x0003;
-        symbolTable.THAT   = 0x0004;
-        symbolTable.SCREEN = 0x4000;
-        symbolTable.KBD    = 0x6000;
-
-        for(k in symbolTable){
-            if (symbolTable.hasOwnProperty(k)) {
-                symbolTable[k] = zeroPad(symbolTable[k].toString(2), 15);
-            }
-        }
-        return symbolTable;
-    }
-
     /*
      * 2-phase assembler for the Hack platform machine language, with
      * support for symbols.
@@ -257,7 +230,7 @@
         this.PHASES = [this.SCAN_PHASE, this.CODE_PHASE];
         
         this.reader = new linereader.LineReader(inFile);
-        this.symbolTable = createSymbolTable();
+        this.symbolTable = new SymbolTable();
         this.parser = new Parser(this.reader, this.symbolTable);
         this.code = new Code();
         this.outFile = fs.openSync(outFile, "w");
@@ -319,7 +292,7 @@
         symbolDesc = this.parser.symbol();
         symbolType = symbolDesc[0];
         symbol = symbolDesc[1];
-        this.symbolTable[symbol] = zeroPad(this.instructionCount.toString(2), 15);
+        this.symbolTable.set(symbol, zeroPad(this.instructionCount.toString(2), 15));
     };
 
     Assembler.prototype.aCommand = function(){
@@ -333,12 +306,12 @@
             symbolValue = symbol;
 
         } else {
-            symbolValue = this.symbolTable[symbol];
+            symbolValue = this.symbolTable.get(symbol);
 
             if(symbolValue === undefined) {
                 // RAM Variable declaration
                 symbolValue = zeroPad(this.nextRAMVarAddress.toString(2), 15);
-                this.symbolTable[symbol] = symbolValue;
+                this.symbolTable.set(symbol, symbolValue);
                 this.nextRAMVarAddress+=1;
             }
         }
@@ -354,13 +327,49 @@
         out += this.code.jump(this.parser.jump());
         return out;
     };
+    
+    
+    SymbolTable = function(){
+        var symbol, i, k;
+        
+        this.obj = {};
 
+        for(i = 0; i<=15; i+=1){
+            symbol = 'R' + i;
+            this.obj[symbol] = i;
+        }
 
+        this.obj.SP     = 0x0000;
+        this.obj.LCL    = 0x0001;
+        this.obj.ARG    = 0x0002;
+        this.obj.THIS   = 0x0003;
+        this.obj.THAT   = 0x0004;
+        this.obj.SCREEN = 0x4000;
+        this.obj.KBD    = 0x6000;
+
+        for(k in this.obj){
+            if (this.obj.hasOwnProperty(k)) {
+                this.obj[k] = zeroPad(this.obj[k].toString(2), 15);
+            }
+        }
+    };
+    
+    SymbolTable.prototype.get = function(symbol){
+        return this.obj[symbol];
+    };
+    
+    SymbolTable.prototype.set = function(symbol, value){
+        if (this.obj[symbol] === undefined){
+            this.obj[symbol] = value;
+        } else {
+            throw new Error('Symbol "' + symbol + '" is already defined.');
+        }
+    }
+    
     exports.Parser = Parser;
     exports.Code = Code;
     exports.Assembler = Assembler;
-
-    
+    exports.SymbolTable = SymbolTable;
     
     (function(){
         
