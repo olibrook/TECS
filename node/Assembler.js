@@ -250,9 +250,11 @@
     }
 
     Assembler.prototype.main = function(){
-        var output, phase, i, commandType, callback;
+        var output, phase, i, commandType, callback, linePrefix;
 
         this.reader.open();
+        
+        linePrefix = '';
 
         for(i=0; i<this.PHASES.length; i+=1){
             phase = this.PHASES[i];
@@ -266,7 +268,8 @@
                     output = callback.call(this);
 
                     if(output !== undefined){
-                        fs.writeSync(this.outFile, output + '\n', null, 'ascii');
+                        fs.writeSync(this.outFile, linePrefix + output, null, 'ascii');
+                        linePrefix = '\n';
                     }
                 }
             }
