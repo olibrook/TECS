@@ -43,7 +43,7 @@ class Memory {
     * Sets the value of the main memory at this address to the given value.
     */
     function void poke(int address, int value){
-        memory[address] = value;
+        let memory[address] = value;
         return;
     }
 
@@ -52,28 +52,81 @@ class Memory {
     * and returns a reference to its base address.
     */
     function int alloc(int size){
+        var int previousSegmentBase;
         var int currentSegmentSize;
         var int currentSegmentBase;
         var int next;
-
+        var int remainingSpace;
+        var int realBlockBase;
+        
+        /*
+        We need a block one word larger than requested so that the block's
+        size can be recorded at position [block-1].
+        */
+        let size = size + 1;
+        
+        let previousSegmentBase = 0;
         let currentSegmentBase = freeList;
         let currentSegmentSize = Memory.peek(currentSegmentBase);
         let next = Memory.peek(currentSegmentBase+1);
         
-        while(currentSegmentSize < size){
+        while((currentSegmentSize < size) & (~(next = 0))){ // Not(Is null)
+            let previousSegmentBase = currentSegmentBase;
             let currentSegmentBase = next;
             let currentSegmentSize = Memory.peek(currentSegmentBase);
             let next = Memory.peek(currentSegmentBase+1);
-            if(next = null){
-                // Throw an error somehow.
-            }
         }
-        // currentSegmentBase is the first segment large enough
+        
+        if(~(currentSegmentSize < size)){
+            
+            /*
+            The currentSegmentBase variable holds the base address of the
+            first segment large enough to allocate the block.
+            */
+            
+            let remainingSpace = currentSegmentBase - size;
+            let realBlockBase = currentSegmentBase;
+            let memory[realBlockBase] = size;
+            
+            if(previousSegmentBase = 0){ // Is null
+                /*
+                Segment found is the first (ie. the segment pointed to by
+                freeList) and we need to update the pointer to the head of
+                the list.
+                */
+                
+                let freeList = realBlockBase + size;
+                let memory[freeList] = remainingSpace;
+                let memory[freeList+1] = null;
+                
+            } else {
+                /*
+                Segment found was not the first in the list and we need to
+                slice the block out of the segment, maintaining the linked
+                list structure.
+                */
+                
+                let memory[previousSegmentBase+1] = realBlockBase + size;
+                
+                let memory[realBlockBase + size] = remainingSpace;
+                let memory[realBlockBase + size + 1] = next;
+            }
+            /*
+            Return the base address of the block, adjusted to skip the work
+            used to store the returned block's size.
+            */
+            return realBlockBase + 1;
+        }
+        
+        
+        do Sys.error(1);
+        return -1;
     }
 
     /**
     * De-allocates the given object and frees its space.
     */
     function void deAlloc(int object){
+        return;
     }
 }
