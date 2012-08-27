@@ -1,0 +1,79 @@
+/**
+* A library of memory operations for the Jack programming language.
+*
+* The Memory class provides alloc() and deAlloc() functions which manage
+* memory on the heap. This is done using a linked-list called the freeList,
+* which keeps track of unused memory space.
+*
+* The freeList is implementated purely in memory (rather than an object-based
+* linked-list, which would require alloc() to begin with). Memory is allocated
+* in segments which are updated to include inforamation which allows the memory
+* space to be reclaimed in a call to deAlloc().
+*/ 
+class Memory {
+
+    static Array memory;
+    static int heapBase;
+    static int heapEnd;
+    
+    static int freeList;
+
+    /**
+    * Static initializer for the Memory class.
+    */
+    function void init(){
+        let memory = 0;
+        let heapBase = 2048;
+        let heapEnd = 16383;
+        
+        let freeList = heapBase;
+        do Memory.poke(freeList, heapEnd - heapBase);
+        do Memory.poke(freeList + 1, null);
+        return;
+    }
+
+    /**
+    * Returns the value of the main memory at address.
+    */
+    function int peek(int address){
+        return memory[address];
+    }
+
+    /**
+    * Sets the value of the main memory at this address to the given value.
+    */
+    function void poke(int address, int value){
+        memory[address] = value;
+        return;
+    }
+
+    /**
+    * Finds and allocates a memory block of the specified size from the heap
+    * and returns a reference to its base address.
+    */
+    function int alloc(int size){
+        var int currentSegmentSize;
+        var int currentSegmentBase;
+        var int next;
+
+        let currentSegmentBase = freeList;
+        let currentSegmentSize = Memory.peek(currentSegmentBase);
+        let next = Memory.peek(currentSegmentBase+1);
+        
+        while(currentSegmentSize < size){
+            let currentSegmentBase = next;
+            let currentSegmentSize = Memory.peek(currentSegmentBase);
+            let next = Memory.peek(currentSegmentBase+1);
+            if(next = null){
+                // Throw an error somehow.
+            }
+        }
+        // currentSegmentBase is the first segment large enough
+    }
+
+    /**
+    * De-allocates the given object and frees its space.
+    */
+    function void deAlloc(int object){
+    }
+}
