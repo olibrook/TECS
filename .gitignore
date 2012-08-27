@@ -6,4 +6,5 @@
 11/*/*.asm
 11/*/*.hack
 12/*/*.vm
+12/*Test/*.jack
 .DS_STORE
