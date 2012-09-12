@@ -127,6 +127,19 @@ class Memory {
     * De-allocates the given object and frees its space.
     */
     function void deAlloc(int object){
+        var int segmentBase;
+        var int segmentSize;
+        
+        let segmentBase = object-1;
+        let segmentSize = memory[segmentBase];
+        
+        // Insert segment into at the head of the free list.
+        // Maintain a pointer to the current first item in the list.
+        let memory[segmentBase+1] = freeList;
+        
+        // Make the base address of the list point at the segment which was
+        // just reclaimed.
+        let freeList = segmentBase;
         return;
     }
 }
