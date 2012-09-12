@@ -1,18 +1,42 @@
-// This file is part of the materials accompanying the book 
-// "The Elements of Computing Systems" by Nisan and Schocken, 
-// MIT Press. Book site: www.idc.ac.il/tecs
-// File name: projects/12/Math.jack
-
 /**
- * A basic math library.
+ * A library of math operations for the Jack programming language.
  */
 class Math {
+    
+    static Array bitMasks;
 
-    /** Initializes the library. */
+    /**
+     * Initializes the library.
+     */
     function void init() {
+        let bitMasks = Array.new(16);
+        let bitMasks[0] = 1;
+        let bitMasks[1] = 2;
+        let bitMasks[2] = 4;
+        let bitMasks[3] = 8;
+        let bitMasks[4] = 16;
+        let bitMasks[5] = 32;
+        let bitMasks[6] = 64;
+        let bitMasks[7] = 128;
+        let bitMasks[8] = 256;
+        let bitMasks[9] = 512;
+        let bitMasks[10] = 1024;
+        let bitMasks[11] = 2048;
+        let bitMasks[12] = 4096;
+        let bitMasks[13] = 8192;
+        let bitMasks[14] = 16384;
+        
+        // Weird case: Added complication that Jack treats -32768 (which is
+        // what we want to store) as unary minus applied to 32768, which can't
+        // be represented in 16 bit twos complement.
+        
+        let bitMasks[15] = (-32767 - 1);
+        return;
     }
 
-    /** Returns the absolute value of x. */
+    /**
+     * Returns the absolute value of x.
+     */
     function int abs(int x) {
         if(x < 0){
             return -x;
@@ -20,19 +44,30 @@ class Math {
         return x;
     }
 
-    /** Returns the product of x and y. */
+    /**
+     * Returns the product of x and y.
+     */
     function int multiply(int x, int y) {
+        return -1;
     }
 
-    /** Returns the integer part of x/y. */
+    /**
+     * Returns the integer part of x/y.
+     */
     function int divide(int x, int y) {
+        return -1;
     }
 
-    /** Returns the integer part of the square root of x. */
+    /**
+     * Returns the integer part of the square root of x.
+     */
     function int sqrt(int x) {
+        return -1;
     }
 
-    /** Returns the greater number. */
+    /**
+     * Returns the greater number.
+     */
     function int max(int a, int b) {
         if(a > b){
             return a;
@@ -40,11 +75,22 @@ class Math {
         return b;
     }
 
-    /** Returns the smaller number. */
+    /**
+     * Returns the smaller number.
+     */
     function int min(int a, int b) {
         if(a < b){
             return a;
         }
         return b;
+    }
+    
+    /*
+     * Returns true if bit 'j' is set in the binary representation of x.
+     */
+    function boolean bit(int x, int j){
+        var int value;
+        let value = bitMasks[j];
+        return (value & x) = value;
     }
 }

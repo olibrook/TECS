@@ -118,7 +118,6 @@ class Memory {
             return realBlockBase + 1;
         }
         
-        
         do Sys.error(1);
         return -1;
     }
