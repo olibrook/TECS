@@ -48,7 +48,22 @@ class Math {
      * Returns the product of x and y.
      */
     function int multiply(int x, int y) {
-        return -1;
+        var int sum;
+        var int shiftedX;
+        var int j;
+        
+        let sum = 0;
+        let shiftedX = x;
+        
+        let j = 0;
+        while(j<16){
+            if(Math.bit(y, j)){
+                let sum = sum + shiftedX;
+            }
+            let shiftedX = shiftedX + shiftedX;
+            let j = j+1;
+        }
+        return sum;
     }
 
     /**
