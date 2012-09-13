@@ -46,6 +46,8 @@ class Math {
 
     /**
      * Returns the product of x and y.
+     *
+     * Implemenation is by binary long multiplication with bit-shifting.
      */
     function int multiply(int x, int y) {
         var int sum;
@@ -60,7 +62,7 @@ class Math {
             if(Math.bit(y, j)){
                 let sum = sum + shiftedX;
             }
-            let shiftedX = shiftedX + shiftedX;
+            let shiftedX = shiftedX + shiftedX; // Bit shift, multiply by 2
             let j = j+1;
         }
         return sum;
