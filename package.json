@@ -1,0 +1,9 @@
+{
+  "name": "olibrook-TECS",
+  "repository": "https://github.com/olibrook/TECS",
+  "devDependencies": {
+    "optimist": "~0.3.4",
+    "lazy": "~1.0.8",
+    "glob": "~3.1.10"
+  }
+}
