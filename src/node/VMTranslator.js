@@ -790,7 +790,7 @@
     
     
     VMTranslator.prototype.run = function(){
-        var i, inputFile, lineReader, parser, code, outputFD;
+        var i, inputFile, lineReader, parser, code, outputFD, commandType;
         
         this.outputFD = fs.openSync(this.outputFile, "w");
         this.code = new Code();
@@ -807,60 +807,63 @@
 
             this.code.setFileName(path.basename(inputFile, '.vm'));
             
-            callMap = {
-                C_ARITHMETIC:
-                    function(){
-                        this.code.command(parser.commandParts[0]);
-                    },
-
-                C_PUSH:
-                    function(){
-                        this.code.pushPop(parser.commandParts[0],
-                                parser.commandParts[1], parseInt(parser.commandParts[2], 10));
-                    },
-
-                C_POP:
-                    function(){
-                        this.code.pushPop(parser.commandParts[0],
-                                parser.commandParts[1], parseInt(parser.commandParts[2], 10));
-                    },
-                C_LABEL:
-                    function(){
-                        this.code.writeLabel(parser.commandParts[1], true);
-                    },
-
-                C_GOTO:
-                    function(){
-                        this.code.writeGoto(parser.commandParts[1]);
-                    },
-
-                C_IF:
-                    function(){
-                        this.code.writeIf(parser.commandParts[1]);
-                    },
-
-                C_FUNCTION:
-                    function(){
-                        this.code.writeFunction(parser.commandParts[1], parser.commandParts[2]);
-                    },
-
-                C_RETURN:
-                    function(){
-                        this.code.writeReturn();
-                    },
-
-                C_CALL:
-                    function(){
-                        this.code.writeCall(parser.commandParts[1], parser.commandParts[2]);
-                    }
-            };
 
             while(parser.hasMoreCommands()){
                 parser.advance();
+                commandType = parser.commandType();
                 this.code.newCommand();
                 
-                callMap[parser.commandType()].call(this);
-                
+                switch(commandType){
+                    case C_ARITHMETIC:
+                        this.code.command(parser.commandParts[0]);
+                        break;
+
+                    case C_PUSH:
+                        this.code.pushPop(
+                            parser.commandParts[0],
+                            parser.commandParts[1],
+                            parseInt(parser.commandParts[2], 10)
+                        );
+                        break;
+
+                    case C_POP:
+                        this.code.pushPop(
+                            parser.commandParts[0],
+                            parser.commandParts[1],
+                            parseInt(parser.commandParts[2], 10)
+                        );
+                        break;
+
+                    case C_LABEL:
+                        this.code.writeLabel(parser.commandParts[1], true);
+                        break;
+
+                    case C_GOTO:
+                        this.code.writeGoto(parser.commandParts[1]);
+                        break;
+
+                    case C_IF:
+                        this.code.writeIf(parser.commandParts[1]);
+                        break;
+
+                    case C_FUNCTION:
+                        this.code.writeFunction(
+                            parser.commandParts[1],
+                            parser.commandParts[2]
+                        );
+                        break;
+
+                    case C_RETURN:
+                        this.code.writeReturn();
+                        break;
+
+                    case C_CALL:
+                        this.code.writeCall(parser.commandParts[1], parser.commandParts[2]);
+                        break;
+
+                    default:
+                        throw new Error("Unrecognized command type '" + commandType + "'");
+                }
                 this.formatCommand(this.code.commands, parser.currentCommand);
             }
             lineReader.close();

@@ -157,14 +157,24 @@ done
 echo ""
 
 echo "--- Project 08 ---"
-EX08=(
-	src/08/FunctionCalls/FibonacciElement/FibonacciElement
-	src/08/FunctionCalls/SimpleFunction/SimpleFunction
-	src/08/FunctionCalls/StaticsTest/StaticsTest
+
+# Init handled by the test script.
+EX08_NO_INIT=(
 	src/08/ProgramFlow/BasicLoop/BasicLoop
+	src/08/FunctionCalls/SimpleFunction/SimpleFunction
 	src/08/ProgramFlow/FibonacciSeries/FibonacciSeries
 )
-for base_name in ${EX08[@]}; do
+for base_name in ${EX08_NO_INIT[@]}; do
+	./bin/node src/node/VMTranslator.js --skip-init `dirname $base_name`
+	./bin/CPUEmulator.sh "$base_name.tst"
+done
+
+# Init expected to be done by the VMTranslator.
+EX08_INIT_REQUIRED=(
+	src/08/FunctionCalls/FibonacciElement/FibonacciElement
+	src/08/FunctionCalls/StaticsTest/StaticsTest
+)
+for base_name in ${EX08_INIT_REQUIRED[@]}; do
 	./bin/node src/node/VMTranslator.js `dirname $base_name`
 	./bin/CPUEmulator.sh "$base_name.tst"
 done
