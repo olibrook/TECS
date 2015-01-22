@@ -156,6 +156,7 @@ done
 
 echo ""
 
+
 echo "--- Project 08 ---"
 
 # Init handled by the test script.
@@ -179,4 +180,13 @@ for base_name in ${EX08_INIT_REQUIRED[@]}; do
 	./bin/CPUEmulator.sh "$base_name.tst"
 done
 
+echo ""
+
+
+echo "--- Project 09 ---"
+echo "TODO: This is a Jack programming exercsise. Leave until last."
+echo ""
+
+
+echo "--- Project 10 ---"
 echo ""
