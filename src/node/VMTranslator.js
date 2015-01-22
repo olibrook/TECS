@@ -195,7 +195,7 @@
             'M=D'
         );
         return this;
-    }
+    };
 
     /**
      * 'base' must be either a numeric base address or a built in
@@ -942,7 +942,7 @@
                     inputFiles = [fileOrDir];
                     outputFile = path.join(path.dirname(fileOrDir), path.basename(fileOrDir, '.vm')) + '.asm';
                 }
-                vmtranslator = new VMTranslator(inputFiles, outputFile, argv.s)
+                vmtranslator = new VMTranslator(inputFiles, outputFile, argv.s);
                 vmtranslator.run();
                 
                 process.exit(0);
