@@ -121,3 +121,22 @@ for test_file in ${EX05[@]}; do
 done
 echo "Warning: src/05/Memory.tst requires interactive testing."
 echo ""
+
+
+echo "--- Project 06 ---"
+EX06=(
+	src/06/add/Add
+	src/06/max/Max
+	src/06/max/MaxL
+	src/06/pong/Pong
+	src/06/pong/PongL
+	src/06/rect/Rect
+	src/06/rect/RectL
+)
+for base_name in ${EX06[@]}; do
+    ./bin/Assembler.sh "$base_name.asm"
+    ./bin/node src/node/Assembler.js "$base_name.asm" --extension=out
+    ./bin/TextComparer.sh "$base_name.hack" "$base_name.out"
+done
+
+echo ""

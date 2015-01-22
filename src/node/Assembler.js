@@ -376,14 +376,16 @@
     
     (function(){
         
-        var stats, inputFiles, i, argv, inputFile, outputFile;
+        var stats, inputFiles, i, argv, inputFile, outputFile, extension;
         
         /*
          * Configure and run the assembler if run as a script.
          */
         if(require.main === module){
-            argv = optimist.usage('Assembler for hack platform assembly language.\n')
-                            .argv;
+            argv = optimist.usage(
+                'Assembler for hack platform assembly language.\n' +
+                'Usage: $0 FILE --extension'
+            ).default('extension', 'hack').argv;
 
             if (argv.h || argv.help) {
                     optimist.showHelp();
@@ -412,8 +414,9 @@
                 
                 for (i=0; i<inputFileNames.length; i+=1) {
                     inputFile = inputFileNames[i];
-                    outputFile = path.join(path.dirname(inputFile),
-                                        path.basename(inputFile, '.asm')) + '.hack';
+                    outputFile = path.join(
+                        path.dirname(inputFile), path.basename(inputFile, '.asm')
+                    ) + '.' + argv.extension;
 
                     new Assembler(inputFile, outputFile).main();
                 }
