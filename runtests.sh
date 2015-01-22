@@ -1,6 +1,24 @@
 #!/usr/bin/env sh
 
-HARDWARE_EXCERCISES=(
+
+EX00=(
+	src/00/And.tst
+	src/00/Mux8Way16.tst
+	src/00/RAM8.tst
+	src/00/Register.tst
+)
+echo "--- Project 00 ---"
+for test_file in ${EX00[@]}; do
+    echo $test_file
+    ./bin/HardwareSimulator.sh $test_file
+    if [[ $? != 0 ]]; then
+        echo "There were failures"
+        exit 1
+    fi
+done
+echo ""
+
+EX01=(
 	src/01/And16.tst
 	src/01/And.tst
 	src/01/DMux4Way.tst
@@ -16,11 +34,38 @@ HARDWARE_EXCERCISES=(
 	src/01/Or8Way.tst
 	src/01/Or.tst
 	src/01/Xor.tst
+)
+echo "--- Project 01 ---"
+for test_file in ${EX01[@]}; do
+    echo $test_file
+    ./bin/HardwareSimulator.sh $test_file
+    if [[ $? != 0 ]]; then
+        echo "There were failures"
+        exit 1
+    fi
+done
+echo ""
+
+
+EX02=(
 	src/02/Add16.tst
 	src/02/ALU.tst
 	src/02/FullAdder.tst
 	src/02/HalfAdder.tst
 	src/02/Inc16.tst
+)
+echo "--- Project 02 ---"
+for test_file in ${EX02[@]}; do
+    echo $test_file
+    ./bin/HardwareSimulator.sh $test_file
+    if [[ $? != 0 ]]; then
+        echo "There were failures"
+        exit 1
+    fi
+done
+echo ""
+
+EX03=(
 	src/03/a/Bit.tst
 	src/03/a/PC.tst
 	src/03/a/RAM64.tst
@@ -29,6 +74,30 @@ HARDWARE_EXCERCISES=(
 	src/03/b/RAM16K.tst
 	src/03/b/RAM4K.tst
 	src/03/b/RAM512.tst
+)
+echo "--- Project 03 ---"
+for test_file in ${EX03[@]}; do
+    echo $test_file
+    ./bin/HardwareSimulator.sh $test_file
+    if [[ $? != 0 ]]; then
+        echo "There were failures"
+        exit 1
+    fi
+done
+echo ""
+
+
+echo "--- Project 04 ---"
+
+./bin/Assembler.sh src/04/fill/Fill.asm
+echo "WARNING: src/04/fill/Fill.asm requires interactive testing."
+
+./bin/Assembler.sh src/04/mult/Mult.asm
+./bin/CPUEmulator.sh src/04/mult/Mult.tst
+
+echo ""
+
+EX05=(
 	src/05/ComputerAdd-external.tst
 	src/05/ComputerAdd.tst
 	src/05/ComputerMax-external.tst
@@ -38,16 +107,14 @@ HARDWARE_EXCERCISES=(
 	src/05/CPU-external.tst
 	src/05/CPU.tst
 )
-
-INTERACTIVE_TESTS=(
-	src/05/Memory.tst
-)
-
-for test_file in ${HARDWARE_EXCERCISES[@]}; do
-	echo $test_file
+echo "--- Project 05 ---"
+for test_file in ${EX05[@]}; do
+    echo $test_file
     ./bin/HardwareSimulator.sh $test_file
     if [[ $? != 0 ]]; then
-    	echo "There were failures"
-    	exit 1
+        echo "There were failures"
+        exit 1
     fi
 done
+echo "Warning: src/05/Memory.tst requires interactive testing."
+echo ""
