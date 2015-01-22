@@ -138,5 +138,20 @@ for base_name in ${EX06[@]}; do
     ./bin/node src/node/Assembler.js "$base_name.asm" --extension=out
     ./bin/TextComparer.sh "$base_name.hack" "$base_name.out"
 done
+echo ""
+
+
+echo "--- Project 07 ---"
+EX07=(
+	src/07/MemoryAccess/BasicTest/BasicTest
+	src/07/MemoryAccess/PointerTest/PointerTest
+	src/07/MemoryAccess/StaticTest/StaticTest
+	src/07/StackArithmetic/SimpleAdd/SimpleAdd
+	src/07/StackArithmetic/StackTest/StackTest
+)
+for base_name in ${EX07[@]}; do
+	./bin/node src/node/VMTranslator.js --skip-init "$base_name.vm"
+	./bin/CPUEmulator.sh "$base_name.tst"
+done
 
 echo ""
