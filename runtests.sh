@@ -1,13 +1,13 @@
 #!/usr/bin/env sh
 
 
+echo "--- Project 00 ---"
 EX00=(
 	src/00/And.tst
 	src/00/Mux8Way16.tst
 	src/00/RAM8.tst
 	src/00/Register.tst
 )
-echo "--- Project 00 ---"
 for test_file in ${EX00[@]}; do
     echo $test_file
     ./bin/HardwareSimulator.sh $test_file
@@ -18,6 +18,8 @@ for test_file in ${EX00[@]}; do
 done
 echo ""
 
+
+echo "--- Project 01 ---"
 EX01=(
 	src/01/And16.tst
 	src/01/And.tst
@@ -35,7 +37,6 @@ EX01=(
 	src/01/Or.tst
 	src/01/Xor.tst
 )
-echo "--- Project 01 ---"
 for test_file in ${EX01[@]}; do
     echo $test_file
     ./bin/HardwareSimulator.sh $test_file
@@ -47,6 +48,7 @@ done
 echo ""
 
 
+echo "--- Project 02 ---"
 EX02=(
 	src/02/Add16.tst
 	src/02/ALU.tst
@@ -54,7 +56,6 @@ EX02=(
 	src/02/HalfAdder.tst
 	src/02/Inc16.tst
 )
-echo "--- Project 02 ---"
 for test_file in ${EX02[@]}; do
     echo $test_file
     ./bin/HardwareSimulator.sh $test_file
@@ -65,6 +66,8 @@ for test_file in ${EX02[@]}; do
 done
 echo ""
 
+
+echo "--- Project 03 ---"
 EX03=(
 	src/03/a/Bit.tst
 	src/03/a/PC.tst
@@ -75,7 +78,6 @@ EX03=(
 	src/03/b/RAM4K.tst
 	src/03/b/RAM512.tst
 )
-echo "--- Project 03 ---"
 for test_file in ${EX03[@]}; do
     echo $test_file
     ./bin/HardwareSimulator.sh $test_file
@@ -97,6 +99,8 @@ echo "WARNING: src/04/fill/Fill.asm requires interactive testing."
 
 echo ""
 
+
+echo "--- Project 05 ---"
 EX05=(
 	src/05/ComputerAdd-external.tst
 	src/05/ComputerAdd.tst
@@ -107,7 +111,6 @@ EX05=(
 	src/05/CPU-external.tst
 	src/05/CPU.tst
 )
-echo "--- Project 05 ---"
 for test_file in ${EX05[@]}; do
     echo $test_file
     ./bin/HardwareSimulator.sh $test_file
