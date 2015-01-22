@@ -48,9 +48,12 @@ CHIP CPU {
         
         // Decode the jump portion of an instruction.
         Not(in=ng, out=notng);
+        Not(in=zr, out=notzr);
+        And(a=notzr, b=notng, out=gtzr);
+
         And(a=instruction[2], b=ng, out=JLE);
         And(a=instruction[1], b=zr, out=JEQ);
-        And(a=instruction[0], b=notng, out=JGT);
+        And(a=instruction[0], b=gtzr, out=JGT);
         Or(a=JLE, b=JEQ, out=doJumpPartial1);
         Or(a=JGT, b=doJumpPartial1, out=doJumpPartial2);
         And(a=doJumpPartial2, b=isCInstruction, out=doJump);
