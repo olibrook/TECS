@@ -28,11 +28,11 @@
     }
 
     Out.prototype.write = function(str){
-        fs.write(this.fd, str + '\n', null, encoding);
+        fs.writeSync(this.fd, str + '\n', null, encoding);
     };
 
     Out.prototype.close = function(){
-        fs.close(this.fd);
+        fs.closeSync(this.fd);
     };
 
 
