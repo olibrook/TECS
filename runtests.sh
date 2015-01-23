@@ -189,4 +189,21 @@ echo ""
 
 
 echo "--- Project 10 ---"
+EX10=(
+	src/10/ArrayTest/Main
+	src/10/ExpressionlessSquare/Main
+	src/10/ExpressionlessSquare/Square
+	src/10/ExpressionlessSquare/SquareGame
+	src/10/Square/Main
+	src/10/Square/Square
+	src/10/Square/SquareGame
+)
+for base_name in ${EX10[@]}; do
+	echo $base_name
+    ./bin/node src/node/jackanalyzer.js --mode=tokenize "${base_name}.jack"
+    ./bin/TextComparer.sh "${base_name}T.xml" "${base_name}.jack.tokenized.xml"
+
+    ./bin/node src/node/jackanalyzer.js --mode=parse "${base_name}.jack"
+    ./bin/TextComparer.sh "${base_name}.xml" "${base_name}.parsed.xml"
+done
 echo ""
