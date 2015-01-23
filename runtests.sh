@@ -231,3 +231,46 @@ for base_name in ${EX11[@]}; do
     echo "Warning: '${base_name}' requires interactive testing using VMEmulator.sh"
 done
 echo ""
+
+
+echo "--- Project 12 ---"
+EX12=(
+    Memory
+    # Array
+    # Math
+    # String
+    # Output
+    # Screen
+    # Keyboard
+    # Sys
+)
+EX12_HAS_TEST=(
+    Memory
+    Array
+    Math
+)
+
+# Compiled working implementations are provided. This is
+# in part a reverse-engineering exercise.
+provided_os_dir=src/12/OS/
+
+for component in ${EX12[@]}; do
+    component_dir="src/12/${component}Test/"
+
+    # Clean and copy provided implementations except for
+    # the component we are working on.
+    rm -f ${component_dir}*.vm
+    cp ${provided_os_dir}/*.vm ${component_dir}
+    rm ${component_dir}${component}.vm
+
+    # Compile our own implementation to vm code.
+    ./bin/JackCompiler.sh ${component_dir}
+
+    if [ $component == Memory ] || [ $component == Array ] || [ $component == Math ] ; then
+        ./bin/VMEmulator.sh ${component_dir}${component}Test.tst
+    else
+        echo "Interactive test"
+    fi
+done
+
+echo ""

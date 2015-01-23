@@ -4,12 +4,13 @@ develop-eggs
 parts
 .installed.cfg
 
+# Outputs from test runs
+src/**/*.out
+
 src/08/*/*/*.asm
-src/08/*/*/*.out
 src/07/*/*/*.asm
-src/07/*/*/*.out
 src/11/*/*.vm
 src/11/*/*.asm
 src/11/*/*.hack
-src/12/*/*.vm
-src/12/*Test/*.jack
+
+src/12/*Test/*.vm
