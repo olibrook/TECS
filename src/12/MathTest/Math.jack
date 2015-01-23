@@ -2,35 +2,34 @@
  * A library of math operations for the Jack programming language.
  */
 class Math {
-    
-    static Array bitMasks;
+
+    static Array twoPow;
 
     /**
      * Initializes the library.
      */
     function void init() {
-        let bitMasks = Array.new(16);
-        let bitMasks[0] = 1;
-        let bitMasks[1] = 2;
-        let bitMasks[2] = 4;
-        let bitMasks[3] = 8;
-        let bitMasks[4] = 16;
-        let bitMasks[5] = 32;
-        let bitMasks[6] = 64;
-        let bitMasks[7] = 128;
-        let bitMasks[8] = 256;
-        let bitMasks[9] = 512;
-        let bitMasks[10] = 1024;
-        let bitMasks[11] = 2048;
-        let bitMasks[12] = 4096;
-        let bitMasks[13] = 8192;
-        let bitMasks[14] = 16384;
-        
+        let twoPow = Array.new(16);
+        let twoPow[0] = 1;
+        let twoPow[1] = 2;
+        let twoPow[2] = 4;
+        let twoPow[3] = 8;
+        let twoPow[4] = 16;
+        let twoPow[5] = 32;
+        let twoPow[6] = 64;
+        let twoPow[7] = 128;
+        let twoPow[8] = 256;
+        let twoPow[9] = 512;
+        let twoPow[10] = 1024;
+        let twoPow[11] = 2048;
+        let twoPow[12] = 4096;
+        let twoPow[13] = 8192;
+        let twoPow[14] = 16384;
+
         // Weird case: Added complication that Jack treats -32768 (which is
         // what we want to store) as unary minus applied to 32768, which can't
         // be represented in 16 bit twos complement.
-        
-        let bitMasks[15] = (-32767 - 1);
+        let twoPow[15] = (-32767 - 1);
         return;
     }
 
@@ -53,10 +52,10 @@ class Math {
         var int sum;
         var int shiftedX;
         var int j;
-        
+
         let sum = 0;
         let shiftedX = x;
-        
+
         let j = 0;
         while(j<16){
             if(Math.bit(y, j)){
@@ -72,14 +71,46 @@ class Math {
      * Returns the integer part of x/y.
      */
     function int divide(int x, int y) {
-        return -1;
+        var int q, res;
+        var bool resultNegative;
+        let resultNegative = ((x < 0) & (y > 0)) | ((x > 0) & (y < 0));
+        let x = Math.abs(x);
+        let y = Math.abs(y);
+
+        if(y>x){
+            return 0;
+        }
+        let q = Math.divide(x, (2 * y));
+        if((x-(2 * (q * y))) < y) {
+            let res = 2 * q;
+        } else {
+            let res = (2 * q) + 1;
+        }
+        if(resultNegative){
+            let res = -res;
+        }
+        return res;
     }
 
     /**
      * Returns the integer part of the square root of x.
      */
     function int sqrt(int x) {
-        return -1;
+        // Note: In the book n=number of bits in a machine word.
+        var int y, j, candidate;
+
+        let y = 0;
+        let j = 7; // (n/2) - 1 where n = 16
+
+        while(j>0){
+            let candidate = y + twoPow[j];
+            let candidate = (candidate * candidate);
+            if(~(candidate > x)){
+                let y = y + twoPow[j];
+            }
+            let j = j-1;
+        }
+        return y;
     }
 
     /**
@@ -101,13 +132,13 @@ class Math {
         }
         return b;
     }
-    
+
     /*
      * Returns true if bit 'j' is set in the binary representation of x.
      */
     function boolean bit(int x, int j){
         var int value;
-        let value = bitMasks[j];
+        let value = twoPow[j];
         return (value & x) = value;
     }
 }
