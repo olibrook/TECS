@@ -92,21 +92,28 @@ class Math {
         return res;
     }
 
+
+
+
     /**
      * Returns the integer part of the square root of x.
      */
     function int sqrt(int x) {
         // Note: In the book n=number of bits in a machine word.
-        var int y, j, candidate;
-
+        var int y, j, candidate, check;
+        if (x < 0) {
+            do Sys.error(1);
+        }
         let y = 0;
         let j = 7; // (n/2) - 1 where n = 16
 
-        while(j>0){
+        while(j>-1){
             let candidate = y + twoPow[j];
-            let candidate = (candidate * candidate);
-            if(~(candidate > x)){
-                let y = y + twoPow[j];
+            let check = (candidate * candidate);
+
+            // Check > 0, y can overflow and become negative.
+            if((~(check > x) & (check > 0))){
+                let y = candidate;
             }
             let j = j-1;
         }
