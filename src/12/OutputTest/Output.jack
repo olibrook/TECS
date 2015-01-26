@@ -17,6 +17,7 @@ class Output {
     static int xPos;
     static int yPos;
     static int screen;
+    static String intString;
 
     /** Initializes the screen with the cursor on the top left. */
     function void init() {
@@ -26,6 +27,10 @@ class Output {
         // Screen is 512x256. Origin top-left. One row is 32, consecutive
         // 16-bit words.
         let screen = 16384;
+
+        // Used to print integers.
+        let intString = String.new(6); // "-32768" is longest value
+
         do Output.initMap();
         return;
     }
@@ -258,11 +263,8 @@ class Output {
     /** Prints i starting from the cursor location, and advances the
      *  cursor appropriately. */
     function void printInt(int i) {
-        var String s;
-        let s = String.new(10);
-        do s.setInt(i);
-        do Output.printString(s);
-        do s.dispose();
+        do intString.setInt(i);
+        do Output.printString(intString);
         return;
     }
 
