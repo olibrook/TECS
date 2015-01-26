@@ -8,26 +8,26 @@
  */
 class String {
 
-    field int _length, _maxLength;
-    field Array _arr;
+    field int strLength, strMaxLength;
+    field Array str;
 
     /** Constructs a new empty String with a maximum length of
      *  maxLength. */
     constructor String new(int maxLength) {
         if(maxLength > 0){
-            let _arr = Array.new(maxLength);
+            let str = Array.new(maxLength);
         } else {
-            let _arr = null;
+            let str = null;
         }
-        let _length = 0;
-        let _maxLength = maxLength;
+        let strLength = 0;
+        let strMaxLength = maxLength;
         return this;
     }
 
     /** De-allocates the string and frees its space. */
     method void dispose() {
-        if(~(_arr = null)){
-            do _arr.dispose();
+        if(~(str = null)){
+            do str.dispose();
         }
         do Memory.deAlloc(this);
         return;
@@ -35,43 +35,43 @@ class String {
 
     /** Returns the current length of this String. */
     method int length() {
-        return _length;
+        return strLength;
     }
 
     /** Returns the character at location j. */
     method char charAt(int j) {
-        if((j < 0) | (j > (_length - 1))){
+        if((j < 0) | (j > (strLength - 1))){
             do Sys.error(1);
         }
-        return _arr[j];
+        return str[j];
     }
 
     /** Sets the j'th character of this string to be c. */
     method void setCharAt(int j, char c) {
-        if(~((j>0) & (j<_length))){
+        if(~((j>0) & (j<strLength))){
             do Sys.error(1);
         }
-        let _arr[j] = c;
+        let str[j] = c;
         return;
     }
 
     /** Appends the character c to the end of this String.
      *  Returns this string as the return value. */
     method String appendChar(char c) {
-        if(_length = _maxLength) {
+        if(strLength = strMaxLength) {
             do Sys.error(1);
         }
-        let _arr[_length] = c;
-        let _length = _length + 1;
+        let str[strLength] = c;
+        let strLength = strLength + 1;
         return this;
     }
 
     /** Erases the last character from this String. */
     method void eraseLastChar() {
-        if(~(_length > 0)){
+        if(~(strLength > 0)){
             do Sys.error(1);
         }
-        let _length = _length - 1;
+        let strLength = strLength - 1;
         return;
     }
 
@@ -82,7 +82,7 @@ class String {
         var bool neg, done;
 
         let val = 0;
-        if((_length > 0) & (_arr[0] = 45)){  // 45 == '-'
+        if((strLength > 0) & (str[0] = 45)){  // 45 == '-'
             let i = 1;
             let neg = true;
         } else {
@@ -91,8 +91,8 @@ class String {
         }
 
         let done = false;
-        while((i < _length) & (~done)){
-            let theChar = _arr[i];
+        while((i < strLength) & (~done)){
+            let theChar = str[i];
             if((theChar > 48) & (theChar < 57)){  // Numeric?
                 let digit = theChar - 48;         // To ASCII
                 let val = (val * 10) + digit;
@@ -110,7 +110,7 @@ class String {
     /** Sets this String to hold a representation of the given
      *  number. */
     method void setInt(int number) {
-        let _length = 0;
+        let strLength = 0;
         if(number < 0){
             do appendChar(45); // 45 == '-'
         }
@@ -118,7 +118,7 @@ class String {
         return;
     }
 
-    /* For internal use only. Does not handle negative numbers. */
+    /** For internal use only. Does not handle negative numbers. */
     method void internalSetInt(int number) {
         var int leastSignificantDigit, mostSignificantDigits;
 
