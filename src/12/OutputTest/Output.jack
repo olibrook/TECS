@@ -226,11 +226,13 @@ class Output {
         var int offset, word, theChar, pixels, i, mask;
         var bool isOdd;
 
-        // Bitmaps are 8-bits wide and as viewed on the screen are
-        // "left-aligned" to a machine word.
-
-        // IMPORTANT: In bitmaps higher index is MSB - ie. backwards to normal
-        // intuition.
+        // CAREFUL!
+        // - Provided bitmaps are 8-bits wide, the low 8-bits of a machine word.
+        // - On screen the lsb of a word is on the left of each cell.
+        // - Bitmaps are are "backwards" in binary, and are left-aligned with
+        //   respect to machine words on the screen.
+        // - Odd-numbered x-positions need to shift pixels half a word to the
+        //   right.
 
         let theChar = Output.getMap(c);
 
@@ -251,7 +253,7 @@ class Output {
 
             let pixels = theChar[i];
             if(isOdd){
-                // Transpose pixels to the right position
+                // Transpose pixels half a word to the right.
                 let pixels = pixels * 256;
             }
             let word = (word & mask) | pixels;
