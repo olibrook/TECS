@@ -231,9 +231,11 @@ class Output {
             if(xPos < 63){
                 let xPos = xPos + 1;
             } else {
+                let xPos = 0;
                 if(yPos < 22) {
-                    let xPos = 0;
                     let yPos = yPos + 1;
+                } else {
+                    let yPos = 0;
                 }
             }
         }
@@ -266,9 +268,11 @@ class Output {
 
     /** Advances the cursor to the beginning of the next line. */
     function void println() {
+        let xPos = 0;
         if(yPos<22){
             let yPos = yPos + 1;
-            let xPos = 0;
+        } else {
+            let yPos = 0;
         }
         return;
     }
@@ -278,9 +282,11 @@ class Output {
         if(xPos > 0){
             let xPos = xPos - 1;
         } else {
+            let xPos = 63;
             if(yPos > 0) {
                 let yPos = yPos -1;
-                let xPos = 63;
+            } else {
+                let yPos = 22;
             }
         }
         return;
