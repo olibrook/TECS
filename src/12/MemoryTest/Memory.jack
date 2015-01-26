@@ -9,13 +9,13 @@
 * linked-list, which would require alloc() to begin with). Memory is allocated
 * in segments which are updated to include inforamation which allows the memory
 * space to be reclaimed in a call to deAlloc().
-*/ 
+*/
 class Memory {
 
     static Array memory;
     static int heapBase;
     static int heapEnd;
-    
+
     static int freeList;
 
     /**
@@ -25,7 +25,7 @@ class Memory {
         let memory = 0;
         let heapBase = 2048;
         let heapEnd = 16383;
-        
+
         let freeList = heapBase;
         do Memory.poke(freeList, heapEnd - heapBase);
         do Memory.poke(freeList + 1, null);
@@ -58,66 +58,66 @@ class Memory {
         var int next;
         var int remainingSpace;
         var int realBlockBase;
-        
-        /*
+
+        /**
         We need a block one word larger than requested so that the block's
         size can be recorded at position [block-1].
         */
         let size = size + 1;
-        
+
         let previousSegmentBase = 0;
         let currentSegmentBase = freeList;
         let currentSegmentSize = Memory.peek(currentSegmentBase);
         let next = Memory.peek(currentSegmentBase+1);
-        
+
         while((currentSegmentSize < size) & (~(next = 0))){ // Not(Is null)
             let previousSegmentBase = currentSegmentBase;
             let currentSegmentBase = next;
             let currentSegmentSize = Memory.peek(currentSegmentBase);
             let next = Memory.peek(currentSegmentBase+1);
         }
-        
+
         if(~(currentSegmentSize < size)){
-            
-            /*
+
+            /**
             The currentSegmentBase variable holds the base address of the
             first segment large enough to allocate the block.
             */
-            
+
             let remainingSpace = currentSegmentBase - size;
             let realBlockBase = currentSegmentBase;
             let memory[realBlockBase] = size;
-            
+
             if(previousSegmentBase = 0){ // Is null
-                /*
+                /**
                 Segment found is the first (ie. the segment pointed to by
                 freeList) and we need to update the pointer to the head of
                 the list.
                 */
-                
+
                 let freeList = realBlockBase + size;
                 let memory[freeList] = remainingSpace;
                 let memory[freeList+1] = null;
-                
+
             } else {
-                /*
+                /**
                 Segment found was not the first in the list and we need to
                 slice the block out of the segment, maintaining the linked
                 list structure.
                 */
-                
+
                 let memory[previousSegmentBase+1] = realBlockBase + size;
-                
+
                 let memory[realBlockBase + size] = remainingSpace;
                 let memory[realBlockBase + size + 1] = next;
             }
-            /*
+            /**
             Return the base address of the block, adjusted to skip the work
             used to store the returned block's size.
             */
             return realBlockBase + 1;
         }
-        
+
         do Sys.error(1);
         return -1;
     }
@@ -128,14 +128,14 @@ class Memory {
     function void deAlloc(int object){
         var int segmentBase;
         var int segmentSize;
-        
+
         let segmentBase = object-1;
         let segmentSize = memory[segmentBase];
-        
+
         // Insert segment into at the head of the free list.
         // Maintain a pointer to the current first item in the list.
         let memory[segmentBase+1] = freeList;
-        
+
         // Make the base address of the list point at the segment which was
         // just reclaimed.
         let freeList = segmentBase;
