@@ -198,28 +198,27 @@ class Output {
 
     function void printCharInternal(char c, bool advance){
         var int offset, word, theChar, pixels, i, mask;
-        var bool isEven;
+        var bool isOdd;
 
-        if((xPos & 1) = 1){
-            let isEven = false;
-        } else {
-            let isEven = true;
-        }
-        let isEven = true;
+        let isOdd = (xPos & 1) = 1;
 
         let theChar = Output.getMap(c);  // Char is in lowest 8 bits
         let offset = (yPos * 32 * 11) + (xPos / 2);
+
+
+        if(isOdd){
+            let mask = 255;
+        } else {
+            let mask = -256;
+        }
 
         let i = 0;
         while(i<11){
             let word = screen[offset];
 
             let pixels = theChar[i];
-            if(isEven){
-                let mask = 255;
+            if(isOdd){
                 let pixels = pixels * 256;
-            } else {
-                let mask = -256;
             }
             let word = (word & mask) | pixels;
             let screen[offset] = word;
