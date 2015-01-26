@@ -71,6 +71,8 @@ class Math {
      * Returns the integer part of x/y.
      */
     function int divide(int x, int y) {
+        // TODO: Eliminate the repeated (2*q*y) calculation, use the result
+        //       from previous recursion.
         var int q, res;
         var bool resultNegative;
         let resultNegative = ((x < 0) & (y > 0)) | ((x > 0) & (y < 0));
@@ -91,9 +93,6 @@ class Math {
         }
         return res;
     }
-
-
-
 
     /**
      * Returns the integer part of the square root of x.

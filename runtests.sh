@@ -237,8 +237,8 @@ echo "--- Project 12 ---"
 EX12=(
     # Memory
     # Array
-    Math
-    # String
+    # Math
+     String
     # Output
     # Screen
     # Keyboard
