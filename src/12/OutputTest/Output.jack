@@ -5,37 +5,44 @@
 
 /**
  * Handles writing characters to the screen.
- * The text screen is divided into 23 rows (0..22), each containing
- * 64 columns (0..63).
- * Each row is 11 pixels high (including 1 space pixel), and 8 pixels
- * wide (including 2 space pixels).
+ *
+ * Spec:
+ * - Screen is 512x256 pixels.
+ * - For text output, screen is divided into 64x22 characters.
+ * - Character size is 8x11 pixels.
+ * - Cursor position (0,0) is top-left of screen.
+ * - One row of pixels is 32 consecutive 16-bit words.
+ * - Cursor wraps around from the bottom to the top of the screen.
  */
 class Output {
 
-    // character map for printing on the left of a screen word
+    // ASCII Bitmaps
     static Array charMaps;
-    static int xPos;
-    static int yPos;
+
+    static int xPos;  // 0-63
+    static int yPos;  // 0-22
+
+    // Pointer to base address of screen
     static int screen;
-    static String intString;
 
-    /** Initializes the screen with the cursor on the top left. */
+    // Used to convert int->String for display
+    static String integerString;
+
+    /**
+     * Initialize the screen with the cursor at the top-left.
+     */
     function void init() {
-        let xPos = 0;  // 0-63
-        let yPos = 0;  // 0-22
-
-        // Screen is 512x256. Origin top-left. One row is 32, consecutive
-        // 16-bit words.
+        let xPos = 0;
+        let yPos = 0;
         let screen = 16384;
-
-        // Used to print integers.
-        let intString = String.new(6); // "-32768" is longest value
-
+        let integerString = String.new(6); // "-32768" is longest value
         do Output.initMap();
         return;
     }
 
-    // Initalizes the character map array
+    /**
+     * Initialize the character map.
+     */
     function void initMap() {
         var int i;
 
@@ -150,9 +157,12 @@ class Output {
         return;
     }
 
-    // Creates a character map array of the given char index with the given values.
-    function void create(int index, int a, int b, int c, int d, int e,
-                 int f, int g, int h, int i, int j, int k) {
+    /**
+     * Inserts a bitmap for ASCII code 'index' into charMaps.
+     */
+    function void create(
+            int index, int a, int b, int c, int d, int e,
+            int f, int g, int h, int i, int j, int k) {
         var Array map;
 
         let map = Array.new(11);
@@ -173,8 +183,12 @@ class Output {
         return;
     }
 
-    // Returns the character map (array of size 11) for the given character
-    // If an illegal character is given, returns the character map of a black square.
+    /**
+     * Returns a character bitmap for ASCII code 'c' with a fallback if out of
+     * bounds.
+     *
+     * Bitmaps are integer Arrays of length 11.
+     */
     function Array getMap(char c) {
         if ((c < 32) | (c > 126)) {
             let c = 0;
@@ -182,8 +196,9 @@ class Output {
         return charMaps[c];
     }
 
-    /** Moves the cursor to the xth column of the yth row and erases the
-        character that was there. */
+    /**
+     * Move cursor to x, y and erase the character there.
+     */
     function void moveCursor(int y, int x) {
         if (((x > 63) | (x < 0)) | ((y < 0) | (y > 22))) {
             do Sys.error(1);
@@ -194,35 +209,49 @@ class Output {
         return;
     }
 
-    /** Prints c on the cursor location and advances the cursor one
-     *  column forward. */
+    /**
+     * Print c at current cursor position and advance.
+     */
     function void printChar(char c) {
         do Output.printCharInternal(c, true);
         return;
     }
 
+    /**
+     * Print c at current cursor position and optionally advance.
+     *
+     * Internal - not in OS spec.
+     */
     function void printCharInternal(char c, bool advance){
         var int offset, word, theChar, pixels, i, mask;
         var bool isOdd;
 
-        let isOdd = (xPos & 1) = 1;
+        // Bitmaps are 8-bits wide and as viewed on the screen are
+        // "left-aligned" to a machine word.
 
-        let theChar = Output.getMap(c);  // Char is in lowest 8 bits
-        let offset = (yPos * 32 * 11) + (xPos / 2);
+        // IMPORTANT: In bitmaps higher index is MSB - ie. backwards to normal
+        // intuition.
 
+        let theChar = Output.getMap(c);
 
+        // Use a mask to selectively clear one half of a machine word
+        // and overwrite the character previously there.
+
+        let isOdd = ((xPos & 1) = 1);
         if(isOdd){
-            let mask = 255;
+            let mask = 255;   // Clears right
         } else {
-            let mask = -256;
+            let mask = -256;  // Clears left
         }
 
+        let offset = (yPos * 32 * 11) + (xPos / 2);
         let i = 0;
         while(i<11){
             let word = screen[offset];
 
             let pixels = theChar[i];
             if(isOdd){
+                // Transpose pixels to the right position
                 let pixels = pixels * 256;
             }
             let word = (word & mask) | pixels;
@@ -247,8 +276,9 @@ class Output {
         return;
     }
 
-    /** Prints s starting from the cursor location, and advances the
-     *  cursor appropriately. */
+    /**
+     * Print s from current position and advance the cursor automatically.
+     */
     function void printString(String s) {
         var int i, length;
         let i = 0;
@@ -260,15 +290,18 @@ class Output {
         return;
     }
 
-    /** Prints i starting from the cursor location, and advances the
-     *  cursor appropriately. */
+    /**
+     * Print i from current position and advance the cursor automatically.
+     */
     function void printInt(int i) {
-        do intString.setInt(i);
-        do Output.printString(intString);
+        do integerString.setInt(i);
+        do Output.printString(integerString);
         return;
     }
 
-    /** Advances the cursor to the beginning of the next line. */
+    /**
+     * Advance the cursor to the beginning of the next line.
+     */
     function void println() {
         let xPos = 0;
         if(yPos<22){
@@ -279,7 +312,9 @@ class Output {
         return;
     }
 
-    /** Takes the cursor one column back. */
+    /**
+     * Move cursor backwards one position.
+     */
     function void backSpace() {
         if(xPos > 0){
             let xPos = xPos - 1;
