@@ -238,8 +238,8 @@ EX12=(
     # Memory
     # Array
     # Math
-     String
-    # Output
+    # String
+     Output
     # Screen
     # Keyboard
     # Sys
