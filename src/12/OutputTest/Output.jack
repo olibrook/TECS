@@ -318,16 +318,21 @@ class Output {
      * Move cursor backwards one position.
      */
     function void backSpace() {
+        var int x, y;
+
         if(xPos > 0){
-            let xPos = xPos - 1;
+            let x = xPos - 1;
+            let y = yPos;
         } else {
-            let xPos = 63;
+            let x = 63;
             if(yPos > 0) {
-                let yPos = yPos -1;
+                let y = yPos -1;
             } else {
-                let yPos = 22;
+                let y = 22;
             }
         }
+
+        do Output.moveCursor(x, y);
         return;
     }
 }

@@ -240,8 +240,8 @@ EX12=(
     # Math
     # String
     # Output
-    Screen
-    # Keyboard
+    # Screen
+    Keyboard
     # Sys
 )
 EX12_HAS_TEST=(
