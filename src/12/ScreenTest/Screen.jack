@@ -94,9 +94,6 @@ class Screen {
 
     /**
      * Draws a line from pixel (x1, y1) to (x2, y2).
-     *
-     * TODO: Optimize drawing of horizontal lines (can write whole memory
-     *       words)
      */
     function void drawLine(int x1, int y1, int x2, int y2) {
         var int dx, dy, absDx, absDy, a, b, absA,
@@ -133,6 +130,7 @@ class Screen {
         let diagonal   = ((absDx > 0) & (absDy > 0));
 
         if (horizontal) {
+            // TODO: Use drawRectangle and write whole words at a time.
             let updateA = true;
         } else {
             if(vertical) {
@@ -167,6 +165,51 @@ class Screen {
      * and the bottom right corner is (x2, y2).
      */
     function void drawRectangle(int x1, int y1, int x2, int y2) {
+
+        var int row, firstRow, lastRow,
+                column, firstColumn, lastColumn,
+                firstColumnRemainder, lastColumnRemainder,
+                firstColumnMask, middleColumnMask, lastColumnMask,
+                fill;
+
+        let firstRow = (y1 * 32);
+        let lastRow = (y2 * 32);
+
+        let firstColumn = (x1/16);
+        let firstColumnRemainder = x1 - (firstColumn * 16);
+
+        let lastColumn = (x2/16);
+        let lastColumnRemainder = x2 - (lastColumn * 16);
+
+        if(lastColumnRemainder>0){
+            // Not on word boundary. Fill one column extra.
+            let lastColumn = lastColumn + 1;
+        }
+
+        let firstColumnMask = -1;
+        let lastColumnMask = -1;
+        let middleColumnMask = -1;
+
+        let row = firstRow;
+        while(row<lastRow){
+            let column = firstColumn;
+            while(column<lastColumn) {
+
+                if(column=firstColumn){
+                    let fill = firstColumnMask;
+                } else {
+                    if(column=(lastColumn-1)) {
+                        let fill = lastColumnMask;
+                    } else {
+                        let fill = middleColumnMask;
+                    }
+                }
+
+                let screen[row + column] = fill;
+                let column = column + 1;
+            }
+            let row = row + 32;
+        }
         return;
     }
 
