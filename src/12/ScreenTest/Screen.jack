@@ -133,7 +133,6 @@ class Screen {
         let diagonal   = ((absDx > 0) & (absDy > 0));
 
         if (horizontal) {
-            // TODO: Use drawRectangle and write whole words at a time.
             let updateA = true;
         } else {
             if(vertical) {
@@ -255,6 +254,16 @@ class Screen {
      * Draws a filled circle of radius r around (cx, cy).
      */
     function void drawCircle(int cx, int cy, int r) {
+        var int dy, x1, x2, y, sharedTerm;
+        let dy = -r;
+        while(dy<(r+1)){
+            let sharedTerm = Math.sqrt(((r*r) - (dy * dy)));
+            let x1 = cx - sharedTerm;
+            let x2 = cx + sharedTerm;
+            let y = cy + dy;
+            do Screen.drawRectangle(x1, y, x2, y+1);
+            let dy = dy+1;
+        }
         return;
     }
 }
