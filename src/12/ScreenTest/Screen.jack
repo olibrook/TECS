@@ -15,6 +15,7 @@ class Screen {
     static bool color;
     static int screen;
     static Array twoPow;
+    static Array scanLine;
 
     /**
      * Initializes the Screen.
@@ -40,6 +41,8 @@ class Screen {
         let twoPow[13] = 8192;
         let twoPow[14] = 16384;
         let twoPow[15] = (-32767 - 1);
+
+        let scanLine = Array.new(32);
 
         return;
     }
@@ -170,45 +173,80 @@ class Screen {
                 column, firstColumn, lastColumn,
                 firstColumnRemainder, lastColumnRemainder,
                 firstColumnMask, middleColumnMask, lastColumnMask,
-                fill;
+                fill, i, columnRange, columnLeftPixel, columnRightPixel, j, from, to, word, rowBase;
 
-        let firstRow = (y1 * 32);
-        let lastRow = (y2 * 32);
-
-        let firstColumn = (x1/16);
-        let firstColumnRemainder = x1 - (firstColumn * 16);
-
-        let lastColumn = (x2/16);
-        let lastColumnRemainder = x2 - (lastColumn * 16);
-
-        if(lastColumnRemainder>0){
-            // Not on word boundary. Fill one column extra.
-            let lastColumn = lastColumn + 1;
+        if((x1<0) | (x2<0) | (x1>511) | (x2>511) | (y1<0) | (y2<0) | (y1>255) | (y2>255)){
+            do Sys.error(15);
         }
 
-        let firstColumnMask = -1;
-        let lastColumnMask = -1;
-        let middleColumnMask = -1;
 
-        let row = firstRow;
-        while(row<lastRow){
-            let column = firstColumn;
-            while(column<lastColumn) {
+//        let numHorizontalPixels = x2 - x1;
+//
+//        let firstColumn = (x1/16);
+//        let firstColumnRemainder = x1 - (firstColumn * 16);
+//
+//        let lastColumn = (x2/16);
+//        let lastColumnRemainder = x2 - (lastColumn * 16);
+//        if(lastColumnRemainder > 0){
+//            let lastColumn = lastColumn + 1;
+//        }
+//        let columnRange = (lastColumn - firstColumn) + 1;
+//        let i = firstColumn;
 
-                if(column=firstColumn){
-                    let fill = firstColumnMask;
+        let i=0;
+        let columnRange=32;
+
+        let columnLeftPixel = i * 16;
+        let columnRightPixel = columnLeftPixel + 15;
+
+        while(i<columnRange){
+
+            if(((x1 < columnLeftPixel) & (x2 < columnLeftPixel)) |
+               ((x1 > columnRightPixel) & (x2 > columnRightPixel))) {
+                // Box is to left or right of this memory word
+                let word = 0;
+
+            } else {
+                if((x1 < columnLeftPixel) & (x2 > columnRightPixel)){
+                    // Box passes through this memory word.
+                    let word = -1;
                 } else {
-                    if(column=(lastColumn-1)) {
-                        let fill = lastColumnMask;
-                    } else {
-                        let fill = middleColumnMask;
+                    // Right, left, or both endpoints contained.
+                    let from = Math.max(columnLeftPixel, x1);
+                    let from = Math.min(columnRightPixel, from);
+                    let from = from - columnLeftPixel;
+
+                    let to = Math.max(columnLeftPixel, x2);
+                    let to = Math.min(columnRightPixel, to);
+                    let to = to - columnLeftPixel;
+
+                    let word = 0;
+                    let j = from;
+                    while((j<to) | (j=to)){
+                        let word = word | twoPow[j];
+                        let j = j+1;
                     }
                 }
-
-                let screen[row + column] = fill;
-                let column = column + 1;
             }
-            let row = row + 32;
+
+
+            let scanLine[i] = word;
+
+            let i = i + 1;
+            let columnLeftPixel = columnLeftPixel + 16;
+            let columnRightPixel = columnLeftPixel + 15;
+        }
+
+        let row=y1;
+        let rowBase = y1 * 32;
+        while(row<y2){
+            let column=0;
+            while(column<32){
+                let screen[rowBase + column] = scanLine[column];
+                let column = column+1;
+            }
+            let rowBase = rowBase+32;
+            let row = row+1;
         }
         return;
     }
