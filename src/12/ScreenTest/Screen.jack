@@ -1,40 +1,116 @@
-// This file is part of the materials accompanying the book 
-// "The Elements of Computing Systems" by Nisan and Schocken, 
+// This file is part of the materials accompanying the book
+// "The Elements of Computing Systems" by Nisan and Schocken,
 // MIT Press. Book site: www.idc.ac.il/tecs
 // File name: projects/12/Screen.jack
 
 /**
  * Graphic screen library.
+ *
+ * Spec:
+ * - Screen is 512x256 pixels.
+ * - One row of pixels is 32 consecutive 16-bit words.
  */
 class Screen {
 
-    /** Initializes the Screen. */
+    static bool color;
+    static int screen;
+    static Array twoPow;
+
+    /**
+     * Initializes the Screen.
+     */
     function void init() {
+        let color = true;
+        let screen = 16384;
+
+        let twoPow = Array.new(16);
+        let twoPow[0] = 1;
+        let twoPow[1] = 2;
+        let twoPow[2] = 4;
+        let twoPow[3] = 8;
+        let twoPow[4] = 16;
+        let twoPow[5] = 32;
+        let twoPow[6] = 64;
+        let twoPow[7] = 128;
+        let twoPow[8] = 256;
+        let twoPow[9] = 512;
+        let twoPow[10] = 1024;
+        let twoPow[11] = 2048;
+        let twoPow[12] = 4096;
+        let twoPow[13] = 8192;
+        let twoPow[14] = 16384;
+        let twoPow[15] = (-32767 - 1);
+
+        return;
     }
 
-    /** Erases the whole screen. */
+    /**
+     * Erases the whole screen.
+     */
     function void clearScreen() {
+        var int i, j, yOffset;
+
+        let i = 0;
+        while(i<32){
+            let j = 0;
+            let yOffset = 0;
+            while(j<256){
+                let screen[i + yOffset] = 0;
+                let j = j+1;
+                let yOffset = yOffset + 512;
+            }
+            let i = i+1;
+        }
+        return;
     }
 
-    /** Sets the color to be used in further draw commands
-     *  where white = false, black = true. */
+    /**
+     * Sets the color to be used in further draw commands where
+     * white = false, black = true.
+     */
     function void setColor(boolean b) {
+        let color = b;
+        return;
     }
 
-    /** Draws the (x, y) pixel. */
+    /**
+     * Draws the (x, y) pixel.
+     */
     function void drawPixel(int x, int y) {
+        var int wordX, pixelX, word, address;
+
+        let wordX = (x/16);
+        let pixelX = x - (wordX * 16); // Must now be 0-15
+        let address = wordX + (y * 32);
+        let word = screen[address];
+
+        if(color){
+            let screen[address] = word | twoPow[pixelX];
+        } else {
+            let screen[address] = word & (~twoPow[pixelX]);
+        }
+        return;
     }
 
-    /** Draws a line from pixel (x1, y1) to (x2, y2). */
+    /**
+     * Draws a line from pixel (x1, y1) to (x2, y2).
+     */
     function void drawLine(int x1, int y1, int x2, int y2) {
+        return;
     }
 
-    /** Draws a filled rectangle where the top left corner
-     *  is (x1, y1) and the bottom right corner is (x2, y2). */
+    /**
+     * Draws a filled rectangle where the top left corner is (x1, y1)
+     * and the bottom right corner is (x2, y2).
+     */
     function void drawRectangle(int x1, int y1, int x2, int y2) {
+        return;
     }
 
-    /** Draws a filled circle of radius r around (cx, cy). */
+    /**
+     * Draws a filled circle of radius r around (cx, cy).
+     */
     function void drawCircle(int cx, int cy, int r) {
+        return;
     }
 }

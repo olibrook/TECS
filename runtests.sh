@@ -239,8 +239,8 @@ EX12=(
     # Array
     # Math
     # String
-     Output
-    # Screen
+    # Output
+    Screen
     # Keyboard
     # Sys
 )
