@@ -171,35 +171,32 @@ class Screen {
 
         var int row, firstRow, lastRow,
                 column, firstColumn, lastColumn,
-                firstColumnRemainder, lastColumnRemainder,
+                lastColumnRemainder,
                 firstColumnMask, middleColumnMask, lastColumnMask,
                 fill, i, columnRange, columnLeftPixel, columnRightPixel, j, from, to, word, rowBase;
 
-        if((x1<0) | (x2<0) | (x1>511) | (x2>511) | (y1<0) | (y2<0) | (y1>255) | (y2>255)){
+
+        if((x1<0) | (x2>511) | (x1>x2) | (y1<0) | (y2>255) | (y1>y2)){
             do Sys.error(15);
         }
 
+        // Work out the range of memory words affected, dividing the screen
+        // into rows of 32 columns (machine words).
 
-//        let numHorizontalPixels = x2 - x1;
-//
-//        let firstColumn = (x1/16);
-//        let firstColumnRemainder = x1 - (firstColumn * 16);
-//
-//        let lastColumn = (x2/16);
-//        let lastColumnRemainder = x2 - (lastColumn * 16);
-//        if(lastColumnRemainder > 0){
-//            let lastColumn = lastColumn + 1;
-//        }
-//        let columnRange = (lastColumn - firstColumn) + 1;
-//        let i = firstColumn;
+        let firstColumn = (x1/16);
 
-        let i=0;
-        let columnRange=32;
+        let lastColumn = (x2/16);
+        let lastColumnRemainder = x2 - (lastColumn * 16);
+        if(lastColumnRemainder > 0){
+            let lastColumn = lastColumn + 1;
+        }
+
+        let i = firstColumn;
 
         let columnLeftPixel = i * 16;
         let columnRightPixel = columnLeftPixel + 15;
 
-        while(i<columnRange){
+        while((i<lastColumn) | (i=lastColumn)){
 
             if(((x1 < columnLeftPixel) & (x2 < columnLeftPixel)) |
                ((x1 > columnRightPixel) & (x2 > columnRightPixel))) {
@@ -211,7 +208,8 @@ class Screen {
                     // Box passes through this memory word.
                     let word = -1;
                 } else {
-                    // Right, left, or both endpoints contained.
+                    // Right, left or both edge(s) of box are contained
+                    // in this memory word.
                     let from = Math.max(columnLeftPixel, x1);
                     let from = Math.min(columnRightPixel, from);
                     let from = from - columnLeftPixel;
@@ -228,8 +226,6 @@ class Screen {
                     }
                 }
             }
-
-
             let scanLine[i] = word;
 
             let i = i + 1;
@@ -240,9 +236,13 @@ class Screen {
         let row=y1;
         let rowBase = y1 * 32;
         while(row<y2){
-            let column=0;
-            while(column<32){
-                let screen[rowBase + column] = scanLine[column];
+            let column=firstColumn;
+            while((column<lastColumn) | (column=lastColumn)){
+                if(color){
+                    let screen[rowBase + column] = screen[rowBase + column] | scanLine[column];
+                } else {
+                    let screen[rowBase + column] = screen[rowBase + column] & (~scanLine[column]);
+                }
                 let column = column+1;
             }
             let rowBase = rowBase+32;
