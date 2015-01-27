@@ -235,14 +235,14 @@
 
 echo "--- Project 12 ---"
 EX12=(
-    # Memory
-    # Array
-    # Math
-    # String
-    # Output
-    # Screen
+    Memory
+    Array
+    Math
+    String
+    Output
+    Screen
     Keyboard
-    # Sys
+    Sys
 )
 EX12_HAS_TEST=(
     Memory
