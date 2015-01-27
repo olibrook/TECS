@@ -94,8 +94,66 @@ class Screen {
 
     /**
      * Draws a line from pixel (x1, y1) to (x2, y2).
+     *
+     * TODO: Optimize unnecessary multiplication.
+     * TODO: Optimize drawing of horizontal lines (can write whole memory
+     *       words)
      */
     function void drawLine(int x1, int y1, int x2, int y2) {
+        var int dx, dy, absDx, absDy, a, b, absA, absB, xHeading, yHeading;
+        var bool horizontal, vertical, diagonal, updateA;
+
+        let dx = x2-x1;
+        let dy = y2-y1;
+
+        if(dx<0){
+            let xHeading = -1;
+        } else {
+            let xHeading = 1;
+        }
+
+        if(dy<0){
+            let yHeading = -1;
+        } else {
+            let yHeading = 1;
+        }
+
+        let absDx = Math.abs(dx);
+        let absDy = Math.abs(dy);
+
+        let a = 0;
+        let b = 0;
+
+        let absA = 0;
+        let absB = 0;
+
+        let horizontal = ((absDx > 0) & (absDy = 0));
+        let vertical   = ((absDx = 0) & (absDy > 0));
+        let diagonal   = ((absDx > 0) & (absDy > 0));
+
+        if (horizontal) {
+            let updateA = true;
+        } else {
+            if(vertical) {
+                let updateA = false;
+            }
+        }
+
+        while(~(absA>absDx) & ~(absB>absDy)){
+            do Screen.drawPixel(x1 + a, y1 + b);
+
+            if(diagonal) {
+                let updateA = ((absA * absDy) < (absB * absDx));
+            }
+
+            if(updateA){
+                let a = a + xHeading;
+                let absA = Math.abs(a);
+            } else {
+                let b = b + yHeading;
+                let absB = Math.abs(b);
+            }
+        }
         return;
     }
 
