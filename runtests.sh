@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 function _msg(){
     local exp=$1;
@@ -241,12 +241,12 @@ EX11=(
 )
 for base_name in ${EX11[@]}; do
     ./bin/node src/node/jackanalyzer.js --mode=compile "${base_name}"
-    _msg "WARNING: '${base_name}' requires interactive testing using VMEmulator.sh"
+    _msg "WARNING: '${base_name}' requires interactive testing using VMEmulator.sh" yellow
 done
 echo ""
 
 
-# echo "--- Project 12 ---"
+echo "--- Project 12 ---"
 EX12=(
     Memory
     Array
@@ -282,13 +282,13 @@ for component in ${EX12[@]}; do
     if [ $component == Memory ] || [ $component == Array ] || [ $component == Math ] ; then
         ./bin/VMEmulator.sh ${component_dir}${component}Test.tst
     else
-        _msg "WARNING: ${component} requires interactive testing"
+        _msg "WARNING: ${component} requires interactive testing" yellow
     fi
 done
 echo ""
 
 
-echo "--- Building Pong using the home-made OS and compilers! ---"
+echo "--- Building Pong using the home-made OS and compilers ---"
 
 # Cleanup
 rm -f src/pong/*.jack
@@ -305,7 +305,33 @@ cp src/11/Pong/*.jack src/pong/
 ./bin/node src/node/VMTranslator.js src/pong/
 ./bin/node src/node/Assembler.js src/pong/
 
-echo "Start ./bin/VMEmulator.sh and open the src/pong directory to play."
+cat << "EOF"
+
+                  .______     ______   .__   __.   _______
+                  |   _  \   /  __  \  |  \ |  |  /  _____|
+                  |  |_)  | |  |  |  | |   \|  | |  |  __
+                  |   ___/  |  |  |  | |  . `  | |  | |_ |
+                  |  |      |  `--'  | |  |\   | |  |__| |
+                  | _|       \______/  |__| \__|  \______|
+
+                              ______   .__   __.
+                             /  __  \  |  \ |  |
+                            |  |  |  | |   \|  |
+                            |  |  |  | |  . `  |
+                            |  `--'  | |  |\   |
+                             \______/  |__| \__|
+
+     __    __       ___        ______  __  ___    ____    ____ .___  ___.
+    |  |  |  |     /   \      /      ||  |/  /    \   \  /   / |   \/   |
+    |  |__|  |    /  ^  \    |  ,----'|  '  /      \   \/   /  |  \  /  |
+    |   __   |   /  /_\  \   |  |     |    <        \      /   |  |\/|  |
+    |  |  |  |  /  _____  \  |  `----.|  .  \        \    /    |  |  |  |
+    |__|  |__| /__/     \__\  \______||__|\__\        \__/     |__|  |__|
+
+
+EOF
+
+_msg "Okay! Run ./bin/VMEmulator.sh and open the src/pong directory to play." green
+_msg "Set 'animate: no animation' and 'speed: fast' in the emulator." green
 
 echo ""
-
