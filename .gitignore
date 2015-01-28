@@ -14,3 +14,7 @@ src/11/*/*.asm
 src/11/*/*.hack
 
 src/12/*Test/*.vm
+
+src/pong/*.jack
+src/pong/*.vm
+src/pong/*.hack

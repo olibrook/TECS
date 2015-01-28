@@ -51,18 +51,18 @@ class Screen {
      * Erases the whole screen.
      */
     function void clearScreen() {
-        var int i, j, yOffset;
+        var int row, rowBase, column;
 
-        let i = 0;
-        while(i<32){
-            let j = 0;
-            let yOffset = 0;
-            while(j<256){
-                let screen[i + yOffset] = 0;
-                let j = j+1;
-                let yOffset = yOffset + 512;
+        let row=0;
+        let rowBase = 0;
+        while(row<256){
+            let column=0;
+            while(column<32){
+                let screen[rowBase + column] = 0;
+                let column = column+1;
             }
-            let i = i+1;
+            let rowBase = rowBase+32;
+            let row = row+1;
         }
         return;
     }
