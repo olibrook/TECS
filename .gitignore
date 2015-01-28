@@ -6,6 +6,7 @@ parts
 
 # Outputs from test runs
 src/**/*.out
+src/**/*.output
 
 src/08/*/*/*.asm
 src/07/*/*/*.asm
