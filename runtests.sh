@@ -1,5 +1,25 @@
 #!/usr/bin/env sh
 
+function _msg(){
+    local exp=$1;
+    local color=$2;
+    if ! [[ $color =~ '^[0-9]$' ]] ; then
+       case $(echo $color | tr '[:upper:]' '[:lower:]') in
+        black) color=0 ;;
+        red) color=1 ;;
+        green) color=2 ;;
+        yellow) color=3 ;;
+        blue) color=4 ;;
+        magenta) color=5 ;;
+        cyan) color=6 ;;
+        white|*) color=7 ;; # white or invalid color
+       esac
+    fi
+    tput setaf $color;
+    echo $exp;
+    tput sgr0;
+}
+
 
 echo "--- Project 00 ---"
 EX00=(
@@ -12,7 +32,7 @@ for test_file in ${EX00[@]}; do
     echo $test_file
     ./bin/HardwareSimulator.sh $test_file
     if [[ $? != 0 ]]; then
-        echo "There were failures"
+        _msg "There were failures" red
         exit 1
     fi
 done
@@ -41,7 +61,7 @@ for test_file in ${EX01[@]}; do
     echo $test_file
     ./bin/HardwareSimulator.sh $test_file
     if [[ $? != 0 ]]; then
-        echo "There were failures"
+        _msg "There were failures" red
         exit 1
     fi
 done
@@ -60,7 +80,7 @@ for test_file in ${EX02[@]}; do
     echo $test_file
     ./bin/HardwareSimulator.sh $test_file
     if [[ $? != 0 ]]; then
-        echo "There were failures"
+        _msg "There were failures" red
         exit 1
     fi
 done
@@ -82,7 +102,7 @@ for test_file in ${EX03[@]}; do
     echo $test_file
     ./bin/HardwareSimulator.sh $test_file
     if [[ $? != 0 ]]; then
-        echo "There were failures"
+        _msg "There were failures" red
         exit 1
     fi
 done
@@ -92,7 +112,7 @@ echo ""
 echo "--- Project 04 ---"
 
 ./bin/Assembler.sh src/04/fill/Fill.asm
-echo "WARNING: src/04/fill/Fill.asm requires interactive testing."
+_msg "WARNING: src/04/fill/Fill.asm requires interactive testing." yellow
 
 ./bin/Assembler.sh src/04/mult/Mult.asm
 ./bin/CPUEmulator.sh src/04/mult/Mult.tst
@@ -115,11 +135,11 @@ for test_file in ${EX05[@]}; do
     echo $test_file
     ./bin/HardwareSimulator.sh $test_file
     if [[ $? != 0 ]]; then
-        echo "There were failures"
+        _msg "There were failures" red
         exit 1
     fi
 done
-echo "Warning: src/05/Memory.tst requires interactive testing."
+_msg "WARNING: src/05/Memory.tst requires interactive testing." yellow
 echo ""
 
 
@@ -221,7 +241,7 @@ EX11=(
 )
 for base_name in ${EX11[@]}; do
     ./bin/node src/node/jackanalyzer.js --mode=compile "${base_name}"
-    echo "Warning: '${base_name}' requires interactive testing using VMEmulator.sh"
+    _msg "WARNING: '${base_name}' requires interactive testing using VMEmulator.sh"
 done
 echo ""
 
@@ -262,7 +282,7 @@ for component in ${EX12[@]}; do
     if [ $component == Memory ] || [ $component == Array ] || [ $component == Math ] ; then
         ./bin/VMEmulator.sh ${component_dir}${component}Test.tst
     else
-        echo "Interactive test"
+        _msg "WARNING: ${component} requires interactive testing"
     fi
 done
 echo ""

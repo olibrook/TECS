@@ -9,6 +9,10 @@ src/**/*.out
 
 src/08/*/*/*.asm
 src/07/*/*/*.asm
+
+src/10/**/*.tokenized.xml
+src/10/**/*.parsed.xml
+
 src/11/*/*.vm
 src/11/*/*.asm
 src/11/*/*.hack
