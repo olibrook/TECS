@@ -8,8 +8,13 @@ parts
 src/**/*.out
 src/**/*.output
 
-src/08/*/*/*.asm
 src/07/*/*/*.asm
+
+src/08/*/*/*.asm
+
+src/09/tetris/*.vm
+src/09/tetris/*.asm
+src/09/tetris/*.hack
 
 src/10/**/*.tokenized.xml
 src/10/**/*.parsed.xml
