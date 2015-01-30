@@ -2,22 +2,26 @@
 class Main {
 
     static int screen;
-    static int titleScreenRows;
-    static int titleScreenCols;
+
     static Array titleScreenBmp;
+    static int titleScreenBmpCols;
+    static int titleScreenBmpRows;
+
+    static Array bricksBmp;
+    static int bricksBmpCols;
+    static int bricksBmpRows;
 
     function void main() {
         // Screen is 512x256
-
         let screen = 16384;
-        let titleScreenRows = 144;
-        let titleScreenCols = 10;
-        let titleScreenBmp = Array.new(titleScreenRows);
 
-//        do Main.loadtitleScreenBmp();
-//        do Main.blit(titleScreenBmp, titleScreenRows, titleScreenCols);
+//        do Main.inittitleScreenBmp();
+//        do Main.blit(titleScreenBmp, titleScreenBmpRows, titleScreenBmpCols);
 
-        do Main.drawGameScreen();
+        do Main.initbricksBmp();
+        do Main.blit(bricksBmp, bricksBmpRows, bricksBmpCols);
+
+//        do Main.drawGameScreen();
         do Sys.halt();
         return;
     }
@@ -98,170 +102,65 @@ class Main {
         return;
     }
 
-    function void store(int index, int a, int b, int c, int d, int e, int f, int g, int h, int i, int j){
-        var Array row;
-
-        let row = Array.new(titleScreenCols);
-        let titleScreenBmp[index] = row;
-
-        let row[0] = a;
-        let row[1] = b;
-        let row[2] = c;
-        let row[3] = d;
-        let row[4] = e;
-        let row[5] = f;
-        let row[6] = g;
-        let row[7] = h;
-        let row[8] = i;
-        let row[9] = j;
+    /*
+     * Initializes the "titleScreen" bitmap.
+     * GENERATED CODE
+     */
+    function void inittitleScreenBmp() {
+        let titleScreenBmpCols = 10;
+        let titleScreenBmpRows = 144;
+        let titleScreenBmp = Array.new(144);
+        do Main.loadtitleScreen();
         return;
     }
 
-    function void loadtitleScreenBmp(){
-        do Main.store(0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
-        do Main.store(1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
-        do Main.store(2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
-        do Main.store(3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
-        do Main.store(4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
-        do Main.store(5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
-        do Main.store(6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
-        do Main.store(7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
-        do Main.store(8, 15, 0, 0, 0, 0, 0, 0, 0, 0, -4096);
-        do Main.store(9, 23, 0, 0, 0, 0, 0, 0, 0, 0, -6144);
-        do Main.store(10, 39, 0, 0, 0, 0, 0, 0, 0, 0, -7168);
-        do Main.store(11, 71, 0, 0, 0, 0, 0, 0, 0, 0, -7680);
-        do Main.store(12, -121, -1, -1, -1, -1, -1, -1, -1, -1, -7681);
-        do Main.store(13, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);
-        do Main.store(14, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);
-        do Main.store(15, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);
-        do Main.store(16, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);
-        do Main.store(17, -16249, -16417, -193, -12290, -16417, -193, -32706, -10113, 32255, -7919);
-        do Main.store(18, 16519, -20400, -16080, 19460, -20400, -16080, -32542, 19552, 4480, -7909);
-        do Main.store(19, 16519, 12360, -16079, 19464, 12360, -16079, -32382, -26016, 4480, -7915);
-        do Main.store(20, 16519, 12356, -16078, 19472, 12356, -16078, -31998, 12896, 4481, -7919);
-        do Main.store(21, 16519, 12356, -16078, 19488, 12356, -16078, -32254, 12640, 4482, -7919);
-        do Main.store(22, 16519, 12354, -16076, 19520, 12354, -16076, -31230, 24928, 386, -7936);
-        do Main.store(23, -16249, 12482, -16076, -13184, 12482, -16076, -31102, -16032, 388, -7936);
-        do Main.store(24, 16519, 13633, -10952, 19712, 13633, -10952, -30890, -10891, 472, -7936);
-        do Main.store(25, 16519, 12865, -7368, 19968, 12865, -7368, -31198, -23710, 425, -7936);
-        do Main.store(26, -16249, 13632, -10960, -13184, 13632, -10960, -30890, 22133, 467, -7936);
-        do Main.store(27, -16249, 14400, -14032, -14144, 14400, -14032, -31222, 2664, 419, -7936);
-        do Main.store(28, 16519, 13632, -10976, 16608, 13632, -10976, -30890, 22133, 455, -7936);
-        do Main.store(29, 135, 12864, -7424, 240, 12864, -7424, -31966, 9314, 462, -7936);
-        do Main.store(30, 135, 13632, -11008, 216, 13632, -11008, -31914, 21621, 413, -7936);
-        do Main.store(31, 135, 15040, -5376, 236, 15040, -5376, -32278, -22422, 282, -7936);
-        do Main.store(32, 135, 14144, -2304, 246, 14144, -2304, -32514, 28791, 63, -7936);
-        do Main.store(33, 135, 15040, -5376, 236, 15040, -5376, -32738, -23958, 106, -7936);
-        do Main.store(34, 135, 15808, -8960, 216, 15808, -8960, -32762, -6531, 221, -7936);
-        do Main.store(35, 135, 15040, -5376, 240, 15040, -5376, -32758, -12694, 426, -7936);
-        do Main.store(36, 135, 14144, -2304, 224, 14144, -2304, -32754, -29065, 503, -7936);
-        do Main.store(37, 135, 15040, -5376, 2240, 15040, -5376, -32742, -26006, 938, -7936);
-        do Main.store(38, 135, 15808, -8960, 3200, 15808, -8960, -32706, 15997, 989, -7936);
-        do Main.store(39, 135, 16320, -256, 3584, 16320, -256, -32642, 32383, 2046, -7936);
-        do Main.store(40, 135, 16320, -256, 3840, 16320, -256, -32642, 32383, 2046, -7936);
-        do Main.store(41, 135, 16320, -256, 3968, 16320, -256, -32514, -385, 2044, -7936);
-        do Main.store(42, 135, 16320, -256, 4032, 16320, -256, -32258, -385, 2041, -7936);
-        do Main.store(43, 135, 16320, -256, 4064, 16320, -256, -31746, -385, 2033, -7936);
-        do Main.store(44, 135, 16320, -256, 4080, 16320, -256, -31746, -385, 2035, -7936);
-        do Main.store(45, 135, 16320, -256, 4088, 16320, -256, -30722, -385, 999, -7936);
-        do Main.store(46, 135, 16320, -256, 4092, 16320, -256, -28674, -385, 975, -7936);
-        do Main.store(47, 135, 16320, -256, 4094, 16320, -256, -24578, -385, 495, -7936);
-        do Main.store(48, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);
-        do Main.store(49, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);
-        do Main.store(50, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);
-        do Main.store(51, -121, -1, -1, -1, -1, -1, -1, -1, -1, -7681);
-        do Main.store(52, 71, 0, 0, 0, 0, 0, 0, 0, 0, -7680);
-        do Main.store(53, 39, 0, 0, 0, 0, 0, 0, 0, 0, -7168);
-        do Main.store(54, 23, 0, 0, 0, 0, 0, 0, 0, 0, -6144);
-        do Main.store(55, 15, 0, 0, 0, 0, 0, 0, 0, 0, -4096);
-        do Main.store(56, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
-        do Main.store(57, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
-        do Main.store(58, -8705, -8739, -8739, -8739, -8739, -8739, -8739, -8739, -8739, -35);
-        do Main.store(59, -21761, -21846, -21846, -21846, -21846, -21846, -21846, -21910, -21846, -86);
-        do Main.store(60, 30719, 30583, 30583, 30583, 30583, 30583, 30583, 30327, 30583, -137);
-        do Main.store(61, -21761, -21846, -21846, -21846, -21846, -21846, -21846, -21462, -21846, -86);
-        do Main.store(62, -8705, -8739, -8739, -8739, -8739, -8739, -8739, -9155, -8739, -35);
-        do Main.store(63, -21761, -21846, -21846, -21846, -21846, -21846, -21846, -21462, -21846, -86);
-        do Main.store(64, 30719, 30583, 30591, 30583, 30591, 30583, 30591, 30327, 30591, -137);
-        do Main.store(65, -21761, -21846, -21846, -21846, -21846, -21846, -21846, -21590, -21846, -86);
-        do Main.store(66, 22015, 21845, 21845, 21845, 21845, 21845, 21845, 21973, 21845, -171);
-        do Main.store(67, 2303, 2056, 2056, 2056, 2056, 2056, 2056, 2440, 2056, -248);
-        do Main.store(68, 22015, 21845, 21845, 21845, 21845, 21845, 21845, 21973, 21845, -171);
-        do Main.store(69, 8959, 8738, 8738, 8738, 8738, 8738, 8738, 9122, 8738, -222);
-        do Main.store(70, 22015, 21845, 21845, 21845, 21845, 21845, 21845, 21973, 21845, -171);
-        do Main.store(71, -32513, -32640, -32640, -32640, -32640, -32640, -32640, -32384, -32640, -128);
-        do Main.store(72, 22015, 21845, 21845, 21845, 21845, 21845, 21845, 22101, 21845, -171);
-        do Main.store(73, 8959, 8738, 8738, 8738, 8738, 8738, 8738, 8802, 8738, -222);
-        do Main.store(74, 255, 0, 0, 0, 0, 0, 0, 960, 0, -256);
-        do Main.store(75, 255, 0, 0, 0, 0, 0, 0, 1696, 0, -256);
-        do Main.store(76, 255, 0, 0, 0, 0, 0, 0, 3600, 0, -256);
-        do Main.store(77, 255, 0, 0, 0, 0, 0, 0, 6664, 0, -256);
-        do Main.store(78, 255, 0, 0, 0, 0, 0, 0, 14660, 0, -256);
-        do Main.store(79, 255, 0, 0, 0, 0, 0, 0, 25122, 0, -256);
-        do Main.store(80, 255, 0, 0, 0, 0, 0, 0, -11503, 0, -256);
-        do Main.store(81, 255, 0, 0, 0, 0, 0, (-32767 - 1), -23928, 1, -256);
-        do Main.store(82, 255, 0, 0, 0, 0, 0, 16384, -32372, -32765, -255);
-        do Main.store(83, 255, 0, 0, 0, 0, 0, 8192, 8322, 16390, -254);
-        do Main.store(84, 255, 0, 0, 0, 0, 0, 4096, 24899, 16398, -254);
-        do Main.store(85, 255, 0, 0, 0, 0, 0, -30720, -24446, 8216, -252);
-        do Main.store(86, 255, 0, 0, 0, 0, 0, -15360, -15935, 8249, -252);
-        do Main.store(87, 255, 0, 0, 0, 0, 0, -23552, -32608, 8226, -252);
-        do Main.store(88, 255, 0, 0, 0, 0, 0, 29184, 16736, 16499, -254);
-        do Main.store(89, 255, 0, 0, 0, 0, 8192, -24064, -32608, -32670, -255);
-        do Main.store(90, 255, 0, 0, 0, 0, 8192, -9984, -32304, -32563, -255);
-        do Main.store(91, 255, 0, 0, 0, 0, 8192, -22272, -32096, -32630, -255);
-        do Main.store(92, 255, 0, 0, 0, 0, 8192, 28928, 880, -32569, -255);
-        do Main.store(93, 255, 0, 0, 0, 0, 28672, -22272, 672, -32630, -255);
-        do Main.store(94, 255, 0, 0, 0, 0, 28680, -9984, 1488, -32563, -255);
-        do Main.store(95, 255, 0, 0, 0, 0, 28700, -22272, 672, -32598, -255);
-        do Main.store(96, 255, 0, 0, 0, 0, 28734, 29200, 1889, 16487, -254);
-        do Main.store(97, 255, 0, 0, 0, 8192, -1921, -24024, 2688, 16482, -254);
-        do Main.store(98, 255, 0, 0, 0, 8192, -1921, -11248, -29247, -15823, -253);
-        do Main.store(99, 255, 0, 0, 0, 8192, -1921, -23536, -30078, -22742, -250);
-        do Main.store(100, 255, 0, 0, 0, 8192, -1986, 2104, 5895, 4629, -242);
-        do Main.store(101, 255, 0, 0, 0, 28672, -2048, -3528, -1, 2767, -230);
-        do Main.store(102, 255, 0, 0, 0, 28672, -450, 16185, 0, 18116, -199);
-        do Main.store(103, 255, 0, 0, 0, 28672, -450, -129, -1, 9215, -158);
-        do Main.store(104, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
-        do Main.store(105, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
-        do Main.store(106, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
-        do Main.store(107, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
-        do Main.store(108, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
-        do Main.store(109, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
-        do Main.store(110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(111, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(113, 1536, 15884, 15366, 32358, 62, 0, 15902, 15366, 32358, 62);
-        do Main.store(114, 3584, 26126, 29190, 1638, 102, 0, 26169, 29190, 1638, 102);
-        do Main.store(115, 7680, 26124, 29190, 15932, 102, 0, 26168, 29190, 15932, 102);
-        do Main.store(116, 7680, 15884, 32262, 1560, 62, 0, 15902, 32262, 1560, 62);
-        do Main.store(117, 3584, 1548, 29190, 1560, 22, 0, 1543, 29190, 1560, 22);
-        do Main.store(118, 1536, 1566, 29310, 32280, 102, 0, 1599, 29310, 32280, 102);
-        do Main.store(119, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(120, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(121, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(122, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(123, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(124, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(125, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(126, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(127, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(128, 0, 0, 0, 0, 0, 867, 0, 384, 0, 0);
-        do Main.store(129, 0, 0, 28, 0, 0, 871, 12, 384, 0, 0);
-        do Main.store(130, 0, 0, 6178, 15420, 60, 103, 30, 384, 0, 0);
-        do Main.store(131, 0, 0, 7261, 29298, 114, -9365, -19508, 31217, 0, 0);
-        do Main.store(132, 0, 0, 6213, 15474, 114, -17557, 30317, -12901, 0, 0);
-        do Main.store(133, 0, 0, 6237, 29308, 124, -25741, 14317, -12901, 0, 0);
-        do Main.store(134, 0, 0, 6178, 29296, 112, -25741, 12397, -12901, 0, 0);
-        do Main.store(135, 0, 0, 15388, 15420, 60, -25757, 14285, 31219, 0, 0);
-        do Main.store(136, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(137, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(138, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(139, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(140, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(141, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(142, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        do Main.store(143, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    /**
+     * GENERATED CODE
+     */
+    function void storetitleScreen(int index, int a, int b, int c, int d, int e, int f, int g, int h, int i, int j){
+        var Array arr;
+        let arr = Array.new(10);
+        let titleScreenBmp[index] = arr;
+        let arr[0] = a;let arr[1] = b;let arr[2] = c;let arr[3] = d;let arr[4] = e;let arr[5] = f;let arr[6] = g;let arr[7] = h;let arr[8] = i;let arr[9] = j;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadtitleScreen(){
+        do Main.storetitleScreen(0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Main.storetitleScreen(1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Main.storetitleScreen(2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Main.storetitleScreen(3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Main.storetitleScreen(4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Main.storetitleScreen(5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Main.storetitleScreen(6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Main.storetitleScreen(7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Main.storetitleScreen(8, 15, 0, 0, 0, 0, 0, 0, 0, 0, -4096);do Main.storetitleScreen(9, 23, 0, 0, 0, 0, 0, 0, 0, 0, -6144);do Main.storetitleScreen(10, 39, 0, 0, 0, 0, 0, 0, 0, 0, -7168);do Main.storetitleScreen(11, 71, 0, 0, 0, 0, 0, 0, 0, 0, -7680);do Main.storetitleScreen(12, -121, -1, -1, -1, -1, -1, -1, -1, -1, -7681);do Main.storetitleScreen(13, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);do Main.storetitleScreen(14, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);do Main.storetitleScreen(15, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);do Main.storetitleScreen(16, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);do Main.storetitleScreen(17, -16249, -16417, -193, -12290, -16417, -193, -32706, -10113, 32255, -7919);do Main.storetitleScreen(18, 16519, -20400, -16080, 19460, -20400, -16080, -32542, 19552, 4480, -7909);do Main.storetitleScreen(19, 16519, 12360, -16079, 19464, 12360, -16079, -32382, -26016, 4480, -7915);do Main.storetitleScreen(20, 16519, 12356, -16078, 19472, 12356, -16078, -31998, 12896, 4481, -7919);do Main.storetitleScreen(21, 16519, 12356, -16078, 19488, 12356, -16078, -32254, 12640, 4482, -7919);do Main.storetitleScreen(22, 16519, 12354, -16076, 19520, 12354, -16076, -31230, 24928, 386, -7936);do Main.storetitleScreen(23, -16249, 12482, -16076, -13184, 12482, -16076, -31102, -16032, 388, -7936);do Main.storetitleScreen(24, 16519, 13633, -10952, 19712, 13633, -10952, -30890, -10891, 472, -7936);do Main.storetitleScreen(25, 16519, 12865, -7368, 19968, 12865, -7368, -31198, -23710, 425, -7936);do Main.storetitleScreen(26, -16249, 13632, -10960, -13184, 13632, -10960, -30890, 22133, 467, -7936);do Main.storetitleScreen(27, -16249, 14400, -14032, -14144, 14400, -14032, -31222, 2664, 419, -7936);do Main.storetitleScreen(28, 16519, 13632, -10976, 16608, 13632, -10976, -30890, 22133, 455, -7936);do Main.storetitleScreen(29, 135, 12864, -7424, 240, 12864, -7424, -31966, 9314, 462, -7936);do Main.storetitleScreen(30, 135, 13632, -11008, 216, 13632, -11008, -31914, 21621, 413, -7936);do Main.storetitleScreen(31, 135, 15040, -5376, 236, 15040, -5376, -32278, -22422, 282, -7936);do Main.storetitleScreen(32, 135, 14144, -2304, 246, 14144, -2304, -32514, 28791, 63, -7936);do Main.storetitleScreen(33, 135, 15040, -5376, 236, 15040, -5376, -32738, -23958, 106, -7936);do Main.storetitleScreen(34, 135, 15808, -8960, 216, 15808, -8960, -32762, -6531, 221, -7936);do Main.storetitleScreen(35, 135, 15040, -5376, 240, 15040, -5376, -32758, -12694, 426, -7936);do Main.storetitleScreen(36, 135, 14144, -2304, 224, 14144, -2304, -32754, -29065, 503, -7936);do Main.storetitleScreen(37, 135, 15040, -5376, 2240, 15040, -5376, -32742, -26006, 938, -7936);do Main.storetitleScreen(38, 135, 15808, -8960, 3200, 15808, -8960, -32706, 15997, 989, -7936);do Main.storetitleScreen(39, 135, 16320, -256, 3584, 16320, -256, -32642, 32383, 2046, -7936);do Main.storetitleScreen(40, 135, 16320, -256, 3840, 16320, -256, -32642, 32383, 2046, -7936);do Main.storetitleScreen(41, 135, 16320, -256, 3968, 16320, -256, -32514, -385, 2044, -7936);do Main.storetitleScreen(42, 135, 16320, -256, 4032, 16320, -256, -32258, -385, 2041, -7936);do Main.storetitleScreen(43, 135, 16320, -256, 4064, 16320, -256, -31746, -385, 2033, -7936);do Main.storetitleScreen(44, 135, 16320, -256, 4080, 16320, -256, -31746, -385, 2035, -7936);do Main.storetitleScreen(45, 135, 16320, -256, 4088, 16320, -256, -30722, -385, 999, -7936);do Main.storetitleScreen(46, 135, 16320, -256, 4092, 16320, -256, -28674, -385, 975, -7936);do Main.storetitleScreen(47, 135, 16320, -256, 4094, 16320, -256, -24578, -385, 495, -7936);do Main.storetitleScreen(48, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);do Main.storetitleScreen(49, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);do Main.storetitleScreen(50, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);do Main.storetitleScreen(51, -121, -1, -1, -1, -1, -1, -1, -1, -1, -7681);do Main.storetitleScreen(52, 71, 0, 0, 0, 0, 0, 0, 0, 0, -7680);do Main.storetitleScreen(53, 39, 0, 0, 0, 0, 0, 0, 0, 0, -7168);do Main.storetitleScreen(54, 23, 0, 0, 0, 0, 0, 0, 0, 0, -6144);do Main.storetitleScreen(55, 15, 0, 0, 0, 0, 0, 0, 0, 0, -4096);do Main.storetitleScreen(56, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Main.storetitleScreen(57, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Main.storetitleScreen(58, -8705, -8739, -8739, -8739, -8739, -8739, -8739, -8739, -8739, -35);do Main.storetitleScreen(59, -21761, -21846, -21846, -21846, -21846, -21846, -21846, -21910, -21846, -86);do Main.storetitleScreen(60, 30719, 30583, 30583, 30583, 30583, 30583, 30583, 30327, 30583, -137);do Main.storetitleScreen(61, -21761, -21846, -21846, -21846, -21846, -21846, -21846, -21462, -21846, -86);do Main.storetitleScreen(62, -8705, -8739, -8739, -8739, -8739, -8739, -8739, -9155, -8739, -35);do Main.storetitleScreen(63, -21761, -21846, -21846, -21846, -21846, -21846, -21846, -21462, -21846, -86);do Main.storetitleScreen(64, 30719, 30583, 30591, 30583, 30591, 30583, 30591, 30327, 30591, -137);do Main.storetitleScreen(65, -21761, -21846, -21846, -21846, -21846, -21846, -21846, -21590, -21846, -86);do Main.storetitleScreen(66, 22015, 21845, 21845, 21845, 21845, 21845, 21845, 21973, 21845, -171);do Main.storetitleScreen(67, 2303, 2056, 2056, 2056, 2056, 2056, 2056, 2440, 2056, -248);do Main.storetitleScreen(68, 22015, 21845, 21845, 21845, 21845, 21845, 21845, 21973, 21845, -171);do Main.storetitleScreen(69, 8959, 8738, 8738, 8738, 8738, 8738, 8738, 9122, 8738, -222);do Main.storetitleScreen(70, 22015, 21845, 21845, 21845, 21845, 21845, 21845, 21973, 21845, -171);do Main.storetitleScreen(71, -32513, -32640, -32640, -32640, -32640, -32640, -32640, -32384, -32640, -128);do Main.storetitleScreen(72, 22015, 21845, 21845, 21845, 21845, 21845, 21845, 22101, 21845, -171);do Main.storetitleScreen(73, 8959, 8738, 8738, 8738, 8738, 8738, 8738, 8802, 8738, -222);do Main.storetitleScreen(74, 255, 0, 0, 0, 0, 0, 0, 960, 0, -256);do Main.storetitleScreen(75, 255, 0, 0, 0, 0, 0, 0, 1696, 0, -256);do Main.storetitleScreen(76, 255, 0, 0, 0, 0, 0, 0, 3600, 0, -256);do Main.storetitleScreen(77, 255, 0, 0, 0, 0, 0, 0, 6664, 0, -256);do Main.storetitleScreen(78, 255, 0, 0, 0, 0, 0, 0, 14660, 0, -256);do Main.storetitleScreen(79, 255, 0, 0, 0, 0, 0, 0, 25122, 0, -256);do Main.storetitleScreen(80, 255, 0, 0, 0, 0, 0, 0, -11503, 0, -256);do Main.storetitleScreen(81, 255, 0, 0, 0, 0, 0, (-32767 - 1), -23928, 1, -256);do Main.storetitleScreen(82, 255, 0, 0, 0, 0, 0, 16384, -32372, -32765, -255);do Main.storetitleScreen(83, 255, 0, 0, 0, 0, 0, 8192, 8322, 16390, -254);do Main.storetitleScreen(84, 255, 0, 0, 0, 0, 0, 4096, 24899, 16398, -254);do Main.storetitleScreen(85, 255, 0, 0, 0, 0, 0, -30720, -24446, 8216, -252);do Main.storetitleScreen(86, 255, 0, 0, 0, 0, 0, -15360, -15935, 8249, -252);do Main.storetitleScreen(87, 255, 0, 0, 0, 0, 0, -23552, -32608, 8226, -252);do Main.storetitleScreen(88, 255, 0, 0, 0, 0, 0, 29184, 16736, 16499, -254);do Main.storetitleScreen(89, 255, 0, 0, 0, 0, 8192, -24064, -32608, -32670, -255);do Main.storetitleScreen(90, 255, 0, 0, 0, 0, 8192, -9984, -32304, -32563, -255);do Main.storetitleScreen(91, 255, 0, 0, 0, 0, 8192, -22272, -32096, -32630, -255);do Main.storetitleScreen(92, 255, 0, 0, 0, 0, 8192, 28928, 880, -32569, -255);do Main.storetitleScreen(93, 255, 0, 0, 0, 0, 28672, -22272, 672, -32630, -255);do Main.storetitleScreen(94, 255, 0, 0, 0, 0, 28680, -9984, 1488, -32563, -255);do Main.storetitleScreen(95, 255, 0, 0, 0, 0, 28700, -22272, 672, -32598, -255);do Main.storetitleScreen(96, 255, 0, 0, 0, 0, 28734, 29200, 1889, 16487, -254);do Main.storetitleScreen(97, 255, 0, 0, 0, 8192, -1921, -24024, 2688, 16482, -254);do Main.storetitleScreen(98, 255, 0, 0, 0, 8192, -1921, -11248, -29247, -15823, -253);do Main.storetitleScreen(99, 255, 0, 0, 0, 8192, -1921, -23536, -30078, -22742, -250);do Main.storetitleScreen(100, 255, 0, 0, 0, 8192, -1986, 2104, 5895, 4629, -242);do Main.storetitleScreen(101, 255, 0, 0, 0, 28672, -2048, -3528, -1, 2767, -230);do Main.storetitleScreen(102, 255, 0, 0, 0, 28672, -450, 16185, 0, 18116, -199);do Main.storetitleScreen(103, 255, 0, 0, 0, 28672, -450, -129, -1, 9215, -158);do Main.storetitleScreen(104, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Main.storetitleScreen(105, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Main.storetitleScreen(106, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Main.storetitleScreen(107, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Main.storetitleScreen(108, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Main.storetitleScreen(109, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Main.storetitleScreen(110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(111, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(113, 1536, 15884, 15366, 32358, 62, 0, 15902, 15366, 32358, 62);do Main.storetitleScreen(114, 3584, 26126, 29190, 1638, 102, 0, 26169, 29190, 1638, 102);do Main.storetitleScreen(115, 7680, 26124, 29190, 15932, 102, 0, 26168, 29190, 15932, 102);do Main.storetitleScreen(116, 7680, 15884, 32262, 1560, 62, 0, 15902, 32262, 1560, 62);do Main.storetitleScreen(117, 3584, 1548, 29190, 1560, 22, 0, 1543, 29190, 1560, 22);do Main.storetitleScreen(118, 1536, 1566, 29310, 32280, 102, 0, 1599, 29310, 32280, 102);do Main.storetitleScreen(119, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(120, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(121, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(122, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(123, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(124, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(125, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(126, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(127, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(128, 0, 0, 0, 0, 0, 867, 0, 384, 0, 0);do Main.storetitleScreen(129, 0, 0, 28, 0, 0, 871, 12, 384, 0, 0);do Main.storetitleScreen(130, 0, 0, 6178, 15420, 60, 103, 30, 384, 0, 0);do Main.storetitleScreen(131, 0, 0, 7261, 29298, 114, -9365, -19508, 31217, 0, 0);do Main.storetitleScreen(132, 0, 0, 6213, 15474, 114, -17557, 30317, -12901, 0, 0);do Main.storetitleScreen(133, 0, 0, 6237, 29308, 124, -25741, 14317, -12901, 0, 0);do Main.storetitleScreen(134, 0, 0, 6178, 29296, 112, -25741, 12397, -12901, 0, 0);do Main.storetitleScreen(135, 0, 0, 15388, 15420, 60, -25757, 14285, 31219, 0, 0);do Main.storetitleScreen(136, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(137, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(138, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(139, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(140, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(141, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(142, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Main.storetitleScreen(143, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        return;
+    }
+
+    /*
+     * Initializes the "bricks" bitmap.
+     * GENERATED CODE
+     */
+    function void initbricksBmp() {
+        let bricksBmpCols = 1;
+        let bricksBmpRows = 6;
+        let bricksBmp = Array.new(6);
+        do Main.loadbricks();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storebricks(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let bricksBmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadbricks(){
+        do Main.storebricks(0, 255);do Main.storebricks(1, 136);do Main.storebricks(2, 136);do Main.storebricks(3, 255);do Main.storebricks(4, 34);do Main.storebricks(5, 34);
         return;
     }
 }

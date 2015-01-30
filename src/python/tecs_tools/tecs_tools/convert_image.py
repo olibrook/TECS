@@ -1,5 +1,6 @@
 import itertools
 import argparse
+import string
 
 import PIL.Image as Image
 
@@ -89,8 +90,12 @@ def main():
         dest='preview', action='store_true', default=False)
 
     parser.add_argument(
-        '--func_name', help='wrap Jack source in calls to a named function',
-        dest='func_name', default='XXX')
+        '--image_name', help='name for the image in Jack source code',
+        dest='image_name', default='XXX')
+
+    parser.add_argument(
+        '--class_name', help='name of the class which loads the image in Jack',
+        dest='class_name', default='XXX')
 
     ns = parser.parse_args()
 
@@ -102,6 +107,7 @@ def main():
 
     output_width_pixels = input_width + (input_width % word_width)
     output_width_words = output_width_pixels / word_width
+    output_height_words = input_height
 
     seq = itertools.chain(img.getdata())
     seq = interleave_padding(seq, input_width, word_width, white)
@@ -116,7 +122,76 @@ def main():
         seq = (''.join(bits) for bits in grouper(seq, word_width))
         seq = (to_hack_literal(binary) for binary in seq)
 
+        if not output_width_words <= len(string.ascii_letters):
+            raise Exception('Cannot generate enough JACK identifiers')
+
+        store_function = 'store{}'.format(ns.image_name)
+        load_function = 'load{}'.format(ns.image_name)
+
+        store_calls = ""
         for i, row in enumerate(grouper(seq, output_width_words)):
-            print("do {}({}, {});".format(ns.func_name, i, ', '.join(row)))
+            store_calls += "do {}.{}({}, {});".format(
+                ns.class_name, store_function, i, ', '.join(row))
 
+        identifiers = string.ascii_letters[:output_width_words]
+        parameter_list = ", ".join(
+            'int {}'.format(identifier) for identifier in identifiers)
 
+        assignments = "".join(
+            "let arr[{}] = {};".format(i, identifier)
+            for i, identifier in enumerate(identifiers)
+        )
+
+        ctx = dict(
+            image_name=ns.image_name,
+            parameter_list=parameter_list,
+            assignments=assignments,
+            store_calls=store_calls,
+            class_name=ns.class_name,
+            store_function=store_function,
+            load_function=load_function,
+            output_width_words=output_width_words,
+            output_height_words=output_height_words,
+        )
+
+        code = """
+
+    // Add to statics
+    static Array {image_name}Bmp;
+    static int {image_name}BmpCols;
+    static int {image_name}BmpRows;
+
+    /*
+     * Initializes the "{image_name}" bitmap.
+     * GENERATED CODE
+     */
+    function void init{image_name}Bmp() {{
+        let {image_name}BmpCols = {output_width_words};
+        let {image_name}BmpRows = {output_height_words};
+        let {image_name}Bmp = Array.new({output_height_words});
+        do {class_name}.{load_function}();
+        return;
+    }}
+
+    /**
+     * GENERATED CODE
+     */
+    function void {store_function}(int index, {parameter_list}){{
+        var Array arr;
+        let arr = Array.new({output_width_words});
+        let {image_name}Bmp[index] = arr;
+        {assignments}
+        return;
+    }}
+
+    /**
+     * GENERATED CODE
+     */
+    function void {load_function}(){{
+        {store_calls}
+        return;
+    }}
+
+        """.format(**ctx)
+
+        print(code)
