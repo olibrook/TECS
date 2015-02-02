@@ -15,6 +15,10 @@ class Game {
     static int COMPLETE;
     static int NON_EMPTY;
 
+    static int GAME_OVER;
+    static int RUNNING;
+    static int gameState;
+
     function void init() {
         var bool stateChanged;
 
@@ -31,20 +35,32 @@ class Game {
         let COMPLETE = 1;
         let NON_EMPTY = 2;
 
+        let GAME_OVER = 3;
+        let RUNNING = 4;
+        let gameState = RUNNING;
+
         let board = Game.createBoard(boardRows, boardCols);
 
         while(true){
-            let stateChanged = Game.update();
-            if(stateChanged){
-                do Screen.clearScreen();
-                do Game.render();
+            if(gameState = RUNNING){
+                let stateChanged = Game.update();
+                if(stateChanged){
+                    do Screen.clearScreen();
+                    do Game.render();
+                }
+            } else {
+                if(gameState = GAME_OVER){
+                    do Output.moveCursor(10, 10);
+                    do Output.printString("Game over");
+                    do Sys.halt();
+                }
             }
         }
         return;
     }
 
     function bool update(){
-        var int key, dx, dy, dr;
+        var int key, dx, dy, dr, newRotation, possibleRotations;
         var bool stateChanged;
 
         let key = Keyboard.keyPressed();
@@ -73,43 +89,42 @@ class Game {
             let dy = 0;
         }
 
-        do Game.removeCompleteLines(board, boardRows);
-        let stateChanged = Game.moveGameCursor(cursor, dx, dy);
+        let stateChanged = false;
+
+        if(~(dy=0)){
+            if(Game.isValidPosition(cursor, 0, dy)){
+                let stateChanged = true;
+                do cursor.setY(cursor.getY() + dy);
+            } else {
+                do Game.writeToBoard(cursor, board);
+
+                // TODO: Randomize, start a new one properly
+                do cursor.setY(0);
+                if(~Game.isValidPosition(cursor, 0, 0)){
+                    let gameState = GAME_OVER;
+                }
+            }
+        }
+
+        if(~(dx=0)){
+            if(Game.isValidPosition(cursor, dx, 0)){
+                let stateChanged = true;
+                do cursor.setX(cursor.getX() + dx);
+            }
+        }
 
         if(~(dr=0)){
-            let stateChanged = stateChanged | Game.rotate(cursor, dr);
+            let possibleRotations = 4;
+            let newRotation = aCursor.getRotationIdx() + dr;
+            let newRotation = (newRotation - ((newRotation/possibleRotations) * possibleRotations));
+            do cursor.setRotationIdx(newRotation);
+            let stateChanged = true;
         }
 
         if(countdown = 0){
-            let countdown = 1000;
+            let countdown = 2000;
         } else {
             let countdown = countdown -1;
-        }
-
-        return stateChanged;
-    }
-
-    function bool moveGameCursor(Cursor cursor, int dx, bool dy){
-        var bool stateChanged;
-
-        let stateChanged = false;
-
-        // Vertical wraps
-        if(~(dy=0)){
-            if(Game.isValidMove(cursor, 0, dy)){
-                let stateChanged = true;
-                do cursor.setY(cursor.getY() + dy);
-            }
-        }
-
-        // Horizontal clamps
-        if(~(dx=0)){
-            if(Game.isValidMove(cursor, dx, 0)){
-                let stateChanged = true;
-                do cursor.setX(cursor.getX() + dx);
-            } else {
-                // Drop the tetronimo, start a new one from the top.
-            }
         }
         return stateChanged;
     }
@@ -128,11 +143,9 @@ class Game {
             let j = 0;
             let row = board[i];
             while(j<boardCols){
-                do Output.moveCursor(i, j);
                 if(~(row[j] = 0)){
+                    do Output.moveCursor(i, j);
                     do Output.printChar(0);
-                } else {
-                    do Output.printChar(32);
                 }
                 let j = j+1;
             }
@@ -194,10 +207,6 @@ class Game {
         return board;
     }
 
-    function int randomInt(int start, int end){
-        return 0;
-    }
-
     function int rowState(Array row, int columns){
         var int i, filledCount;
 
@@ -253,16 +262,6 @@ class Game {
         return;
     }
 
-    function bool rotate(Cursor aCursor, int dr){
-        var int newRotation, possibleRotations;
-
-        let possibleRotations = 4;
-        let newRotation = aCursor.getRotationIdx() + dr;
-        let newRotation = (newRotation - ((newRotation/possibleRotations) * possibleRotations));
-        do cursor.setRotationIdx(newRotation);
-        return true;
-    }
-
     /**
      * Is the cursor position valid, optionally with an offset to
      * decide for candidate moves.
@@ -270,7 +269,7 @@ class Game {
      * A position is invalid if the tentronimo overlaps existing pieces
      * or is off the board.
      */
-    function bool isValidMove(Cursor aCursor, int dX, int dY){
+    function bool isValidPosition(Cursor aCursor, int dX, int dY){
         var int boardX, boardY, tileX, tileY, boardBaseX, boardBaseY, boardVal, tileVal;
         var Array cTiles;
 
@@ -304,5 +303,33 @@ class Game {
             let tileY = tileY + 1;
         }
         return true;
+    }
+
+    function void writeToBoard(Cursor aCursor, Array aBoard){
+        var int boardX, boardY, tileX, tileY, boardBaseX, boardBaseY, boardVal, tileVal;
+        var Array cTiles;
+
+        let boardBaseX = aCursor.getX();
+        let boardBaseY = aCursor.getY();
+        let cTiles = aCursor.getTiles();
+
+        let tileY = 0;
+        while(tileY < 4){
+            let tileX = 0;
+            while(tileX < 4){
+                let boardX = boardBaseX + tileX;
+                let boardY = boardBaseY + tileY;
+
+                if((boardX>-1) & (boardX<boardCols) & (boardY>-1) & (boardY<boardRows)){
+                    let tileVal = Matrix.get(cTiles, tileY, tileX);
+                    if(tileVal > 0){  // Don't copy empty!
+                        do Matrix.set(aBoard, boardY, boardX, tileVal);
+                    }
+                }
+                let tileX = tileX + 1;
+            }
+            let tileY = tileY + 1;
+        }
+        return;
     }
 }
