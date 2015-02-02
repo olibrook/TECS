@@ -104,16 +104,16 @@ class Tetronimoes {
     }
 
     function Array rotations(Array tetronimo, int n){
-        var int i;
+        var int i, numRotations;
         var Array ret, t;
-        let ret = Array.new(4);
+        let numRotations = 4;
+        let ret = Array.new(numRotations);
 
         let ret[0] = tetronimo;
-
         let i = 1;
-        while(i<4){
-            let t = Matrix.copy(ret[i-1], 4);
-            do Matrix.rotate(t, 4, true);
+        while(i<numRotations){
+            let t = Matrix.copy(ret[i-1], n);
+            do Matrix.rotate(t, n, true);
             let ret[i] = t;
             let i = i+1;
         }

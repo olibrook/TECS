@@ -91,24 +91,24 @@ class Game {
 
     function bool moveGameCursor(Cursor cursor, int dx, bool dy){
         var bool stateChanged;
-        var int newY;
 
         let stateChanged = false;
 
         // Vertical wraps
         if(~(dy=0)){
-            let stateChanged = true;
-            let newY = cursor.getY() + dy;
-            let newY = (newY - ((newY/boardRows) * boardRows));
-            do cursor.setY(newY);
+            if(Game.isValidMove(cursor, 0, dy)){
+                let stateChanged = true;
+                do cursor.setY(cursor.getY() + dy);
+            }
         }
 
         // Horizontal clamps
         if(~(dx=0)){
-            let stateChanged = true;
-            do cursor.setX(Math.min(Math.max(0, cursor.getX() + dx), (boardCols - 4)));
+            if(Game.isValidMove(cursor, dx, 0)){
+                let stateChanged = true;
+                do cursor.setX(cursor.getX() + dx);
+            }
         }
-
         return stateChanged;
     }
 
@@ -258,6 +258,49 @@ class Game {
         let newRotation = aCursor.getRotationIdx() + dr;
         let newRotation = (newRotation - ((newRotation/possibleRotations) * possibleRotations));
         do cursor.setRotationIdx(newRotation);
+        return true;
+    }
+
+    /**
+     * Is the cursor position valid, optionally with an offset to
+     * decide for candidate moves.
+     *
+     * A position is invalid if the tentronimo overlaps existing pieces
+     * or is off the board.
+     */
+    function bool isValidMove(Cursor aCursor, int dX, int dY){
+        var int boardX, boardY, tileX, tileY, boardBaseX, boardBaseY, boardVal, tileVal;
+        var Array cTiles;
+
+        let boardBaseX = aCursor.getX() + dX;
+        let boardBaseY = aCursor.getY() + dY;
+        let cTiles = aCursor.getTiles();
+
+        let tileY = 0;
+        while(tileY < 4){
+            let tileX = 0;
+            while(tileX < 4){
+                let boardX = boardBaseX + tileX;
+                let boardY = boardBaseY + tileY;
+
+                let tileVal = Matrix.get(cTiles, tileY, tileX);
+                if((boardX>-1) & (boardX<boardCols) & (boardY>-1) & (boardY<boardRows)){
+                    let boardVal = Matrix.get(board, boardY, boardX);
+                } else {
+                    let boardVal = -1;
+                }
+
+                if((tileVal > 0) & (boardVal > 0)){
+                    return false; // Overlapping cells
+                }
+
+                if((tileVal > 0) & (boardVal = -1)) {
+                    return false; // Cells off-the board
+                }
+                let tileX = tileX + 1;
+            }
+            let tileY = tileY + 1;
+        }
         return true;
     }
 }
