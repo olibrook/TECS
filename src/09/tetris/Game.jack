@@ -107,6 +107,8 @@ class Game {
             if(Game.isValidMove(cursor, dx, 0)){
                 let stateChanged = true;
                 do cursor.setX(cursor.getX() + dx);
+            } else {
+                // Drop the tetronimo, start a new one from the top.
             }
         }
         return stateChanged;
