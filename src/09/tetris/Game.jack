@@ -9,6 +9,7 @@ class Game {
     static int countdown;
     static int previousKey;
 
+    static Cursor trialCursor;
     static Cursor cursor;
 
     static int EMPTY;
@@ -24,6 +25,7 @@ class Game {
 
         do Cursor.init();
 
+        let trialCursor = Cursor.new(0, 0, 0, 0);
         let cursor = Cursor.new(0, 0, 0, 0);
 
         let boardRows = 20;
@@ -91,8 +93,17 @@ class Game {
 
         let stateChanged = false;
 
+        if(~(dx=0) | ~(dr=0)){
+            if(Game.isValidPosition(cursor, dx, 0, dr)){
+                let stateChanged = true;
+                do cursor.setX(cursor.getX() + dx);
+                do cursor.rotate(dr);
+            }
+        }
+
+        // Handle vertical movement last and alone - triggers new blocks
         if(~(dy=0)){
-            if(Game.isValidPosition(cursor, 0, dy)){
+            if(Game.isValidPosition(cursor, 0, dy, 0)){
                 let stateChanged = true;
                 do cursor.setY(cursor.getY() + dy);
             } else {
@@ -100,25 +111,10 @@ class Game {
 
                 // TODO: Randomize, start a new one properly
                 do cursor.setY(0);
-                if(~Game.isValidPosition(cursor, 0, 0)){
+                if(~Game.isValidPosition(cursor, 0, 0, 0)){
                     let gameState = GAME_OVER;
                 }
             }
-        }
-
-        if(~(dx=0)){
-            if(Game.isValidPosition(cursor, dx, 0)){
-                let stateChanged = true;
-                do cursor.setX(cursor.getX() + dx);
-            }
-        }
-
-        if(~(dr=0)){
-            let possibleRotations = 4;
-            let newRotation = aCursor.getRotationIdx() + dr;
-            let newRotation = (newRotation - ((newRotation/possibleRotations) * possibleRotations));
-            do cursor.setRotationIdx(newRotation);
-            let stateChanged = true;
         }
 
         if(countdown = 0){
@@ -269,13 +265,25 @@ class Game {
      * A position is invalid if the tentronimo overlaps existing pieces
      * or is off the board.
      */
-    function bool isValidPosition(Cursor aCursor, int dX, int dY){
+    function bool isValidPosition(Cursor aCursor, int dX, int dY, int dr){
         var int boardX, boardY, tileX, tileY, boardBaseX, boardBaseY, boardVal, tileVal;
         var Array cTiles;
 
-        let boardBaseX = aCursor.getX() + dX;
-        let boardBaseY = aCursor.getY() + dY;
-        let cTiles = aCursor.getTiles();
+        // Match cursor props.
+        do trialCursor.setTetronimo(aCursor.getTetronimo());
+        do trialCursor.setX(aCursor.getX());
+        do trialCursor.setY(aCursor.getY());
+        do trialCursor.setRotation(aCursor.getRotation());
+
+        // Make the dx/dy/dr adjustments
+        do trialCursor.setX(trialCursor.getX() + dX);
+        do trialCursor.setY(trialCursor.getY() + dY);
+        do trialCursor.rotate(dr);
+
+        // Do the rest with the 'trial' cursor
+        let boardBaseX = trialCursor.getX();
+        let boardBaseY = trialCursor.getY();
+        let cTiles = trialCursor.getTiles();
 
         let tileY = 0;
         while(tileY < 4){

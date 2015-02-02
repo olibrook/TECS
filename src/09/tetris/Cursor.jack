@@ -4,18 +4,18 @@ class Cursor {
 
     static Array TETRONIMOES;
 
-    field int x, y, tetronimoIdx, rotationIdx;
+    field int x, y, tetronimo, rotation;
 
     function void init(){
         let TETRONIMOES = Tetronimoes.getTetronimoes();
         return;
     }
 
-    constructor Cursor new(int aX, int aY, int aRotationIdx, int aTetronimoIdx) {
+    constructor Cursor new(int aX, int aY, int aRotation, int aTetronimo) {
         let x = aX;
         let y = aY;
-        let rotationIdx = aRotationIdx;
-        let tetronimoIdx = aTetronimoIdx;
+        let rotation = aRotation;
+        let tetronimo = aTetronimo;
         return this;
     }
 
@@ -37,25 +37,36 @@ class Cursor {
         return;
     }
 
-    method int getRotationIdx(){
-        return rotationIdx;
+    method int getRotation(){
+        return rotation;
     }
 
-    method void setRotationIdx(int val){
-        let rotationIdx = val;
+    method void setRotation(int val){
+        let rotation = val;
         return;
     }
 
-    method int getTetronimoIdx(){
-        return tetronimoIdx;
+    method void rotate(int dr){
+        var int possibleRotations, newRotation;
+
+        let possibleRotations = 4;
+        let newRotation = getRotation() + dr;
+        let newRotation = (newRotation -
+            ((newRotation/possibleRotations) * possibleRotations));
+        do setRotation(newRotation);
+        return;
     }
 
-    method void setTetronimoIdx(int val){
-        let tetronimoIdx = val;
+    method int getTetronimo(){
+        return tetronimo;
+    }
+
+    method void setTetronimo(int val){
+        let tetronimo = val;
         return;
     }
 
     method Array getTiles(){
-        return Matrix.get(TETRONIMOES, tetronimoIdx, rotationIdx);
+        return Matrix.get(TETRONIMOES, tetronimo, rotation);
     }
 }
