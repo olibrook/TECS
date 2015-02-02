@@ -1,0 +1,122 @@
+
+
+class Tetronimoes {
+
+    /**
+     * Returns a 7x4 array of tetronimoes, each of which is a 4x4 array.
+     */
+    function Array getTetronimoes(){
+        var Array tetronimoes;
+
+        let tetronimoes = Array.new(7);
+
+        let tetronimoes[0] = Tetronimoes.rotations(Tetronimoes.makeShape(
+            0, 0, 0, 0,
+            0, 1, 1, 1,
+            0, 0, 1, 0,
+            0, 0, 0, 0
+        ), 4);
+
+        let tetronimoes[1] = Tetronimoes.rotations(Tetronimoes.makeShape(
+            0, 0, 0, 0,
+            0, 0, 2, 2,
+            0, 2, 2, 0,
+            0, 0, 0, 0
+        ), 4);
+
+        let tetronimoes[2] = Tetronimoes.rotations(Tetronimoes.makeShape(
+            0, 0, 0, 0,
+            0, 2, 2, 0,
+            0, 0, 2, 2,
+            0, 0, 0, 0
+        ), 4);
+
+        let tetronimoes[3] = Tetronimoes.rotations(Tetronimoes.makeShape(
+            0, 0, 3, 0,
+            0, 0, 3, 0,
+            0, 3, 3, 0,
+            0, 0, 0, 0
+        ), 4);
+
+        let tetronimoes[4] = Tetronimoes.rotations(Tetronimoes.makeShape(
+            0, 3, 0, 0,
+            0, 3, 0, 0,
+            0, 3, 3, 0,
+            0, 0, 0, 0
+        ), 4);
+
+        let tetronimoes[5] = Tetronimoes.rotations(Tetronimoes.makeShape(
+            0, 4, 0, 0,
+            0, 4, 0, 0,
+            0, 4, 0, 0,
+            0, 4, 0, 0
+        ), 4);
+
+        let tetronimoes[6] = Tetronimoes.rotations(Tetronimoes.makeShape(
+            0, 0, 0, 0,
+            0, 5, 5, 0,
+            0, 5, 5, 0,
+            0, 0, 0, 0
+        ), 4);
+
+        return tetronimoes;
+    }
+
+    function Array makeShape(
+        int a, int b, int c, int d,
+        int e, int f, int g, int h,
+        int i, int j, int k, int l,
+        int m, int n, int o, int p) {
+
+        var Array ret, r0, r1, r2, r3;
+
+        let ret = Array.new(4);
+
+        let r0 = Array.new(4);
+        let r0[0] = a;
+        let r0[1] = b;
+        let r0[2] = c;
+        let r0[3] = d;
+        let ret[0] = r0;
+
+        let r1 = Array.new(4);
+        let r1[0] = e;
+        let r1[1] = f;
+        let r1[2] = g;
+        let r1[3] = h;
+        let ret[1] = r1;
+
+        let r2 = Array.new(4);
+        let r2[0] = i;
+        let r2[1] = j;
+        let r2[2] = k;
+        let r2[3] = l;
+        let ret[2] = r2;
+
+        let r3 = Array.new(4);
+        let r3[0] = m;
+        let r3[1] = n;
+        let r3[2] = o;
+        let r3[3] = p;
+        let ret[3] = r3;
+
+        return ret;
+    }
+
+    function Array rotations(Array tetronimo, int n){
+        var int i;
+        var Array ret, t;
+        let ret = Array.new(4);
+
+        let ret[0] = tetronimo;
+
+        let i = 1;
+        while(i<4){
+            let t = Matrix.copy(ret[i-1], 4);
+            do Matrix.rotate(t, 4, true);
+            let ret[i] = t;
+            let i = i+1;
+        }
+        return ret;
+    }
+}

@@ -1,0 +1,61 @@
+
+
+class Cursor {
+
+    static Array TETRONIMOES;
+
+    field int x, y, tetronimoIdx, rotationIdx;
+
+    function void init(){
+        let TETRONIMOES = Tetronimoes.getTetronimoes();
+        return;
+    }
+
+    constructor Cursor new(int aX, int aY, int aRotationIdx, int aTetronimoIdx) {
+        let x = aX;
+        let y = aY;
+        let rotationIdx = aRotationIdx;
+        let tetronimoIdx = aTetronimoIdx;
+        return this;
+    }
+
+    method int getX(){
+        return x;
+    }
+
+    method void setX(int val){
+        let x = val;
+        return;
+    }
+
+    method int getY(){
+        return y;
+    }
+
+    method void setY(int val){
+        let y = val;
+        return;
+    }
+
+    method int getRotationIdx(){
+        return rotationIdx;
+    }
+
+    method void setRotationIdx(int val){
+        let rotationIdx = val;
+        return;
+    }
+
+    method int getTetronimoIdx(){
+        return tetronimoIdx;
+    }
+
+    method void setTetronimoIdx(int val){
+        let tetronimoIdx = val;
+        return;
+    }
+
+    method Array getTiles(){
+        return Matrix.get(TETRONIMOES, tetronimoIdx, rotationIdx);
+    }
+}

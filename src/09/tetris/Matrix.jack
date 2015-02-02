@@ -1,0 +1,90 @@
+class Matrix {
+
+    function int get(Array mat, int x, int y){
+        var Array row;
+        let row = mat[x];
+        return row[y];
+    }
+
+    function int set(Array mat, int x, int y, int val){
+        var Array row;
+        let row = mat[x];
+        let row[y] = val;
+        return val;
+    }
+
+    function void trans(Array mat, int n){
+        var int step, i, j, jMax, t;
+
+        let step = 0;
+        let i = 0;
+
+        while(i<n){
+            let j = 0;
+            let jMax = step+1;
+            while(j<jMax){
+                let t = Matrix.get(mat, i, j);
+                do Matrix.set(mat, i, j, Matrix.get(mat, j, i));
+                do Matrix.set(mat, j, i, t);
+                let j = j+1;
+            }
+            let i = i+1;
+            let step = step+1;
+        }
+        return;
+    }
+
+    function void reverse(Array mat, int n, bool horizontal){
+        var int i, j, jMax, t;
+
+        let jMax = n/2;
+        let i = 0;
+        while(i<n){
+            let j = 0;
+            while(j<jMax){
+                if (horizontal){
+                    let t = Matrix.get(mat, i, j);
+                    do Matrix.set(mat, i, j, Matrix.get(mat, i, n-1-j));
+                    do Matrix.set(mat, i, n-1-j, t);
+                } else {
+                    let t = Matrix.get(mat, j, i);
+                    do Matrix.set(mat, j, i, Matrix.get(mat, n-1-j, i));
+                    do Matrix.set(mat, n-1-j, i, t);
+                }
+                let j = j+1;
+            }
+            let i = i+1;
+        }
+        return;
+    }
+
+    function void rotate(Array mat, int n, bool right){
+        do Matrix.trans(mat, n);
+        if (right){
+            do Matrix.reverse(mat, n, true);
+        } else {
+            do Matrix.reverse(mat, n, false);
+        }
+        return;
+    }
+
+    function Array copy(Array mat, int n){
+        var int i, j;
+        var Array ret, row, rowCopy;
+
+        let ret = Array.new(n);
+        let i = 0;
+        while(i<n){
+            let row = mat[i];
+            let rowCopy = Array.new(n);
+            let ret[i] = rowCopy;
+            let j = 0;
+            while(j<n){
+                let rowCopy[j] = row[j];
+                let j = j+1;
+            }
+            let i = i+1;
+        }
+        return ret;
+    }
+}

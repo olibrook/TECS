@@ -1,0 +1,263 @@
+class Game {
+
+    // Board is [rows][cols]
+    static Array board;
+    static int boardCols;
+    static int boardRows;
+
+    static int nextShape;
+    static int countdown;
+    static int previousKey;
+
+    static Cursor cursor;
+
+    static int EMPTY;
+    static int COMPLETE;
+    static int NON_EMPTY;
+
+    function void init() {
+        var bool stateChanged;
+
+        do Cursor.init();
+
+        let cursor = Cursor.new(0, 0, 0, 0);
+
+        let boardRows = 20;
+        let boardCols = 10;
+
+        let previousKey = 0;
+
+        let EMPTY = 0;
+        let COMPLETE = 1;
+        let NON_EMPTY = 2;
+
+        let board = Game.createBoard(boardRows, boardCols);
+
+        while(true){
+            let stateChanged = Game.update();
+            if(stateChanged){
+                do Screen.clearScreen();
+                do Game.render();
+            }
+        }
+        return;
+    }
+
+    function bool update(){
+        var int key, dx, dy, dr;
+        var bool stateChanged;
+
+        let key = Keyboard.keyPressed();
+        if(~(key = previousKey)){
+            let previousKey = key;
+
+            let dx = 0;
+            let dr = 0;
+
+            if(key = 130){
+                let dx = -1;
+            }
+
+            if(key = 132){
+                let dx = 1;
+            }
+
+            if(key = 131){ // Up
+                let dr = 1;
+            }
+        }
+
+        if(countdown = 0){
+            let dy = 1;
+        } else {
+            let dy = 0;
+        }
+
+        do Game.removeCompleteLines(board, boardRows);
+        let stateChanged = Game.moveGameCursor(cursor, dx, dy);
+
+        if(~(dr=0)){
+            let stateChanged = stateChanged | Game.rotate(cursor, dr);
+        }
+
+        if(countdown = 0){
+            let countdown = 1000;
+        } else {
+            let countdown = countdown -1;
+        }
+
+        return stateChanged;
+    }
+
+    function bool moveGameCursor(Cursor cursor, int dx, bool dy){
+        var bool stateChanged;
+        var int newY;
+
+        let stateChanged = false;
+
+        // Vertical wraps
+        if(~(dy=0)){
+            let stateChanged = true;
+            let newY = cursor.getY() + dy;
+            let newY = (newY - ((newY/boardRows) * boardRows));
+            do cursor.setY(newY);
+        }
+
+        // Horizontal clamps
+        if(~(dx=0)){
+            let stateChanged = true;
+            do cursor.setX(Math.min(Math.max(0, cursor.getX() + dx), (boardCols - 4)));
+        }
+
+        return stateChanged;
+    }
+
+    function void render(){
+        do Game.renderBoard();
+        do Game.renderShape(cursor, 0);
+        return;
+    }
+
+    function void renderBoard(){
+        var int i, j, row;
+
+        let i = 0;
+        while(i<boardRows){
+            let j = 0;
+            let row = board[i];
+            while(j<boardCols){
+                do Output.moveCursor(i, j);
+                if(~(row[j] = 0)){
+                    do Output.printChar(0);
+                } else {
+                    do Output.printChar(32);
+                }
+                let j = j+1;
+            }
+            let i = i+1;
+        }
+        return;
+    }
+
+    function void renderShape(Cursor aCursor, char c){
+        var int x, xOffset, cX,
+                y, yOffset, cY,
+                tile;
+        var Array cTiles;
+
+        let cX = cursor.getX();
+        let cY = cursor.getY();
+        let cTiles = cursor.getTiles();
+
+        let yOffset = 0;
+        let y = cY + yOffset;
+
+        while(yOffset<4){
+            let xOffset = 0;
+            let x = cX + xOffset;
+            while(xOffset<4){
+                if((x>-1) & (x<boardCols) & (y>-1) & (y<boardRows)){
+                    let tile = Matrix.get(cTiles, yOffset, xOffset);
+                    if(~(tile = 0)){
+                        do Output.moveCursor(y, x);
+                        do Output.printChar(c);
+                    }
+                }
+                let xOffset = xOffset+1;
+                let x = cX + xOffset;
+            }
+            let yOffset = yOffset+1;
+            let y = cY + yOffset;
+        }
+        return;
+    }
+
+    function Array createBoard(int rows, int columns){
+        var Array board, row;
+        var int i, j;
+
+        let board = Array.new(rows);
+        let i = 0;
+
+        while(i<rows){
+            let row = Array.new(columns);
+            let board[i] = row;
+            let j = 0;
+            while(j<columns){
+                let row[j] = 0;
+                let j = j+1;
+            }
+            let i = i+1;
+        }
+        return board;
+    }
+
+    function int randomInt(int start, int end){
+        return 0;
+    }
+
+    function int rowState(Array row, int columns){
+        var int i, filledCount;
+
+        let i = 0;
+        let filledCount = 0;
+
+        while(i<columns){
+            if(~(row[i] = 0)){
+                let filledCount = filledCount + 1;
+            }
+            let i = i+1;
+        }
+
+        if(filledCount = 0){
+            return EMPTY;
+        } else {
+            if(filledCount = columns){
+                return COMPLETE;
+            } else {
+                return NON_EMPTY;
+            }
+        }
+    }
+
+    function void removeCompleteLines(Array board, int rows){
+        var int i, j, k;
+        var Array ri, rk;
+
+        let i = rows - 1;
+
+        while(i>-1){
+            let j = i + 1;
+            let ri = board[i];
+
+            if(j<rows){
+                let board[j] = ri;
+            } else {
+                if(j=rows){
+                    do ri.dispose();
+                }
+            }
+            if(i=0){
+                let rk = Array.new(boardCols);
+                let board[i] = rk;
+                let k = 0;
+                while(k<boardCols){
+                    let rk[k] = 0;
+                    let k = k + 1;
+                }
+            }
+            let i = i - 1;
+        }
+        return;
+    }
+
+    function bool rotate(Cursor aCursor, int dr){
+        var int newRotation, possibleRotations;
+
+        let possibleRotations = 4;
+        let newRotation = aCursor.getRotationIdx() + dr;
+        let newRotation = (newRotation - ((newRotation/possibleRotations) * possibleRotations));
+        do cursor.setRotationIdx(newRotation);
+        return true;
+    }
+}
