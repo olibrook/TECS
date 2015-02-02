@@ -5,11 +5,11 @@ class Game {
     static int boardCols;
     static int boardRows;
 
-    static int nextShape;
     static int countdown;
     static int previousKey;
 
     static Cursor trialCursor;
+    static Cursor nextCursor;
     static Cursor cursor;
 
     static int EMPTY;
@@ -23,10 +23,13 @@ class Game {
     function void init() {
         var bool stateChanged;
 
+        // TODO: Set seed by counting cycles on title screen until input.
+        do LCGRandom.setSeed(999);
         do Cursor.init();
 
         let trialCursor = Cursor.new(0, 0, 0, 0);
-        let cursor = Cursor.new(0, 0, 0, 0);
+        let nextCursor = Game.randomizeCursor(Cursor.new(0, 0, 0, 0));
+        let cursor = Game.randomizeCursor(Cursor.new(0, 0, 0, 0));
 
         let boardRows = 20;
         let boardCols = 10;
@@ -61,9 +64,18 @@ class Game {
         return;
     }
 
+    function Cursor randomizeCursor(Cursor aCursor){
+        do aCursor.setY(0);
+        do aCursor.setX(0);
+        do aCursor.setRotation(LCGRandom.randRange(0, 3));
+        do aCursor.setTetronimo(LCGRandom.randRange(0, 6));
+        return aCursor;
+    }
+
     function bool update(){
         var int key, dx, dy, dr, newRotation, possibleRotations;
         var bool stateChanged;
+        var Cursor temp;
 
         let key = Keyboard.keyPressed();
         if(~(key = previousKey)){
@@ -109,8 +121,11 @@ class Game {
             } else {
                 do Game.writeToBoard(cursor, board);
 
-                // TODO: Randomize, start a new one properly
-                do cursor.setY(0);
+                let temp = cursor;
+                let cursor = nextCursor;
+                let nextCursor = Game.randomizeCursor(temp);
+                let temp = null;
+
                 if(~Game.isValidPosition(cursor, 0, 0, 0)){
                     let gameState = GAME_OVER;
                 }
