@@ -27,15 +27,6 @@ class Game {
 
         do Graphics.init();
 
-//        // DEBUGGING STUFF.
-//        do Graphics.drawGameScreen();
-//
-//        do Graphics.drawGBTile(null, 0, 0);
-//        do Graphics.drawGBTile(null, 0, 17);
-//        do Graphics.drawGBTile(null, 19, 0);
-//        do Graphics.drawGBTile(null, 19, 17);
-//        return;
-
         // TODO: Set seed by counting cycles on title screen until input.
         do LCGRandom.setSeed(999);
         do Cursor.init();
@@ -79,8 +70,6 @@ class Game {
     }
 
     function Cursor randomizeCursor(Cursor aCursor){
-        do aCursor.setY(0);
-        do aCursor.setX(0);
         do aCursor.setRotation(LCGRandom.randRange(0, 3));
         do aCursor.setTetronimo(LCGRandom.randRange(0, 6));
         return aCursor;
@@ -143,6 +132,10 @@ class Game {
                 let nextCursor = Game.randomizeCursor(temp);
                 let temp = null;
 
+                // Position the cursor at the top of the screen
+                do cursor.setX(3);
+                do cursor.setY(0);
+
                 if(~Game.isValidPosition(cursor, 0, 0, 0)){
                     let gameState = GAME_OVER;
                 }
@@ -160,7 +153,8 @@ class Game {
     function void render(){
         do Graphics.drawGameScreen();
         do Game.renderBoard();
-        do Game.renderShape(cursor, 0);
+        do Game.renderShape(cursor);
+        do Game.renderNextShape(nextCursor);
         return;
     }
 
@@ -182,7 +176,7 @@ class Game {
         return;
     }
 
-    function void renderShape(Cursor aCursor, char c){
+    function void renderShape(Cursor aCursor){
         var int boardX, tileX, cX,
                 boardY, tileY, cY,
                 tile;
@@ -199,17 +193,44 @@ class Game {
             let tileX = 0;
             let boardX = cX + tileX;
             while(tileX<4){
-                if((boardX>-1) & (boardX<boardCols) & (boardY>-1) & (boardY<boardRows)){
-                    let tile = Matrix.get(cTiles, tileY, tileX);
-                    if(~(tile = 0)){
-                        do Graphics.drawGBTile(null, BOARD_OFFSET_X + boardX, BOARD_OFFSET_Y + boardY);
-                    }
+                let tile = Matrix.get(cTiles, tileY, tileX);
+                if(~(tile = 0)){
+                    do Graphics.drawGBTile(null, BOARD_OFFSET_X + boardX, BOARD_OFFSET_Y + boardY);
                 }
                 let tileX = tileX+1;
                 let boardX = cX + tileX;
             }
             let tileY = tileY+1;
             let boardY = cY + tileY;
+        }
+        return;
+    }
+
+    function void renderNextShape(Cursor aCursor){
+        var int screenX, tileX, cX,
+                screenY, tileY, cY,
+                tile;
+        var Array cTiles;
+
+        let cX = 15;
+        let cY = 13;
+
+        let cTiles = cursor.getTiles();
+
+        let tileY = 0;
+        let screenY = cY + tileY;
+
+        while(tileY<4){
+            let tileX = 0;
+            let screenX = cX + tileX;
+            while(tileX<4){
+                let tile = Matrix.get(cTiles, tileY, tileX);
+                do Graphics.drawGBTile(null, screenX, screenY);
+                let tileX = tileX+1;
+                let screenX = cX + tileX;
+            }
+            let tileY = tileY+1;
+            let screenY = cY + tileY;
         }
         return;
     }
