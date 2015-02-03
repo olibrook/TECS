@@ -5,6 +5,8 @@ class Game {
     static int boardCols;
     static int boardRows;
 
+    static int rowsComplete;
+
     static int countdown;
     static int previousKey;
 
@@ -35,6 +37,8 @@ class Game {
         let GAME_OVER = 3;
         let RUNNING = 4;
         let gameState = RUNNING;
+
+        let rowsComplete = 0;
 
         let board = Game.createBoard(boardRows, boardCols);
 
@@ -237,6 +241,8 @@ class Game {
         while(i>-1){
 
             while(Game.rowComplete(board[i])){
+                let rowsComplete = rowsComplete + 1;
+
                 let oldRow = board[i];
                 do oldRow.dispose();
                 let board[i] = null;
