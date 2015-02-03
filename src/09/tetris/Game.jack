@@ -18,8 +18,23 @@ class Game {
     static int RUNNING;
     static int gameState;
 
+    static int BOARD_OFFSET_X;
+    static int BOARD_OFFSET_Y;
+
     function void init() {
         var bool stateChanged;
+
+
+        do Graphics.init();
+
+//        // DEBUGGING STUFF.
+//        do Graphics.drawGameScreen();
+//
+//        do Graphics.drawGBTile(null, 0, 0);
+//        do Graphics.drawGBTile(null, 0, 17);
+//        do Graphics.drawGBTile(null, 19, 0);
+//        do Graphics.drawGBTile(null, 19, 17);
+//        return;
 
         // TODO: Set seed by counting cycles on title screen until input.
         do LCGRandom.setSeed(999);
@@ -29,7 +44,7 @@ class Game {
         let nextCursor = Game.randomizeCursor(Cursor.new(0, 0, 0, 0));
         let cursor = Game.randomizeCursor(Cursor.new(0, 0, 0, 0));
 
-        let boardRows = 20;
+        let boardRows = 18;
         let boardCols = 10;
 
         let previousKey = 0;
@@ -37,6 +52,9 @@ class Game {
         let GAME_OVER = 3;
         let RUNNING = 4;
         let gameState = RUNNING;
+
+        let BOARD_OFFSET_X = 2;
+        let BOARD_OFFSET_Y = 0;
 
         let rowsComplete = 0;
 
@@ -140,33 +158,33 @@ class Game {
     }
 
     function void render(){
+        do Graphics.drawGameScreen();
         do Game.renderBoard();
         do Game.renderShape(cursor, 0);
         return;
     }
 
     function void renderBoard(){
-        var int i, j, row;
+        var int boardY, boardX, row;
 
-        let i = 0;
-        while(i<boardRows){
-            let j = 0;
-            let row = board[i];
-            while(j<boardCols){
-                if(~(row[j] = 0)){
-                    do Output.moveCursor(i, j);
-                    do Output.printChar(0);
+        let boardY = 0;
+        while(boardY<boardRows){
+            let boardX = 0;
+            let row = board[boardY];
+            while(boardX<boardCols){
+                if(~(row[boardX] = 0)){
+                    do Graphics.drawGBTile(null, BOARD_OFFSET_X + boardX, BOARD_OFFSET_Y + boardY);
                 }
-                let j = j+1;
+                let boardX = boardX+1;
             }
-            let i = i+1;
+            let boardY = boardY+1;
         }
         return;
     }
 
     function void renderShape(Cursor aCursor, char c){
-        var int x, xOffset, cX,
-                y, yOffset, cY,
+        var int boardX, tileX, cX,
+                boardY, tileY, cY,
                 tile;
         var Array cTiles;
 
@@ -174,25 +192,24 @@ class Game {
         let cY = cursor.getY();
         let cTiles = cursor.getTiles();
 
-        let yOffset = 0;
-        let y = cY + yOffset;
+        let tileY = 0;
+        let boardY = cY + tileY;
 
-        while(yOffset<4){
-            let xOffset = 0;
-            let x = cX + xOffset;
-            while(xOffset<4){
-                if((x>-1) & (x<boardCols) & (y>-1) & (y<boardRows)){
-                    let tile = Matrix.get(cTiles, yOffset, xOffset);
+        while(tileY<4){
+            let tileX = 0;
+            let boardX = cX + tileX;
+            while(tileX<4){
+                if((boardX>-1) & (boardX<boardCols) & (boardY>-1) & (boardY<boardRows)){
+                    let tile = Matrix.get(cTiles, tileY, tileX);
                     if(~(tile = 0)){
-                        do Output.moveCursor(y, x);
-                        do Output.printChar(c);
+                        do Graphics.drawGBTile(null, BOARD_OFFSET_X + boardX, BOARD_OFFSET_Y + boardY);
                     }
                 }
-                let xOffset = xOffset+1;
-                let x = cX + xOffset;
+                let tileX = tileX+1;
+                let boardX = cX + tileX;
             }
-            let yOffset = yOffset+1;
-            let y = cY + yOffset;
+            let tileY = tileY+1;
+            let boardY = cY + tileY;
         }
         return;
     }
