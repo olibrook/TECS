@@ -12,10 +12,6 @@ class Game {
     static Cursor nextCursor;
     static Cursor cursor;
 
-    static int EMPTY;
-    static int COMPLETE;
-    static int NON_EMPTY;
-
     static int GAME_OVER;
     static int RUNNING;
     static int gameState;
@@ -35,10 +31,6 @@ class Game {
         let boardCols = 10;
 
         let previousKey = 0;
-
-        let EMPTY = 0;
-        let COMPLETE = 1;
-        let NON_EMPTY = 2;
 
         let GAME_OVER = 3;
         let RUNNING = 4;
@@ -118,8 +110,11 @@ class Game {
             if(Game.isValidPosition(cursor, 0, dy, 0)){
                 let stateChanged = true;
                 do cursor.setY(cursor.getY() + dy);
+
             } else {
+
                 do Game.writeToBoard(cursor, board);
+                do Game.removeCompleteLines();
 
                 let temp = cursor;
                 let cursor = nextCursor;
@@ -133,7 +128,7 @@ class Game {
         }
 
         if(countdown = 0){
-            let countdown = 2000;
+            let countdown = 4000;
         } else {
             let countdown = countdown -1;
         }
@@ -218,54 +213,50 @@ class Game {
         return board;
     }
 
-    function int rowState(Array row, int columns){
+    function bool rowComplete(Array row){
         var int i, filledCount;
 
         let i = 0;
         let filledCount = 0;
 
-        while(i<columns){
-            if(~(row[i] = 0)){
+        while(i<boardCols){
+            if(row[i] > 0){
                 let filledCount = filledCount + 1;
             }
-            let i = i+1;
+            let i = i + 1;
         }
-
-        if(filledCount = 0){
-            return EMPTY;
-        } else {
-            if(filledCount = columns){
-                return COMPLETE;
-            } else {
-                return NON_EMPTY;
-            }
-        }
+        return (filledCount = boardCols);
     }
 
-    function void removeCompleteLines(Array board, int rows){
+    function void removeCompleteLines(){
         var int i, j, k;
-        var Array ri, rk;
+        var Array newRow, oldRow;
 
-        let i = rows - 1;
+        let i = boardRows - 1;
 
         while(i>-1){
-            let j = i + 1;
-            let ri = board[i];
 
-            if(j<rows){
-                let board[j] = ri;
-            } else {
-                if(j=rows){
-                    do ri.dispose();
-                }
-            }
-            if(i=0){
-                let rk = Array.new(boardCols);
-                let board[i] = rk;
-                let k = 0;
-                while(k<boardCols){
-                    let rk[k] = 0;
-                    let k = k + 1;
+            while(Game.rowComplete(board[i])){
+                let oldRow = board[i];
+                do oldRow.dispose();
+                let board[i] = null;
+
+                let j = i;
+                while(j>-1){
+                    if(j>0){
+                        let board[j] = board[j-1];
+                        let board[j-1] = null;
+
+                    } else {
+                        let newRow = Array.new(boardRows);
+                        let k = 0;
+                        while(k<boardRows){
+                            let newRow[k] = 0;
+                            let k = k+1;
+                        }
+                        let board[j] = newRow;
+                    }
+                    let j = j - 1;
                 }
             }
             let i = i - 1;
