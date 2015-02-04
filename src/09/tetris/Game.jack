@@ -218,7 +218,7 @@ class Game {
         let cX = 15;
         let cY = 13;
 
-        let cTiles = cursor.getTiles();
+        let cTiles = aCursor.getTiles();
 
         let tileY = 0;
         let screenY = cY + tileY;
