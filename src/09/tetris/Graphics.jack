@@ -162,12 +162,27 @@ class Graphics {
         return;
     }
 
+    function void drawGBFrame(){
+        do Graphics.blit(Graphics.getGameboyBmp(), 232, 18);
+        return;
+    }
+
+    function void clearGBScreen(){
+        // Screen is aligned to memory words, can be done quickly
+        // depending on Screen implementation.
+        do Screen.setColor(false);
+        do Screen.drawRectangle(
+            GB_SCREEN_OFFSET_X_PX, GB_SCREEN_OFFSET_Y_PX,
+            GB_SCREEN_OFFSET_X_PX + (8 * 20), GB_SCREEN_OFFSET_Y_PX + (8 * 18)
+        );
+        return;
+    }
+
     function void drawGameScreen(){
         var int xo, yo;
         let xo = GB_SCREEN_OFFSET_X_PX;
         let yo = GB_SCREEN_OFFSET_Y_PX;
 
-        do Graphics.blit(Graphics.getGameboyBmp(), 232, 18);
         do Graphics.drawBrickColumns();
 
         do Screen.setColor(true);

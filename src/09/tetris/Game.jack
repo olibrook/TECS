@@ -51,11 +51,13 @@ class Game {
 
         let board = Game.createBoard(boardRows, boardCols);
 
+        do Graphics.drawGBFrame();
+
         while(true){
             if(gameState = RUNNING){
                 let stateChanged = Game.update();
                 if(stateChanged){
-                    do Screen.clearScreen();
+                    do Graphics.clearGBScreen();
                     do Game.render();
                 }
             } else {
