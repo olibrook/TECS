@@ -15,16 +15,16 @@ class Game {
     static Cursor nextCursor;
     static Cursor cursor;
 
-    static int GAME_OVER;
-    static int RUNNING;
-    static int TITLE_SCREEN;
-    static int gameState;
-
     static int BOARD_OFFSET_X;
     static int BOARD_OFFSET_Y;
 
     static int CURSOR_CHANGE;
     static int BOARD_CHANGE;
+
+    static int GAME_OVER;
+    static int RUNNING;
+    static int TITLE_SCREEN;
+    static int gameState;
 
     function void init() {
 
@@ -40,17 +40,18 @@ class Game {
         let boardCols = 10;
         let board = Game.createBoard(boardRows, boardCols);
 
-        let GAME_OVER = 3;
-        let RUNNING = 4;
-        let TITLE_SCREEN = 5;
-        let gameState = TITLE_SCREEN;
-
         let BOARD_OFFSET_X = 2;
         let BOARD_OFFSET_Y = 0;
 
         // Bit-masks
         let CURSOR_CHANGE = 1;
         let BOARD_CHANGE = 2;
+
+        let TITLE_SCREEN = 1;
+        let RUNNING = 2;
+        let GAME_OVER = 3;
+
+        let gameState = TITLE_SCREEN;
 
         do Graphics.drawGBFrame();
         do Game.enterGameLoop();
@@ -60,6 +61,7 @@ class Game {
     function void enterGameLoop(){
         var int changedFeatures;
         var int key;
+        var bool firstRender;
 
         while(true){
 
@@ -74,6 +76,7 @@ class Game {
                 }
 
                 while(~(Keyboard.keyPressed() = 0)){}
+
                 let gameState = RUNNING;
             }
 
@@ -90,13 +93,27 @@ class Game {
                 do Game.clearBoard(board, boardRows, boardCols);
 
                 let previousKey = 0;
+                let firstRender = true;
 
                 while(gameState = RUNNING){
                     let changedFeatures = Game.update();
-                    if(changedFeatures > 0){
+
+                    if(firstRender | ((changedFeatures & BOARD_CHANGE) > 0)){
+                        // Full re-render
                         do Graphics.clearGBScreen();
-                        do Game.render();
+                        do Graphics.drawGameScreen();
+                        do Game.renderBoard();
+                        do Game.renderShape(cursor, true);
+                        do Game.renderNextShape(nextCursor);
+
+                    } else {
+                        if((changedFeatures & CURSOR_CHANGE) > 0){
+                            do Game.renderShape(previousCursor, false);
+                            do Game.renderShape(cursor, true);
+                        }
                     }
+
+                    let firstRender = false;
                 }
             }
 
@@ -197,14 +214,6 @@ class Game {
         return changedFeatures;
     }
 
-    function void render(){
-        do Graphics.drawGameScreen();
-        do Game.renderBoard();
-        do Game.renderShape(cursor);
-        do Game.renderNextShape(nextCursor);
-        return;
-    }
-
     function void renderBoard(){
         var int boardY, boardX, row;
         var Array tileBMP;
@@ -225,15 +234,19 @@ class Game {
         return;
     }
 
-    function void renderShape(Cursor aCursor){
+    /*
+     * Renders a cursor. When positive the cursor is drawn, else
+     * the cursor is cleared.
+     */
+    function void renderShape(Cursor aCursor, bool positive){
         var int boardX, tileX, cX,
                 boardY, tileY, cY,
                 tile;
         var Array cTiles, tileBMP;
 
-        let cX = cursor.getX();
-        let cY = cursor.getY();
-        let cTiles = cursor.getTiles();
+        let cX = aCursor.getX();
+        let cY = aCursor.getY();
+        let cTiles = aCursor.getTiles();
 
         let tileY = 0;
         let boardY = cY + tileY;
@@ -244,7 +257,11 @@ class Game {
             while(tileX<4){
                 let tile = Matrix.get(cTiles, tileY, tileX);
                 if(~(tile = 0)){
-                    let tileBMP = Graphics.getTetronimoTile(tile);
+                    if(positive){
+                        let tileBMP = Graphics.getTetronimoTile(tile);
+                    } else {
+                        let tileBMP = Graphics.getTetronimoTile(0);
+                    }
                     do Graphics.drawGBTile(tileBMP, BOARD_OFFSET_X + boardX, BOARD_OFFSET_Y + boardY);
                 }
                 let tileX = tileX+1;
