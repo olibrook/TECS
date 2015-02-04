@@ -10,7 +10,8 @@ class Game {
     static int countdown;
     static int previousKey;
 
-    static Cursor trialCursor;
+    static Cursor validationCursor;
+    static Cursor previousCursor;
     static Cursor nextCursor;
     static Cursor cursor;
 
@@ -22,12 +23,16 @@ class Game {
     static int BOARD_OFFSET_X;
     static int BOARD_OFFSET_Y;
 
+    static int CURSOR_CHANGE;
+    static int BOARD_CHANGE;
+
     function void init() {
 
         do Graphics.init();
         do Cursor.init();
 
-        let trialCursor = Cursor.new(0, 0, 0, 0);
+        let validationCursor = Cursor.new(0, 0, 0, 0);
+        let previousCursor = Cursor.new(0, 0, 0, 0) ;
         let nextCursor = Cursor.new(0, 0, 0, 0) ;
         let cursor = Cursor.new(0, 0, 0, 0);
 
@@ -43,13 +48,17 @@ class Game {
         let BOARD_OFFSET_X = 2;
         let BOARD_OFFSET_Y = 0;
 
+        // Bit-masks
+        let CURSOR_CHANGE = 1;
+        let BOARD_CHANGE = 2;
+
         do Graphics.drawGBFrame();
         do Game.enterGameLoop();
         return;
     }
 
     function void enterGameLoop(){
-        var bool stateChanged;
+        var int changedFeatures;
         var int key;
 
         while(true){
@@ -83,8 +92,8 @@ class Game {
                 let previousKey = 0;
 
                 while(gameState = RUNNING){
-                    let stateChanged = Game.update();
-                    if(stateChanged){
+                    let changedFeatures = Game.update();
+                    if(changedFeatures > 0){
                         do Graphics.clearGBScreen();
                         do Game.render();
                     }
@@ -112,7 +121,7 @@ class Game {
 
     function bool update(){
         var int key, dx, dy, dr, newRotation, possibleRotations;
-        var bool stateChanged;
+        var int changedFeatures;
         var Cursor temp;
 
         let key = Keyboard.keyPressed();
@@ -141,11 +150,12 @@ class Game {
             let dy = 0;
         }
 
-        let stateChanged = false;
+        let changedFeatures = 0;
+        do Game.copyCursorProps(previousCursor, cursor);
 
         if(~(dx=0) | ~(dr=0)){
             if(Game.isValidPosition(cursor, dx, 0, dr)){
-                let stateChanged = true;
+                let changedFeatures = changedFeatures | CURSOR_CHANGE;
                 do cursor.setX(cursor.getX() + dx);
                 do cursor.rotate(dr);
             }
@@ -154,10 +164,12 @@ class Game {
         // Handle vertical movement last and alone - triggers new blocks
         if(~(dy=0)){
             if(Game.isValidPosition(cursor, 0, dy, 0)){
-                let stateChanged = true;
+                let changedFeatures =  changedFeatures | CURSOR_CHANGE;
                 do cursor.setY(cursor.getY() + dy);
 
             } else {
+
+                let changedFeatures = changedFeatures | BOARD_CHANGE;
 
                 do Game.writeToBoard(cursor, board);
                 do Game.removeCompleteLines();
@@ -182,7 +194,7 @@ class Game {
         } else {
             let countdown = countdown -1;
         }
-        return stateChanged;
+        return changedFeatures;
     }
 
     function void render(){
@@ -364,6 +376,14 @@ class Game {
         return;
     }
 
+    function void copyCursorProps(Cursor target, Cursor source){
+        do target.setTetronimo(source.getTetronimo());
+        do target.setX(source.getX());
+        do target.setY(source.getY());
+        do target.setRotation(source.getRotation());
+        return;
+    }
+
     /**
      * Is the cursor position valid, optionally with an offset to
      * decide for candidate moves.
@@ -375,21 +395,17 @@ class Game {
         var int boardX, boardY, tileX, tileY, boardBaseX, boardBaseY, boardVal, tileVal;
         var Array cTiles;
 
-        // Match cursor props.
-        do trialCursor.setTetronimo(aCursor.getTetronimo());
-        do trialCursor.setX(aCursor.getX());
-        do trialCursor.setY(aCursor.getY());
-        do trialCursor.setRotation(aCursor.getRotation());
+        do Game.copyCursorProps(validationCursor, aCursor);
 
         // Make the dx/dy/dr adjustments
-        do trialCursor.setX(trialCursor.getX() + dX);
-        do trialCursor.setY(trialCursor.getY() + dY);
-        do trialCursor.rotate(dr);
+        do validationCursor.setX(validationCursor.getX() + dX);
+        do validationCursor.setY(validationCursor.getY() + dY);
+        do validationCursor.rotate(dr);
 
-        // Do the rest with the 'trial' cursor
-        let boardBaseX = trialCursor.getX();
-        let boardBaseY = trialCursor.getY();
-        let cTiles = trialCursor.getTiles();
+        // Do the rest with the 'hidden' cursor
+        let boardBaseX = validationCursor.getX();
+        let boardBaseY = validationCursor.getY();
+        let cTiles = validationCursor.getTiles();
 
         let tileY = 0;
         while(tileY < 4){
