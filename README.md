@@ -33,6 +33,11 @@ Follow the instructions on-screen to run the pong game.
 
 TODOs:
 ------
+- Tetris - center the screen.
+- Tetris - display line count.
+- Tetris - display score.
+- Tetris - increase speed when level goes up.
+- Tetris - draw outline of a gameboy around the screen :D.
 - Check error codes are correct throughout the OS implementation.
 - A proper malloc/deAlloc test would be good. Malloc the entire memory and
   check it can be reclaimed.

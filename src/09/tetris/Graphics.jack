@@ -75,8 +75,8 @@ class Graphics {
     function void init(){
         let SCREEN = 16384;
 
-        let GB_SCREEN_OFFSET_X_TLS = 8;
-        let GB_SCREEN_OFFSET_Y_TLS = 4;
+        let GB_SCREEN_OFFSET_X_TLS = 22;
+        let GB_SCREEN_OFFSET_Y_TLS = 7;
 
         let GB_SCREEN_OFFSET_X_PX = GB_SCREEN_OFFSET_X_TLS * 8;
         let GB_SCREEN_OFFSET_Y_PX = GB_SCREEN_OFFSET_Y_TLS * 8;
@@ -133,8 +133,8 @@ class Graphics {
             do Sys.error(99);
         }
 
-        let xPos = xPos + 8;
-        let yPos = yPos + 4;
+        let xPos = xPos + GB_SCREEN_OFFSET_X_TLS;
+        let yPos = yPos + GB_SCREEN_OFFSET_Y_TLS;
 
         let isOdd = ((xPos & 1) = 1);
         if(isOdd){
@@ -161,6 +161,7 @@ class Graphics {
         }
         return;
     }
+
 
     function void drawGBFrame(){
         do Graphics.blit(Graphics.getGameboyBmp(), 232, 18);
