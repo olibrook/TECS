@@ -16,56 +16,89 @@ class Game {
 
     static int GAME_OVER;
     static int RUNNING;
+    static int TITLE_SCREEN;
     static int gameState;
 
     static int BOARD_OFFSET_X;
     static int BOARD_OFFSET_Y;
 
     function void init() {
-        var bool stateChanged;
-
 
         do Graphics.init();
-
-        // TODO: Set seed by counting cycles on title screen until input.
-        do LCGRandom.setSeed(999);
         do Cursor.init();
 
         let trialCursor = Cursor.new(0, 0, 0, 0);
-        let nextCursor = Game.randomizeCursor(Cursor.new(0, 0, 0, 0));
-        let cursor = Game.randomizeCursor(Cursor.new(0, 0, 0, 0));
+        let nextCursor = Cursor.new(0, 0, 0, 0) ;
+        let cursor = Cursor.new(0, 0, 0, 0);
 
         let boardRows = 18;
         let boardCols = 10;
-
-        let previousKey = 0;
+        let board = Game.createBoard(boardRows, boardCols);
 
         let GAME_OVER = 3;
         let RUNNING = 4;
-        let gameState = RUNNING;
+        let TITLE_SCREEN = 5;
+        let gameState = TITLE_SCREEN;
 
         let BOARD_OFFSET_X = 2;
         let BOARD_OFFSET_Y = 0;
 
-        let rowsComplete = 0;
-
-        let board = Game.createBoard(boardRows, boardCols);
-
         do Graphics.drawGBFrame();
+        do Game.enterGameLoop();
+        return;
+    }
+
+    function void enterGameLoop(){
+        var bool stateChanged;
+        var int key;
 
         while(true){
+
+            if(gameState = TITLE_SCREEN){
+                do Graphics.clearGBScreen();
+                do Output.moveCursor(10, 10);
+                do Output.printString("Press a key");
+
+                while(Keyboard.keyPressed() = 0){
+                    // TODO: Set seed by counting cycles on title screen until input.
+                    do LCGRandom.setSeed(999);
+                }
+
+                while(~(Keyboard.keyPressed() = 0)){}
+                let gameState = RUNNING;
+            }
+
             if(gameState = RUNNING){
-                let stateChanged = Game.update();
-                if(stateChanged){
-                    do Graphics.clearGBScreen();
-                    do Game.render();
+                let rowsComplete = 0;
+
+                let cursor = Game.randomizeCursor(cursor);
+                let nextCursor = Game.randomizeCursor(nextCursor);
+
+                // TODO: This happens in two places!
+                do cursor.setX(4);
+                do cursor.setY(0);
+
+                do Game.clearBoard(board, boardRows, boardCols);
+
+                let previousKey = 0;
+
+                while(gameState = RUNNING){
+                    let stateChanged = Game.update();
+                    if(stateChanged){
+                        do Graphics.clearGBScreen();
+                        do Game.render();
+                    }
                 }
-            } else {
-                if(gameState = GAME_OVER){
-                    do Output.moveCursor(10, 10);
-                    do Output.printString("Game over");
-                    do Sys.halt();
-                }
+            }
+
+            if(gameState = GAME_OVER){
+                do Graphics.clearGBScreen();
+                do Output.moveCursor(10, 10);
+                do Output.printString("Game over");
+
+                while(Keyboard.keyPressed() = 0){}
+                while(~(Keyboard.keyPressed() = 0)){}
+                let gameState = TITLE_SCREEN;
             }
         }
         return;
@@ -259,6 +292,23 @@ class Game {
             let i = i+1;
         }
         return board;
+    }
+
+    function void clearBoard(Array aBoard, int rows, int columns){
+        var Array row;
+        var int i, j;
+
+        let i = 0;
+        while(i<rows){
+            let row = board[i];
+            let j = 0;
+            while(j<columns){
+                let row[j] = 0;
+                let j = j+1;
+            }
+            let i = i+1;
+        }
+        return;
     }
 
     function bool rowComplete(Array row){
