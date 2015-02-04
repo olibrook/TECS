@@ -30,6 +30,38 @@ class Graphics {
     static int bricks3BmpCols;
     static int bricks3BmpRows;
 
+    static Array sbrickBmp;
+    static int sbrickBmpCols;
+    static int sbrickBmpRows;
+
+    static Array lbrickBmp;
+    static int lbrickBmpCols;
+    static int lbrickBmpRows;
+
+    static Array jbrickBmp;
+    static int jbrickBmpCols;
+    static int jbrickBmpRows;
+
+    static Array zbrickBmp;
+    static int zbrickBmpCols;
+    static int zbrickBmpRows;
+
+    static Array ibrickBmp;
+    static int ibrickBmpCols;
+    static int ibrickBmpRows;
+
+    static Array obrickBmp;
+    static int obrickBmpCols;
+    static int obrickBmpRows;
+
+    static Array tbrickBmp;
+    static int tbrickBmpCols;
+    static int tbrickBmpRows;
+
+    static Array emptybrickBmp;
+    static int emptybrickBmpCols;
+    static int emptybrickBmpRows;
+
     static int GB_SCREEN_OFFSET_X_TLS;
     static int GB_SCREEN_OFFSET_Y_TLS;
 
@@ -37,6 +69,8 @@ class Graphics {
     static int GB_SCREEN_OFFSET_Y_PX;
 
     static Array BORDER_TILES;
+
+    static Array TETRONIMO_TILES;
 
     function void init(){
         let SCREEN = 16384;
@@ -55,16 +89,31 @@ class Graphics {
         do Graphics.initbricks2Bmp();
         do Graphics.initbricks3Bmp();
 
+        do Graphics.initemptybrickBmp();
+        do Graphics.initsbrickBmp();
+        do Graphics.initlbrickBmp();
+        do Graphics.initjbrickBmp();
+        do Graphics.initzbrickBmp();
+        do Graphics.initibrickBmp();
+        do Graphics.initobrickBmp();
+        do Graphics.inittbrickBmp();
+
         let BORDER_TILES = Array.new(3);
         let BORDER_TILES[0] = bricks1Bmp;
         let BORDER_TILES[1] = bricks2Bmp;
         let BORDER_TILES[2] = bricks3Bmp;
 
-        return;
-    }
+        let TETRONIMO_TILES = Array.new(8);
+        let TETRONIMO_TILES[0] = emptybrickBmp;
+        let TETRONIMO_TILES[1] = sbrickBmp;
+        let TETRONIMO_TILES[2] = lbrickBmp;
+        let TETRONIMO_TILES[3] = jbrickBmp;
+        let TETRONIMO_TILES[4] = zbrickBmp;
+        let TETRONIMO_TILES[5] = ibrickBmp;
+        let TETRONIMO_TILES[6] = obrickBmp;
+        let TETRONIMO_TILES[7] = tbrickBmp;
 
-    function Array getTileData(){
-        return brick1Bmp;
+        return;
     }
 
     /**
@@ -267,7 +316,7 @@ class Graphics {
     }
 
     function Array getTetronimoTile(int idx){
-        return brick1Bmp;
+        return TETRONIMO_TILES[idx];
     }
 
     /*
@@ -484,6 +533,254 @@ class Graphics {
      */
     function void loadbricks3(){
         do Graphics.storebricks3(0, 136);do Graphics.storebricks3(1, 255);do Graphics.storebricks3(2, 34);do Graphics.storebricks3(3, 34);do Graphics.storebricks3(4, 255);do Graphics.storebricks3(5, 136);do Graphics.storebricks3(6, 136);do Graphics.storebricks3(7, 255);
+        return;
+    }
+
+    /*
+     * Initializes the "emptybrick" bitmap.
+     * GENERATED CODE
+     */
+    function void initemptybrickBmp() {
+        let emptybrickBmpCols = 1;
+        let emptybrickBmpRows = 8;
+        let emptybrickBmp = Array.new(8);
+        do Graphics.loademptybrick();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storeemptybrick(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let emptybrickBmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loademptybrick(){
+        do Graphics.storeemptybrick(0, 0);do Graphics.storeemptybrick(1, 0);do Graphics.storeemptybrick(2, 0);do Graphics.storeemptybrick(3, 0);do Graphics.storeemptybrick(4, 0);do Graphics.storeemptybrick(5, 0);do Graphics.storeemptybrick(6, 0);do Graphics.storeemptybrick(7, 0);
+        return;
+    }
+
+    /*
+     * Initializes the "sbrick" bitmap.
+     * GENERATED CODE
+     */
+    function void initsbrickBmp() {
+        let sbrickBmpCols = 1;
+        let sbrickBmpRows = 8;
+        let sbrickBmp = Array.new(8);
+        do Graphics.loadsbrick();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storesbrick(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let sbrickBmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadsbrick(){
+        do Graphics.storesbrick(0, 255);do Graphics.storesbrick(1, 255);do Graphics.storesbrick(2, 195);do Graphics.storesbrick(3, 219);do Graphics.storesbrick(4, 219);do Graphics.storesbrick(5, 195);do Graphics.storesbrick(6, 255);do Graphics.storesbrick(7, 255);
+        return;
+    }
+
+    /*
+     * Initializes the "lbrick" bitmap.
+     * GENERATED CODE
+     */
+    function void initlbrickBmp() {
+        let lbrickBmpCols = 1;
+        let lbrickBmpRows = 8;
+        let lbrickBmp = Array.new(8);
+        do Graphics.loadlbrick();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storelbrick(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let lbrickBmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadlbrick(){
+        do Graphics.storelbrick(0, 255);do Graphics.storelbrick(1, 129);do Graphics.storelbrick(2, 129);do Graphics.storelbrick(3, 129);do Graphics.storelbrick(4, 129);do Graphics.storelbrick(5, 129);do Graphics.storelbrick(6, 129);do Graphics.storelbrick(7, 255);
+        return;
+    }
+
+    /*
+     * Initializes the "jbrick" bitmap.
+     * GENERATED CODE
+     */
+    function void initjbrickBmp() {
+        let jbrickBmpCols = 1;
+        let jbrickBmpRows = 8;
+        let jbrickBmp = Array.new(8);
+        do Graphics.loadjbrick();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storejbrick(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let jbrickBmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadjbrick(){
+        do Graphics.storejbrick(0, 255);do Graphics.storejbrick(1, 129);do Graphics.storejbrick(2, 189);do Graphics.storejbrick(3, 165);do Graphics.storejbrick(4, 165);do Graphics.storejbrick(5, 189);do Graphics.storejbrick(6, 129);do Graphics.storejbrick(7, 255);
+        return;
+    }
+
+    /*
+     * Initializes the "zbrick" bitmap.
+     * GENERATED CODE
+     */
+    function void initzbrickBmp() {
+        let zbrickBmpCols = 1;
+        let zbrickBmpRows = 8;
+        let zbrickBmp = Array.new(8);
+        do Graphics.loadzbrick();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storezbrick(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let zbrickBmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadzbrick(){
+        do Graphics.storezbrick(0, 255);do Graphics.storezbrick(1, 129);do Graphics.storezbrick(2, 129);do Graphics.storezbrick(3, 153);do Graphics.storezbrick(4, 153);do Graphics.storezbrick(5, 129);do Graphics.storezbrick(6, 129);do Graphics.storezbrick(7, 255);
+        return;
+    }
+
+    /*
+     * Initializes the "ibrick" bitmap.
+     * GENERATED CODE
+     */
+    function void initibrickBmp() {
+        let ibrickBmpCols = 1;
+        let ibrickBmpRows = 8;
+        let ibrickBmp = Array.new(8);
+        do Graphics.loadibrick();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storeibrick(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let ibrickBmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadibrick(){
+        do Graphics.storeibrick(0, 255);do Graphics.storeibrick(1, 145);do Graphics.storeibrick(2, 197);do Graphics.storeibrick(3, 129);do Graphics.storeibrick(4, 147);do Graphics.storeibrick(5, 193);do Graphics.storeibrick(6, 149);do Graphics.storeibrick(7, 255);
+        return;
+    }
+
+    /*
+     * Initializes the "obrick" bitmap.
+     * GENERATED CODE
+     */
+    function void initobrickBmp() {
+        let obrickBmpCols = 1;
+        let obrickBmpRows = 8;
+        let obrickBmp = Array.new(8);
+        do Graphics.loadobrick();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storeobrick(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let obrickBmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadobrick(){
+        do Graphics.storeobrick(0, 255);do Graphics.storeobrick(1, 129);do Graphics.storeobrick(2, 189);do Graphics.storeobrick(3, 189);do Graphics.storeobrick(4, 189);do Graphics.storeobrick(5, 189);do Graphics.storeobrick(6, 129);do Graphics.storeobrick(7, 255);
+        return;
+    }
+
+    /*
+     * Initializes the "tbrick" bitmap.
+     * GENERATED CODE
+     */
+    function void inittbrickBmp() {
+        let tbrickBmpCols = 1;
+        let tbrickBmpRows = 8;
+        let tbrickBmp = Array.new(8);
+        do Graphics.loadtbrick();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storetbrick(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let tbrickBmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadtbrick(){
+        do Graphics.storetbrick(0, 255);do Graphics.storetbrick(1, 129);do Graphics.storetbrick(2, 129);do Graphics.storetbrick(3, 161);do Graphics.storetbrick(4, 161);do Graphics.storetbrick(5, 189);do Graphics.storetbrick(6, 129);do Graphics.storetbrick(7, 255);
         return;
     }
 }
