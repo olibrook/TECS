@@ -160,6 +160,7 @@ class Game {
 
     function void renderBoard(){
         var int boardY, boardX, row;
+        var Array tileBMP;
 
         let boardY = 0;
         while(boardY<boardRows){
@@ -167,7 +168,8 @@ class Game {
             let row = board[boardY];
             while(boardX<boardCols){
                 if(~(row[boardX] = 0)){
-                    do Graphics.drawGBTile(null, BOARD_OFFSET_X + boardX, BOARD_OFFSET_Y + boardY);
+                    let tileBMP = Graphics.getTetronimoTile(row[boardX]);
+                    do Graphics.drawGBTile(tileBMP, BOARD_OFFSET_X + boardX, BOARD_OFFSET_Y + boardY);
                 }
                 let boardX = boardX+1;
             }
@@ -180,7 +182,7 @@ class Game {
         var int boardX, tileX, cX,
                 boardY, tileY, cY,
                 tile;
-        var Array cTiles;
+        var Array cTiles, tileBMP;
 
         let cX = cursor.getX();
         let cY = cursor.getY();
@@ -195,7 +197,8 @@ class Game {
             while(tileX<4){
                 let tile = Matrix.get(cTiles, tileY, tileX);
                 if(~(tile = 0)){
-                    do Graphics.drawGBTile(null, BOARD_OFFSET_X + boardX, BOARD_OFFSET_Y + boardY);
+                    let tileBMP = Graphics.getTetronimoTile(tile);
+                    do Graphics.drawGBTile(tileBMP, BOARD_OFFSET_X + boardX, BOARD_OFFSET_Y + boardY);
                 }
                 let tileX = tileX+1;
                 let boardX = cX + tileX;
@@ -209,7 +212,7 @@ class Game {
     function void renderNextShape(Cursor aCursor){
         var int screenX, tileX, cX,
                 screenY, tileY, cY,
-                tile;
+                tile, tileBMP;
         var Array cTiles;
 
         let cX = 15;
@@ -225,7 +228,8 @@ class Game {
             let screenX = cX + tileX;
             while(tileX<4){
                 let tile = Matrix.get(cTiles, tileY, tileX);
-                do Graphics.drawGBTile(null, screenX, screenY);
+                let tileBMP = Graphics.getTetronimoTile(tile);
+                do Graphics.drawGBTile(tileBMP, screenX, screenY);
                 let tileX = tileX+1;
                 let screenX = cX + tileX;
             }

@@ -26,7 +26,6 @@ class Graphics {
     static int bricks2BmpCols;
     static int bricks2BmpRows;
 
-
     static Array bricks3Bmp;
     static int bricks3BmpCols;
     static int bricks3BmpRows;
@@ -36,6 +35,8 @@ class Graphics {
 
     static int GB_SCREEN_OFFSET_X_PX;
     static int GB_SCREEN_OFFSET_Y_PX;
+
+    static Array BORDER_TILES;
 
     function void init(){
         let SCREEN = 16384;
@@ -54,6 +55,11 @@ class Graphics {
         do Graphics.initbricks2Bmp();
         do Graphics.initbricks3Bmp();
 
+        let BORDER_TILES = Array.new(3);
+        let BORDER_TILES[0] = bricks1Bmp;
+        let BORDER_TILES[1] = bricks2Bmp;
+        let BORDER_TILES[2] = bricks3Bmp;
+
         return;
     }
 
@@ -62,12 +68,14 @@ class Graphics {
     }
 
     /**
-     * Renders a tile in the coordinate space of the Gameboy screen.
+     * Renders a 8x8 tile in the coordinate space of the Gameboy screen.
      *
-     * Units for xPos and yPos are tiles.
+     * tile - a bitmap as a 2d array
+     * xPos - x position from origin, in tiles
+     * yPos - y position from origin, in tiles
      */
-    function void drawGBTile(char tileCode, int xPos, int yPos){
-        var int offset, word, theChar, i, mask;
+    function void drawGBTile(Array tile, int xPos, int yPos){
+        var int offset, word, tile, i, mask;
         var bool isOdd;
         var Array row, pixels;
 
@@ -78,19 +86,6 @@ class Graphics {
 
         let xPos = xPos + 8;
         let yPos = yPos + 4;
-
-        // CAREFUL!
-        // - Provided bitmaps are 8-bits wide, the low 8-bits of a machine word.
-        // - On screen the lsb of a word is on the left of each cell.
-        // - Bitmaps are are "backwards" in binary, and are left-aligned with
-        //   respect to machine words on the screen.
-        // - Odd-numbered x-positions need to shift pixels half a word to the
-        //   right.
-
-        let theChar = Graphics.getTileData();
-
-        // Use a mask to selectively clear one half of a machine word
-        // and overwrite the character previously there.
 
         let isOdd = ((xPos & 1) = 1);
         if(isOdd){
@@ -103,7 +98,7 @@ class Graphics {
         let i = 0;
         while(i<8){
             let word = SCREEN[offset];
-            let row = theChar[i];
+            let row = tile[i];
             let pixels = row[0];
             if(isOdd){
                 // Transpose pixels half a word to the right.
@@ -231,15 +226,15 @@ class Graphics {
 
     function void drawBrickColumns(){
         var int y, col1, col2;
-        var array tile;
+        var array tileBMP;
 
         let y = 0;
         let col1 = 1;
         let col2 = 12;
         while(y<18){
-//            let tile = BRICK_TILES[Utils.mod(y, 3)];
-            do Graphics.drawGBTile(null, col1, y);
-            do Graphics.drawGBTile(null, col2, y);
+            let tileBMP = BORDER_TILES[Utils.mod(y, 3)];
+            do Graphics.drawGBTile(tileBMP, col1, y);
+            do Graphics.drawGBTile(tileBMP, col2, y);
             let y = y + 1;
         }
         return;
@@ -269,6 +264,10 @@ class Graphics {
             let rowBase = rowBase + 32;
         }
         return;
+    }
+
+    function Array getTetronimoTile(int idx){
+        return brick1Bmp;
     }
 
     /*
