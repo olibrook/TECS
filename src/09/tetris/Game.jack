@@ -63,6 +63,7 @@ class Game {
         var int key;
         var bool firstRender;
 
+
         while(true){
 
             if(gameState = TITLE_SCREEN){
@@ -104,6 +105,7 @@ class Game {
                         do Game.renderBoard();
                         do Game.renderShape(cursor, true);
                         do Game.renderNextShape(nextCursor);
+                        do Game.renderScores();
 
                     } else {
                         if((changedFeatures & CURSOR_CHANGE) > 0){
@@ -299,6 +301,18 @@ class Game {
             let tileY = tileY+1;
             let screenY = cY + tileY;
         }
+        return;
+    }
+
+    function void renderScores(){
+        do Output.moveCursor(09, 36);
+        do Output.printString("Level");
+        do Output.moveCursor(10, 36);
+        do Output.printString("01");
+        do Output.moveCursor(11, 36);
+        do Output.printString("Lines");
+        do Output.moveCursor(12, 36);
+        do Output.printString("09");
         return;
     }
 

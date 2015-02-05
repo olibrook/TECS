@@ -229,32 +229,18 @@ class Graphics {
         do Screen.drawRectangle(xo + 0, yo + 0, xo + 6, yo + 143);
         do Screen.drawRectangle(xo + 105, yo + 0, xo + 159, yo + 143);
 
-        // Score label
-        do Screen.setColor(false);
-        do Screen.drawRectangle(xo + 105, yo + 13, xo + 159, yo + 13);
-
-        do Screen.setColor(true);
-        do Graphics.drawFancyBox(xo + 109, yo + 5, xo + 154, yo + 18);
-
         // Score display
         do Screen.setColor(false);
-        do Screen.drawRectangle(xo + 105, yo + 21, xo + 159, yo + 34);
+        do Screen.drawRectangle(xo + 105, yo + 40, xo + 159, yo + 90);
         do Screen.setColor(true);
-        do Screen.drawRectangle(xo + 105, yo + 22, xo + 159, yo + 22);
-        do Screen.drawRectangle(xo + 105, yo + 33, xo + 159, yo + 33);
-
-        // Level display
-        do Graphics.drawFancyBox(xo + 109, yo + 45, xo + 154, yo + 66);
-
-        // Line display
-        do Graphics.drawFancyBox(xo + 109, yo + 69, xo + 154, yo + 90);
-
+        do Screen.drawRectangle(xo + 105, yo + 41, xo + 159, yo + 41);
+        do Screen.drawRectangle(xo + 105, yo + 89, xo + 159, yo + 89);
 
         do Graphics.drawNextShapeBox();
         return;
     }
 
-    function void drawFancyBox2(bool boxColor, int x1, int y1, int x2, int y2){
+    function void drawFancyBox(bool boxColor, int x1, int y1, int x2, int y2){
         do Screen.setColor(boxColor);
         do Screen.drawRectangle(x1, y1, x2, y2);
 
@@ -288,41 +274,11 @@ class Graphics {
         let xo = GB_SCREEN_OFFSET_X_PX;
         let yo = GB_SCREEN_OFFSET_Y_PX;
 
-        do Graphics.drawFancyBox2(false, xo + 115, yo + 99, xo + 156, yo + 140);
-        do Graphics.drawFancyBox2(true, xo + 117, yo + 101, xo + 154, yo + 138);
+        do Graphics.drawFancyBox(false, xo + 115, yo + 99, xo + 156, yo + 140);
+        do Graphics.drawFancyBox(true, xo + 117, yo + 101, xo + 154, yo + 138);
         do Screen.setColor(false);
         do Screen.drawRectangle(xo + 119, yo + 103, xo + 152, yo + 136);
 
-        return;
-    }
-
-
-    function void drawFancyBox(int x1, int y1, int x2, int y2) {
-        do Screen.setColor(false);
-        do Screen.drawRectangle(x1, y1, x2, y2);
-
-        do Screen.setColor(true);
-        do Screen.drawRectangle(x1+1, y1+1, x2-1, y2-1);
-
-        do Screen.setColor(false);
-        do Screen.drawRectangle(x1+2, y1+2, x2-2, y2-2);
-
-        do Screen.drawPixel(x1+1, y1+1);
-        do Screen.drawPixel(x2-1, y2-1);
-        do Screen.drawPixel(x1+1, y2-1);
-        do Screen.drawPixel(x2-1, y1+1);
-
-        do Screen.setColor(true);
-
-        do Screen.drawPixel(x1, y1);
-        do Screen.drawPixel(x2, y2);
-        do Screen.drawPixel(x1, y2);
-        do Screen.drawPixel(x2, y1);
-
-        do Screen.drawPixel(x1+2, y1+2);
-        do Screen.drawPixel(x2-2, y2-2);
-        do Screen.drawPixel(x1+2, y2-2);
-        do Screen.drawPixel(x2-2, y1+2);
         return;
     }
 

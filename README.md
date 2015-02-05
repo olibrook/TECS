@@ -36,6 +36,7 @@ TODOs:
 - Tetris - display line count.
 - Tetris - display score.
 - Tetris - increase speed when level goes up.
+- Tetris - seed random number generator properly.
 - Check error codes are correct throughout the OS implementation.
 - A proper malloc/deAlloc test would be good. Malloc the entire memory and
   check it can be reclaimed.
