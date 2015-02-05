@@ -1,6 +1,6 @@
 class Graphics {
 
-    static int SCREEN;
+    static int screen;
 
     static Array titleScreenBmp;
     static int titleScreenBmpCols;
@@ -54,24 +54,24 @@ class Graphics {
     static int emptybrickBmpCols;
     static int emptybrickBmpRows;
 
-    static int GB_SCREEN_OFFSET_X_TLS;
-    static int GB_SCREEN_OFFSET_Y_TLS;
+    static int gbScreenOffsetXTls;
+    static int gbScreenOffsetYTls;
 
-    static int GB_SCREEN_OFFSET_X_PX;
-    static int GB_SCREEN_OFFSET_Y_PX;
+    static int gbScreenOffsetXPx;
+    static int gbScreenOffsetYPx;
 
-    static Array BORDER_TILES;
+    static Array borderTiles;
 
-    static Array TETRONIMO_TILES;
+    static Array tetronimoTiles;
 
     function void init(){
-        let SCREEN = 16384;
+        let screen = 16384;
 
-        let GB_SCREEN_OFFSET_X_TLS = 22;
-        let GB_SCREEN_OFFSET_Y_TLS = 7;
+        let gbScreenOffsetXTls = 22;
+        let gbScreenOffsetYTls = 7;
 
-        let GB_SCREEN_OFFSET_X_PX = GB_SCREEN_OFFSET_X_TLS * 8;
-        let GB_SCREEN_OFFSET_Y_PX = GB_SCREEN_OFFSET_Y_TLS * 8;
+        let gbScreenOffsetXPx = gbScreenOffsetXTls * 8;
+        let gbScreenOffsetYPx = gbScreenOffsetYTls * 8;
 
         do Graphics.inittitleScreenBmp();
         do Graphics.initbrick1Bmp();
@@ -88,26 +88,26 @@ class Graphics {
         do Graphics.initobrickBmp();
         do Graphics.inittbrickBmp();
 
-        let BORDER_TILES = Array.new(3);
-        let BORDER_TILES[0] = bricks1Bmp;
-        let BORDER_TILES[1] = bricks2Bmp;
-        let BORDER_TILES[2] = bricks3Bmp;
+        let borderTiles = Array.new(3);
+        let borderTiles[0] = bricks1Bmp;
+        let borderTiles[1] = bricks2Bmp;
+        let borderTiles[2] = bricks3Bmp;
 
-        let TETRONIMO_TILES = Array.new(8);
-        let TETRONIMO_TILES[0] = emptybrickBmp;
-        let TETRONIMO_TILES[1] = sbrickBmp;
-        let TETRONIMO_TILES[2] = lbrickBmp;
-        let TETRONIMO_TILES[3] = jbrickBmp;
-        let TETRONIMO_TILES[4] = zbrickBmp;
-        let TETRONIMO_TILES[5] = ibrickBmp;
-        let TETRONIMO_TILES[6] = obrickBmp;
-        let TETRONIMO_TILES[7] = tbrickBmp;
+        let tetronimoTiles = Array.new(8);
+        let tetronimoTiles[0] = emptybrickBmp;
+        let tetronimoTiles[1] = sbrickBmp;
+        let tetronimoTiles[2] = lbrickBmp;
+        let tetronimoTiles[3] = jbrickBmp;
+        let tetronimoTiles[4] = zbrickBmp;
+        let tetronimoTiles[5] = ibrickBmp;
+        let tetronimoTiles[6] = obrickBmp;
+        let tetronimoTiles[7] = tbrickBmp;
 
         return;
     }
 
     function void drawTitleScreen(){
-        do Graphics.blit(titleScreenBmp, 144, 160, GB_SCREEN_OFFSET_X_PX, GB_SCREEN_OFFSET_Y_PX);
+        do Graphics.blit(titleScreenBmp, 144, 160, gbScreenOffsetXPx, gbScreenOffsetYPx);
         return;
     }
 
@@ -128,8 +128,8 @@ class Graphics {
             do Sys.error(99);
         }
 
-        let xPos = xPos + GB_SCREEN_OFFSET_X_TLS;
-        let yPos = yPos + GB_SCREEN_OFFSET_Y_TLS;
+        let xPos = xPos + gbScreenOffsetXTls;
+        let yPos = yPos + gbScreenOffsetYTls;
 
         let isOdd = ((xPos & 1) = 1);
         if(isOdd){
@@ -141,7 +141,7 @@ class Graphics {
         let offset = (yPos * 32 * 8) + (xPos / 2);
         let i = 0;
         while(i<8){
-            let word = SCREEN[offset];
+            let word = screen[offset];
             let row = tile[i];
             let pixels = row[0];
             if(isOdd){
@@ -149,7 +149,7 @@ class Graphics {
                 let pixels = pixels * 256;
             }
             let word = (word & mask) | pixels;
-            let SCREEN[offset] = word;
+            let screen[offset] = word;
 
             let offset = offset + 32;
             let i = i + 1;
@@ -210,16 +210,16 @@ class Graphics {
         // depending on Screen implementation.
         do Screen.setColor(false);
         do Screen.drawRectangle(
-            GB_SCREEN_OFFSET_X_PX, GB_SCREEN_OFFSET_Y_PX,
-            GB_SCREEN_OFFSET_X_PX + (8 * 20) - 1, GB_SCREEN_OFFSET_Y_PX + (8 * 18) - 1
+            gbScreenOffsetXPx, gbScreenOffsetYPx,
+            gbScreenOffsetXPx + (8 * 20) - 1, gbScreenOffsetYPx + (8 * 18) - 1
         );
         return;
     }
 
     function void drawGameScreen(){
         var int xo, yo;
-        let xo = GB_SCREEN_OFFSET_X_PX;
-        let yo = GB_SCREEN_OFFSET_Y_PX;
+        let xo = gbScreenOffsetXPx;
+        let yo = gbScreenOffsetYPx;
 
         do Graphics.drawBrickColumns();
 
@@ -271,8 +271,8 @@ class Graphics {
 
     function void drawNextShapeBox(){
         var int xo, yo, x1;
-        let xo = GB_SCREEN_OFFSET_X_PX;
-        let yo = GB_SCREEN_OFFSET_Y_PX;
+        let xo = gbScreenOffsetXPx;
+        let yo = gbScreenOffsetYPx;
 
         do Graphics.drawFancyBox(false, xo + 115, yo + 99, xo + 156, yo + 140);
         do Graphics.drawFancyBox(true, xo + 117, yo + 101, xo + 154, yo + 138);
@@ -290,7 +290,7 @@ class Graphics {
         let col1 = 1;
         let col2 = 12;
         while(y<18){
-            let tileBMP = BORDER_TILES[Utils.mod(y, 3)];
+            let tileBMP = borderTiles[Utils.mod(y, 3)];
             do Graphics.drawGBTile(tileBMP, col1, y);
             do Graphics.drawGBTile(tileBMP, col2, y);
             let y = y + 1;
@@ -312,7 +312,7 @@ class Graphics {
         while(row<height){
             let col = 0;
             while(col<widthInWords){
-                let SCREEN[rowBase + xInWords + col] = Matrix.get(sprite, row, col);
+                let screen[rowBase + xInWords + col] = Matrix.get(sprite, row, col);
                 let col = col+1;
             }
             let row = row+1;
@@ -322,10 +322,10 @@ class Graphics {
     }
 
     function Array getTetronimoTile(int idx){
-        return TETRONIMO_TILES[idx];
+        return tetronimoTiles[idx];
     }
 
-    /*
+    /**
      * Initializes the "titleScreen" bitmap.
      * GENERATED CODE
      */
@@ -356,7 +356,7 @@ class Graphics {
         return;
     }
 
-    /*
+    /**
      * Initializes the "brick1" bitmap.
      * GENERATED CODE
      */
@@ -387,7 +387,7 @@ class Graphics {
         return;
     }
 
-    /*
+    /**
      * Initializes the "bricks1" bitmap.
      * GENERATED CODE
      */
@@ -418,7 +418,7 @@ class Graphics {
         return;
     }
 
-    /*
+    /**
      * Initializes the "bricks2" bitmap.
      * GENERATED CODE
      */
@@ -449,7 +449,7 @@ class Graphics {
         return;
     }
 
-    /*
+    /**
      * Initializes the "bricks3" bitmap.
      * GENERATED CODE
      */
@@ -480,7 +480,7 @@ class Graphics {
         return;
     }
 
-    /*
+    /**
      * Initializes the "emptybrick" bitmap.
      * GENERATED CODE
      */
@@ -511,7 +511,7 @@ class Graphics {
         return;
     }
 
-    /*
+    /**
      * Initializes the "sbrick" bitmap.
      * GENERATED CODE
      */
@@ -542,7 +542,7 @@ class Graphics {
         return;
     }
 
-    /*
+    /**
      * Initializes the "lbrick" bitmap.
      * GENERATED CODE
      */
@@ -573,7 +573,7 @@ class Graphics {
         return;
     }
 
-    /*
+    /**
      * Initializes the "jbrick" bitmap.
      * GENERATED CODE
      */
@@ -604,7 +604,7 @@ class Graphics {
         return;
     }
 
-    /*
+    /**
      * Initializes the "zbrick" bitmap.
      * GENERATED CODE
      */
@@ -635,7 +635,7 @@ class Graphics {
         return;
     }
 
-    /*
+    /**
      * Initializes the "ibrick" bitmap.
      * GENERATED CODE
      */
@@ -666,7 +666,7 @@ class Graphics {
         return;
     }
 
-    /*
+    /**
      * Initializes the "obrick" bitmap.
      * GENERATED CODE
      */
@@ -697,7 +697,7 @@ class Graphics {
         return;
     }
 
-    /*
+    /**
      * Initializes the "tbrick" bitmap.
      * GENERATED CODE
      */

@@ -1,4 +1,4 @@
-/* LCGRandom.jack, released under the BSD 2-Clause License, also known as Simplified BSD or FreeBSD License"
+/** LCGRandom.jack, released under the BSD 2-Clause License, also known as Simplified BSD or FreeBSD License"
  * Copyright (c) 2013, Rowan Limb
  * All rights reserved.
  * This software implements a PRNG based on Linear Congruential Generator (Schrage Method).
@@ -33,7 +33,7 @@ class LCGRandom {
         return;
     }
 
-    /* returns a random int in range 0..(M-1) inclusive */
+    // returns a random int in range 0..(M-1) inclusive
     function int rand() {
         var int test;
         let test=(A*(Utils.mod(seed,Q)))-(R*(seed/Q));
@@ -46,7 +46,9 @@ class LCGRandom {
         return seed;
     }
 
-    /* returns a random int in range low..high inclusive */
+    /**
+     * returns a random int in range low..high inclusive
+     */
     function int randRange(int low, int high) {
        var int scale;
        let scale = (M / (high - low + 1));

@@ -85,6 +85,7 @@ src/11/*/*.hack
 
 src/12/*Test/*.vm
 
-src/pong/*.jack
-src/pong/*.vm
-src/pong/*.hack
+src/tetris/*.jack
+src/tetris/*.vm
+src/tetris/*.hack
+src/tetris/*.asm

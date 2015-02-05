@@ -2,12 +2,12 @@
 
 class Cursor {
 
-    static Array TETRONIMOES;
+    static Array tetronimoes;
 
     field int x, y, tetronimo, rotation;
 
     function void init(){
-        let TETRONIMOES = Tetronimoes.getTetronimoes();
+        let tetronimoes = Tetronimoes.getTetronimoes();
         return;
     }
 
@@ -67,6 +67,6 @@ class Cursor {
     }
 
     method Array getTiles(){
-        return Matrix.get(TETRONIMOES, tetronimo, rotation);
+        return Matrix.get(tetronimoes, tetronimo, rotation);
     }
 }

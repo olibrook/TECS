@@ -16,18 +16,18 @@ class Game {
     static Cursor nextCursor;
     static Cursor cursor;
 
-    static int BOARD_OFFSET_X;
-    static int BOARD_OFFSET_Y;
+    static int boardOffsetX;
+    static int boardOffsetY;
 
-    static int CURSOR_CHANGE;
-    static int BOARD_CHANGE;
+    static int cursorChange;
+    static int boardChange;
 
-    static int GAME_OVER;
-    static int RUNNING;
-    static int TITLE_SCREEN;
+    static int gameOver;
+    static int running;
+    static int titleScreen;
     static int gameState;
 
-    static int MAX_LEVEL;
+    static int maxLevel;
 
     function void init() {
 
@@ -43,19 +43,19 @@ class Game {
         let boardCols = 10;
         let board = Game.createBoard(boardRows, boardCols);
 
-        let BOARD_OFFSET_X = 2;
-        let BOARD_OFFSET_Y = 0;
+        let boardOffsetX = 2;
+        let boardOffsetY = 0;
 
         // Bit-masks
-        let CURSOR_CHANGE = 1;
-        let BOARD_CHANGE = 2;
+        let cursorChange = 1;
+        let boardChange = 2;
 
-        let TITLE_SCREEN = 1;
-        let RUNNING = 2;
-        let GAME_OVER = 3;
-        let gameState = TITLE_SCREEN;
+        let titleScreen = 1;
+        let running = 2;
+        let gameOver = 3;
+        let gameState = titleScreen;
 
-        let MAX_LEVEL = 9;
+        let maxLevel = 9;
 
         do Graphics.drawGBFrame();
         do Game.enterGameLoop();
@@ -64,7 +64,7 @@ class Game {
 
     function void updateCountdown(){
         if(countdown = 0){
-            let countdown = ((MAX_LEVEL + 2) - level) * 400;
+            let countdown = ((maxLevel + 2) - level) * 400;
         } else {
             let countdown = countdown -1;
         }
@@ -78,7 +78,7 @@ class Game {
 
 
         while(true){
-            if(gameState = TITLE_SCREEN){
+            if(gameState = titleScreen){
                 do Graphics.clearGBScreen();
                 do Graphics.drawTitleScreen();
 
@@ -88,10 +88,10 @@ class Game {
                 }
                 while(Keyboard.keyPressed() = 128){}
 
-                let gameState = RUNNING;
+                let gameState = running;
             }
 
-            if(gameState = RUNNING){
+            if(gameState = running){
                 let linesComplete = 0;
                 let level = 0;
 
@@ -107,11 +107,11 @@ class Game {
                 let previousKey = 0;
                 let firstRender = true;
 
-                while(gameState = RUNNING){
+                while(gameState = running){
                     do Game.updateCountdown();
                     let changedFeatures = Game.update();
 
-                    if(firstRender | ((changedFeatures & BOARD_CHANGE) > 0)){
+                    if(firstRender | ((changedFeatures & boardChange) > 0)){
                         // Full re-render
                         do Graphics.clearGBScreen();
                         do Graphics.drawGameScreen();
@@ -121,7 +121,7 @@ class Game {
                         do Game.renderScores();
 
                     } else {
-                        if((changedFeatures & CURSOR_CHANGE) > 0){
+                        if((changedFeatures & cursorChange) > 0){
                             do Game.renderShape(previousCursor, false);
                             do Game.renderShape(cursor, true);
                         }
@@ -130,8 +130,8 @@ class Game {
                 }
             }
 
-            if(gameState = GAME_OVER){
-                let gameState = TITLE_SCREEN;
+            if(gameState = gameOver){
+                let gameState = titleScreen;
             }
         }
         return;
@@ -179,7 +179,7 @@ class Game {
 
         if(~(dx=0) | ~(dr=0)){
             if(Game.isValidPosition(cursor, dx, 0, dr)){
-                let changedFeatures = changedFeatures | CURSOR_CHANGE;
+                let changedFeatures = changedFeatures | cursorChange;
                 do cursor.setX(cursor.getX() + dx);
                 do cursor.rotate(dr);
             }
@@ -188,12 +188,12 @@ class Game {
         // Handle vertical movement last and alone - triggers new blocks
         if(~(dy=0)){
             if(Game.isValidPosition(cursor, 0, dy, 0)){
-                let changedFeatures =  changedFeatures | CURSOR_CHANGE;
+                let changedFeatures =  changedFeatures | cursorChange;
                 do cursor.setY(cursor.getY() + dy);
 
             } else {
 
-                let changedFeatures = changedFeatures | BOARD_CHANGE;
+                let changedFeatures = changedFeatures | boardChange;
 
                 do Game.writeToBoard(cursor, board);
                 do Game.removeCompleteLines();
@@ -208,7 +208,7 @@ class Game {
                 do cursor.setY(0);
 
                 if(~Game.isValidPosition(cursor, 0, 0, 0)){
-                    let gameState = GAME_OVER;
+                    let gameState = gameOver;
                 }
             }
         }
@@ -226,7 +226,7 @@ class Game {
             while(boardX<boardCols){
                 if(~(row[boardX] = 0)){
                     let tileBMP = Graphics.getTetronimoTile(row[boardX]);
-                    do Graphics.drawGBTile(tileBMP, BOARD_OFFSET_X + boardX, BOARD_OFFSET_Y + boardY);
+                    do Graphics.drawGBTile(tileBMP, boardOffsetX + boardX, boardOffsetY + boardY);
                 }
                 let boardX = boardX+1;
             }
@@ -235,7 +235,7 @@ class Game {
         return;
     }
 
-    /*
+    /**
      * Renders a cursor. When positive the cursor is drawn, else
      * the cursor is cleared.
      */
@@ -263,7 +263,7 @@ class Game {
                     } else {
                         let tileBMP = Graphics.getTetronimoTile(0);
                     }
-                    do Graphics.drawGBTile(tileBMP, BOARD_OFFSET_X + boardX, BOARD_OFFSET_Y + boardY);
+                    do Graphics.drawGBTile(tileBMP, boardOffsetX + boardX, boardOffsetY + boardY);
                 }
                 let tileX = tileX+1;
                 let boardX = cX + tileX;
@@ -378,7 +378,7 @@ class Game {
 
             while(Game.rowComplete(board[i])){
                 let linesComplete = linesComplete + 1;
-                let level = Math.min(linesComplete / 10, MAX_LEVEL);
+                let level = Math.min(linesComplete / 10, maxLevel);
 
                 let oldRow = board[i];
                 do oldRow.dispose();
