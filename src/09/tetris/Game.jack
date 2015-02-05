@@ -67,7 +67,7 @@ class Game {
 
             if(gameState = TITLE_SCREEN){
                 do Graphics.clearGBScreen();
-                do Output.moveCursor(10, 10);
+                do Output.moveCursor(10, 30);
                 do Output.printString("Press a key");
 
                 while(Keyboard.keyPressed() = 0){
@@ -119,7 +119,7 @@ class Game {
 
             if(gameState = GAME_OVER){
                 do Graphics.clearGBScreen();
-                do Output.moveCursor(10, 10);
+                do Output.moveCursor(10, 30);
                 do Output.printString("Game over");
 
                 while(Keyboard.keyPressed() = 0){}

@@ -5,4 +5,5 @@ class Main {
         do Game.init();
         return;
     }
+
 }
