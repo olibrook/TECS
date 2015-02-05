@@ -31,9 +31,6 @@ the compiler and OS built as part of the project:
 
 Follow the instructions on-screen to run the pong game.
 
-TODOs:
-------
-- Tetris - increase speed when level goes up.
 
 Issues:
 -------

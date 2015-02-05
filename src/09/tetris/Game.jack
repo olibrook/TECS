@@ -27,6 +27,8 @@ class Game {
     static int TITLE_SCREEN;
     static int gameState;
 
+    static int MAX_LEVEL;
+
     function void init() {
 
         do Graphics.init();
@@ -51,8 +53,9 @@ class Game {
         let TITLE_SCREEN = 1;
         let RUNNING = 2;
         let GAME_OVER = 3;
-
         let gameState = TITLE_SCREEN;
+
+        let MAX_LEVEL = 9;
 
         do Graphics.drawGBFrame();
         do Game.enterGameLoop();
@@ -61,7 +64,7 @@ class Game {
 
     function void updateCountdown(){
         if(countdown = 0){
-            let countdown = 4000;
+            let countdown = ((MAX_LEVEL + 2) - level) * 400;
         } else {
             let countdown = countdown -1;
         }
@@ -375,7 +378,7 @@ class Game {
 
             while(Game.rowComplete(board[i])){
                 let linesComplete = linesComplete + 1;
-                let level = Math.min(linesComplete / 10, 9);
+                let level = Math.min(linesComplete / 10, MAX_LEVEL);
 
                 let oldRow = board[i];
                 do oldRow.dispose();
