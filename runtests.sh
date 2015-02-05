@@ -249,21 +249,21 @@ function _msg(){
 
 
 # echo "--- Project 12 ---"
-# EX12=(
-#     Memory
-#     Array
-#     Math
-#     String
-#     Output
-#     Screen
-#     Keyboard
-#     Sys
-# )
-# EX12_HAS_TEST=(
-#     Memory
-#     Array
-#     Math
-# )
+EX12=(
+    Memory
+    Array
+    Math
+    String
+    Output
+    Screen
+    Keyboard
+    Sys
+)
+EX12_HAS_TEST=(
+    Memory
+    Array
+    Math
+)
 
 # # Compiled working implementations are provided. This is
 # # in part a reverse-engineering exercise.
