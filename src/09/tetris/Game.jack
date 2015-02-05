@@ -67,8 +67,7 @@ class Game {
 
             if(gameState = TITLE_SCREEN){
                 do Graphics.clearGBScreen();
-                do Output.moveCursor(10, 30);
-                do Output.printString("Press a key");
+                do Graphics.drawTitleScreen();
 
                 while(Keyboard.keyPressed() = 0){
                     // TODO: Set seed by counting cycles on title screen until input.

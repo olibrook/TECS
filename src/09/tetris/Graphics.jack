@@ -106,6 +106,11 @@ class Graphics {
         return;
     }
 
+    function void drawTitleScreen(){
+        do Graphics.blit(titleScreenBmp, 144, 160, GB_SCREEN_OFFSET_X_PX, GB_SCREEN_OFFSET_Y_PX);
+        return;
+    }
+
     /**
      * Renders a 8x8 tile in the coordinate space of the Gameboy screen.
      *
@@ -337,20 +342,21 @@ class Graphics {
         return;
     }
 
-    /**
-     * Rows is in pixels, cols is in words.
-     */
-    function void blit(Array sprite, int rows, int cols){
-        var int row, col, rowBase;
-        var Array arr;
+    function void blit(Array sprite, int height, int width, int x, int y){
+        var int row, col, rowBase, widthInWords, xInWords;
+
+        if(~(Utils.mod(width, 16) = 0) | ~(Utils.mod(x, 16) = 0)){
+            do Sys.error(97);
+        }
+        let widthInWords = width/16;
+        let xInWords = x/16;
 
         let row = 0;
-        let rowBase = 0;
-        while(row<rows){
+        let rowBase = y * 32;
+        while(row<height){
             let col = 0;
-            let arr = sprite[row];
-            while(col<cols){
-                let SCREEN[rowBase + col] = arr[col];
+            while(col<widthInWords){
+                let SCREEN[rowBase + xInWords + col] = Matrix.get(sprite, row, col);
                 let col = col+1;
             }
             let row = row+1;
