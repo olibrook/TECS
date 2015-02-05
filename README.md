@@ -34,8 +34,6 @@ Follow the instructions on-screen to run the pong game.
 TODOs:
 ------
 - Tetris - increase speed when level goes up.
-- Tetris - seed random number generator properly.
-
 
 Issues:
 -------

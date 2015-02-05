@@ -59,6 +59,15 @@ class Game {
         return;
     }
 
+    function void updateCountdown(){
+        if(countdown = 0){
+            let countdown = 4000;
+        } else {
+            let countdown = countdown -1;
+        }
+        return;
+    }
+
     function void enterGameLoop(){
         var int changedFeatures;
         var int key;
@@ -66,16 +75,14 @@ class Game {
 
 
         while(true){
-
             if(gameState = TITLE_SCREEN){
                 do Graphics.clearGBScreen();
                 do Graphics.drawTitleScreen();
 
                 while(Keyboard.keyPressed() = 0){
-                    // TODO: Set seed by counting cycles on title screen until input.
-                    do LCGRandom.setSeed(999);
+                    do Game.updateCountdown();
+                    do LCGRandom.setSeed(countdown);
                 }
-
                 while(~(Keyboard.keyPressed() = 0)){}
 
                 let gameState = RUNNING;
@@ -98,6 +105,7 @@ class Game {
                 let firstRender = true;
 
                 while(gameState = RUNNING){
+                    do Game.updateCountdown();
                     let changedFeatures = Game.update();
 
                     if(firstRender | ((changedFeatures & BOARD_CHANGE) > 0)){
@@ -115,18 +123,11 @@ class Game {
                             do Game.renderShape(cursor, true);
                         }
                     }
-
                     let firstRender = false;
                 }
             }
 
             if(gameState = GAME_OVER){
-                do Graphics.clearGBScreen();
-                do Output.moveCursor(10, 30);
-                do Output.printString("Game over");
-
-                while(Keyboard.keyPressed() = 0){}
-                while(~(Keyboard.keyPressed() = 0)){}
                 let gameState = TITLE_SCREEN;
             }
         }
@@ -207,12 +208,6 @@ class Game {
                     let gameState = GAME_OVER;
                 }
             }
-        }
-
-        if(countdown = 0){
-            let countdown = 4000;
-        } else {
-            let countdown = countdown -1;
         }
         return changedFeatures;
     }
