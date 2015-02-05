@@ -82,11 +82,11 @@ class Game {
                 do Graphics.clearGBScreen();
                 do Graphics.drawTitleScreen();
 
-                while(Keyboard.keyPressed() = 0){
+                while(~(Keyboard.keyPressed() = 128)){
                     do Game.updateCountdown();
                     do LCGRandom.setSeed(countdown);
                 }
-                while(~(Keyboard.keyPressed() = 0)){}
+                while(Keyboard.keyPressed() = 128){}
 
                 let gameState = RUNNING;
             }
