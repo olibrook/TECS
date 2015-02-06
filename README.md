@@ -4,6 +4,15 @@ The Elements of Computing Systems
 My work on the exercises set in the [The Elements of Computing Systems][tecs]
 book.
 
+All the exercises are complete. There's a script which will run all of the
+(non-interactive) tests and finally build a version of Tetris with the
+compiler which is developed as part of the course. The compiler is written
+in node.js.
+
+My version of Tetris looks like this:
+
+![Tetris](https://raw.github.com/username/projectname/branch/path/to/img.png)
+
 Requirements
 ------------
 
@@ -12,6 +21,9 @@ Requirements
 
 Setup
 -----
+
+Bootstrap the project using Buildout. Yeah, yeah - it's what I know and there's
+a simple recipe to install node.js:
 
 ```
     # Fetch tecs software and node dependencies
@@ -22,14 +34,14 @@ Setup
 Running
 -------
 
-This will run all tests and build a version of pong with
+This will run all tests and build a version of Tetris with
 the compiler and OS built as part of the project:
 
 ```
     ./runtests.sh
 ```
 
-Follow the instructions on-screen to run the pong game.
+Follow the instructions on-screfor en to run the Tetris game.
 
 
 Issues:
@@ -38,7 +50,7 @@ Issues:
    supports '/*' as well as '/**' as comment openings. This is an oversight.
  - My compiler doesn't warn when there is an argument name which is shadowed by
    a function local. This produces errors which are extremely hard to debug!
- - Compiling tetris down to assembly results in a file which is too large for
+ - Compiling Tetris down to assembly results in a file which is too large for
    the ROM. The VMEmulator doesn't care though (it runs bytecode) and this
    could be fixed by dropping the fancy graphics on the title screen.
 
