@@ -11,7 +11,7 @@ in node.js.
 
 My version of Tetris looks like this:
 
-![Tetris](https://raw.github.com/username/projectname/branch/path/to/img.png)
+![Tetris](https://raw.githubusercontent.com/olibrook/TECS/master/tetris-screnshot.png)
 
 Requirements
 ------------
