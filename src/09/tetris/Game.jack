@@ -84,7 +84,7 @@ class Game {
 
                 while(~(Keyboard.keyPressed() = 128)){
                     do Game.updateCountdown();
-                    do LCGRandom.setSeed(countdown);
+                    do Random.setSeed(countdown);
                 }
                 while(Keyboard.keyPressed() = 128){}
 
@@ -138,8 +138,8 @@ class Game {
     }
 
     function Cursor randomizeCursor(Cursor aCursor){
-        do aCursor.setRotation(LCGRandom.randRange(0, 3));
-        do aCursor.setTetronimo(LCGRandom.randRange(0, 6));
+        do aCursor.setRotation(Random.randRange(3));
+        do aCursor.setTetronimo(Random.randRange(6));
         return aCursor;
     }
 

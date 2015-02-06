@@ -119,7 +119,7 @@ class Graphics {
      * yPos - y position from origin, in tiles
      */
     function void drawGBTile(Array tile, int xPos, int yPos){
-        var int offset, word, tile, i, mask;
+        var int offset, word, i, mask;
         var bool isOdd;
         var Array row, pixels;
 

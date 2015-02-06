@@ -234,7 +234,7 @@ class Screen {
 
         let row=y1;
         let rowBase = y1 * 32;
-        while(row<y2){
+        while(~(row>y2)){
             let column=firstColumn;
             while((column<lastColumn) | (column=lastColumn)){
                 if(color){
