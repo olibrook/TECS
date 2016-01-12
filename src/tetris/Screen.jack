@@ -1,0 +1,269 @@
+// This file is part of the materials accompanying the book
+// "The Elements of Computing Systems" by Nisan and Schocken,
+// MIT Press. Book site: www.idc.ac.il/tecs
+// File name: projects/12/Screen.jack
+
+/**
+ * Graphic screen library.
+ *
+ * Spec:
+ * - Screen is 512x256 pixels.
+ * - One row of pixels is 32 consecutive 16-bit words.
+ */
+class Screen {
+
+    static bool color;
+    static int screen;
+    static Array twoPow;
+    static Array scanLine;
+
+    /**
+     * Initializes the Screen.
+     */
+    function void init() {
+        let color = true;
+        let screen = 16384;
+
+        let twoPow = Array.new(16);
+        let twoPow[0] = 1;
+        let twoPow[1] = 2;
+        let twoPow[2] = 4;
+        let twoPow[3] = 8;
+        let twoPow[4] = 16;
+        let twoPow[5] = 32;
+        let twoPow[6] = 64;
+        let twoPow[7] = 128;
+        let twoPow[8] = 256;
+        let twoPow[9] = 512;
+        let twoPow[10] = 1024;
+        let twoPow[11] = 2048;
+        let twoPow[12] = 4096;
+        let twoPow[13] = 8192;
+        let twoPow[14] = 16384;
+        let twoPow[15] = (-32767 - 1);
+
+        let scanLine = Array.new(32);
+
+        return;
+    }
+
+    /**
+     * Erases the whole screen.
+     */
+    function void clearScreen() {
+        var int row, rowBase, column;
+
+        let row=0;
+        let rowBase = 0;
+        while(row<256){
+            let column=0;
+            while(column<32){
+                let screen[rowBase + column] = 0;
+                let column = column+1;
+            }
+            let rowBase = rowBase+32;
+            let row = row+1;
+        }
+        return;
+    }
+
+    /**
+     * Sets the color to be used in further draw commands where
+     * white = false, black = true.
+     */
+    function void setColor(boolean b) {
+        let color = b;
+        return;
+    }
+
+    /**
+     * Draws the (x, y) pixel.
+     */
+    function void drawPixel(int x, int y) {
+        var int wordX, pixelX, word, address;
+
+        let wordX = (x/16);
+        let pixelX = x - (wordX * 16); // Must now be 0-15
+        let address = wordX + (y * 32);
+        let word = screen[address];
+
+        if(color){
+            let screen[address] = word | twoPow[pixelX];
+        } else {
+            let screen[address] = word & (~twoPow[pixelX]);
+        }
+        return;
+    }
+
+    /**
+     * Draws a line from pixel (x1, y1) to (x2, y2).
+     */
+    function void drawLine(int x1, int y1, int x2, int y2) {
+        var int dx, dy, absDx, absDy, a, b, absA,
+                absB, xHeading, yHeading, adyMinusbdx;
+
+        var bool horizontal, vertical, diagonal, updateA;
+
+        let dx = x2-x1;
+        let dy = y2-y1;
+
+        if(dx<0){
+            let xHeading = -1;
+        } else {
+            let xHeading = 1;
+        }
+
+        if(dy<0){
+            let yHeading = -1;
+        } else {
+            let yHeading = 1;
+        }
+
+        let absDx = Math.abs(dx);
+        let absDy = Math.abs(dy);
+
+        let a = 0;
+        let b = 0;
+
+        let absA = 0;
+        let absB = 0;
+
+        let horizontal = ((absDx > 0) & (absDy = 0));
+        let vertical   = ((absDx = 0) & (absDy > 0));
+        let diagonal   = ((absDx > 0) & (absDy > 0));
+
+        if (horizontal) {
+            let updateA = true;
+        } else {
+            if(vertical) {
+                let updateA = false;
+            }
+        }
+
+        let adyMinusbdx = 0;
+
+        while(~(absA>absDx) & ~(absB>absDy)){
+            do Screen.drawPixel(x1 + a, y1 + b);
+
+            if(diagonal) {
+                let updateA = (adyMinusbdx < 0);
+            }
+
+            if(updateA){
+                let a = a + xHeading;
+                let absA = Math.abs(a);
+                let adyMinusbdx = adyMinusbdx + absDy;
+            } else {
+                let b = b + yHeading;
+                let absB = Math.abs(b);
+                let adyMinusbdx = adyMinusbdx - absDx;
+            }
+        }
+        return;
+    }
+
+    /**
+     * Draws a filled rectangle where the top left corner is (x1, y1)
+     * and the bottom right corner is (x2, y2).
+     */
+    function void drawRectangle(int x1, int y1, int x2, int y2) {
+
+        var int row, firstRow, lastRow,
+                column, firstColumn, lastColumn,
+                lastColumnRemainder,
+                firstColumnMask, middleColumnMask, lastColumnMask,
+                fill, i, columnRange, columnLeftPixel, columnRightPixel, j, from, to, word, rowBase;
+
+
+        if((x1<0) | (x2>511) | (x1>x2) | (y1<0) | (y2>255) | (y1>y2)){
+            do Sys.error(15);
+        }
+
+        // Work out the range of memory words affected, dividing the screen
+        // into rows of 32 columns (machine words).
+
+        let firstColumn = (x1/16);
+
+        let lastColumn = (x2/16);
+        let lastColumnRemainder = x2 - (lastColumn * 16);
+        if(lastColumnRemainder > 0){
+            let lastColumn = lastColumn + 1;
+        }
+
+        let i = firstColumn;
+
+        let columnLeftPixel = i * 16;
+        let columnRightPixel = columnLeftPixel + 15;
+
+        while((i<lastColumn) | (i=lastColumn)){
+
+            if(((x1 < columnLeftPixel) & (x2 < columnLeftPixel)) |
+               ((x1 > columnRightPixel) & (x2 > columnRightPixel))) {
+                // Box is to left or right of this memory word
+                let word = 0;
+
+            } else {
+                if((x1 < columnLeftPixel) & (x2 > columnRightPixel)){
+                    // Box passes through this memory word.
+                    let word = -1;
+                } else {
+                    // Right, left or both edge(s) of box are contained
+                    // in this memory word.
+                    let from = Math.max(columnLeftPixel, x1);
+                    let from = Math.min(columnRightPixel, from);
+                    let from = from - columnLeftPixel;
+
+                    let to = Math.max(columnLeftPixel, x2);
+                    let to = Math.min(columnRightPixel, to);
+                    let to = to - columnLeftPixel;
+
+                    let word = 0;
+                    let j = from;
+                    while((j<to) | (j=to)){
+                        let word = word | twoPow[j];
+                        let j = j+1;
+                    }
+                }
+            }
+            let scanLine[i] = word;
+
+            let i = i + 1;
+            let columnLeftPixel = columnLeftPixel + 16;
+            let columnRightPixel = columnLeftPixel + 15;
+        }
+
+        let row=y1;
+        let rowBase = y1 * 32;
+        while(~(row>y2)){
+            let column=firstColumn;
+            while((column<lastColumn) | (column=lastColumn)){
+                if(color){
+                    let screen[rowBase + column] = screen[rowBase + column] | scanLine[column];
+                } else {
+                    let screen[rowBase + column] = screen[rowBase + column] & (~scanLine[column]);
+                }
+                let column = column+1;
+            }
+            let rowBase = rowBase+32;
+            let row = row+1;
+        }
+        return;
+    }
+
+    /**
+     * Draws a filled circle of radius r around (cx, cy).
+     */
+    function void drawCircle(int cx, int cy, int r) {
+        var int dy, x1, x2, y, sharedTerm;
+        let dy = -r;
+        while(dy<(r+1)){
+            let sharedTerm = Math.sqrt(((r*r) - (dy * dy)));
+            let x1 = cx - sharedTerm;
+            let x2 = cx + sharedTerm;
+            let y = cy + dy;
+            do Screen.drawRectangle(x1, y, x2, y+1);
+            let dy = dy+1;
+        }
+        return;
+    }
+}

@@ -1,0 +1,730 @@
+class Graphics {
+
+    static int screen;
+
+    static Array titleScreenBmp;
+    static int titleScreenBmpCols;
+    static int titleScreenBmpRows;
+
+    static Array brick1Bmp;
+    static int brick1BmpCols;
+    static int brick1BmpRows;
+
+    static Array bricks1Bmp;
+    static int bricks1BmpCols;
+    static int bricks1BmpRows;
+
+    static Array bricks2Bmp;
+    static int bricks2BmpCols;
+    static int bricks2BmpRows;
+
+    static Array bricks3Bmp;
+    static int bricks3BmpCols;
+    static int bricks3BmpRows;
+
+    static Array sbrickBmp;
+    static int sbrickBmpCols;
+    static int sbrickBmpRows;
+
+    static Array lbrickBmp;
+    static int lbrickBmpCols;
+    static int lbrickBmpRows;
+
+    static Array jbrickBmp;
+    static int jbrickBmpCols;
+    static int jbrickBmpRows;
+
+    static Array zbrickBmp;
+    static int zbrickBmpCols;
+    static int zbrickBmpRows;
+
+    static Array ibrickBmp;
+    static int ibrickBmpCols;
+    static int ibrickBmpRows;
+
+    static Array obrickBmp;
+    static int obrickBmpCols;
+    static int obrickBmpRows;
+
+    static Array tbrickBmp;
+    static int tbrickBmpCols;
+    static int tbrickBmpRows;
+
+    static Array emptybrickBmp;
+    static int emptybrickBmpCols;
+    static int emptybrickBmpRows;
+
+    static int gbScreenOffsetXTls;
+    static int gbScreenOffsetYTls;
+
+    static int gbScreenOffsetXPx;
+    static int gbScreenOffsetYPx;
+
+    static Array borderTiles;
+
+    static Array tetronimoTiles;
+
+    function void init(){
+        let screen = 16384;
+
+        let gbScreenOffsetXTls = 22;
+        let gbScreenOffsetYTls = 7;
+
+        let gbScreenOffsetXPx = gbScreenOffsetXTls * 8;
+        let gbScreenOffsetYPx = gbScreenOffsetYTls * 8;
+
+        do Graphics.inittitleScreenBmp();
+        do Graphics.initbrick1Bmp();
+        do Graphics.initbricks1Bmp();
+        do Graphics.initbricks2Bmp();
+        do Graphics.initbricks3Bmp();
+
+        do Graphics.initemptybrickBmp();
+        do Graphics.initsbrickBmp();
+        do Graphics.initlbrickBmp();
+        do Graphics.initjbrickBmp();
+        do Graphics.initzbrickBmp();
+        do Graphics.initibrickBmp();
+        do Graphics.initobrickBmp();
+        do Graphics.inittbrickBmp();
+
+        let borderTiles = Array.new(3);
+        let borderTiles[0] = bricks1Bmp;
+        let borderTiles[1] = bricks2Bmp;
+        let borderTiles[2] = bricks3Bmp;
+
+        let tetronimoTiles = Array.new(8);
+        let tetronimoTiles[0] = emptybrickBmp;
+        let tetronimoTiles[1] = sbrickBmp;
+        let tetronimoTiles[2] = lbrickBmp;
+        let tetronimoTiles[3] = jbrickBmp;
+        let tetronimoTiles[4] = zbrickBmp;
+        let tetronimoTiles[5] = ibrickBmp;
+        let tetronimoTiles[6] = obrickBmp;
+        let tetronimoTiles[7] = tbrickBmp;
+
+        return;
+    }
+
+    function void drawTitleScreen(){
+        do Graphics.blit(titleScreenBmp, 144, 160, gbScreenOffsetXPx, gbScreenOffsetYPx);
+        return;
+    }
+
+    /**
+     * Renders a 8x8 tile in the coordinate space of the Gameboy screen.
+     *
+     * tile - a bitmap as a 2d array
+     * xPos - x position from origin, in tiles
+     * yPos - y position from origin, in tiles
+     */
+    function void drawGBTile(Array tile, int xPos, int yPos){
+        var int offset, word, i, mask;
+        var bool isOdd;
+        var Array row, pixels;
+
+        // Gameboy screen is 20x18 tiles
+        if(~(xPos>-1) | ~(xPos<20) | ~(yPos>-1) | ~(yPos<18)){
+            do Sys.error(99);
+        }
+
+        let xPos = xPos + gbScreenOffsetXTls;
+        let yPos = yPos + gbScreenOffsetYTls;
+
+        let isOdd = ((xPos & 1) = 1);
+        if(isOdd){
+            let mask = 255;   // Clears right
+        } else {
+            let mask = -256;  // Clears left
+        }
+
+        let offset = (yPos * 32 * 8) + (xPos / 2);
+        let i = 0;
+        while(i<8){
+            let word = screen[offset];
+            let row = tile[i];
+            let pixels = row[0];
+            if(isOdd){
+                // Transpose pixels half a word to the right.
+                let pixels = pixels * 256;
+            }
+            let word = (word & mask) | pixels;
+            let screen[offset] = word;
+
+            let offset = offset + 32;
+            let i = i + 1;
+        }
+        return;
+    }
+
+
+    function void drawGBFrame(){
+        var int x, y;
+        let x = 16*8;
+        let y = 3*8;
+        do Screen.setColor(true);
+
+        // Black rectangle with rounded corners
+        do Screen.drawRectangle(x, y, x+260, y+200);
+
+        do Screen.setColor(false);
+        do Screen.drawRectangle(x, y, x+10, y+10);
+        do Screen.drawRectangle(x+260-10, y+0, x+260, y+10);
+        do Screen.drawRectangle(x+260-60, y+200-60, x+260, y+200);
+        do Screen.drawRectangle(x, y+200-10, x+10, y+200);
+
+        do Screen.setColor(true);
+        do Screen.drawCircle(x+10, y+10, 10);
+        do Screen.drawCircle(x+260-10, y+10, 10);
+        do Screen.drawCircle(x+260-60, y+200-60, 60);
+        do Screen.drawCircle(x+10, y+200-10, 10);
+
+        // White lines on the top
+        do Screen.setColor(false);
+        do Screen.drawLine(x+15, y+10, x+260-15, y+10);
+        do Screen.drawLine(x+15, y+16, x+260-15, y+16);
+
+        do Screen.setColor(true);
+        do Screen.drawLine(x+70, y+10, x+260-45, y+10);
+        do Screen.drawLine(x+70, y+16, x+260-45, y+16);
+
+        // Battery indicator
+        do Screen.setColor(false);
+        do Screen.drawCircle(x+24, y+65, 3);
+
+        // Gameboy label
+        do Output.moveCursor(22, 17);
+        do Output.printString("nintendo GAMEBOY");
+
+        // Outline
+        do Screen.setColor(true);
+        do Screen.drawLine(x-20, 0, x-20, 255);
+        do Screen.drawLine(x+260+20, 0, x+260+20, 255);
+
+
+        return;
+    }
+
+    function void clearGBScreen(){
+        // Screen is aligned to memory words, can be done quickly
+        // depending on Screen implementation.
+        do Screen.setColor(false);
+        do Screen.drawRectangle(
+            gbScreenOffsetXPx, gbScreenOffsetYPx,
+            gbScreenOffsetXPx + (8 * 20) - 1, gbScreenOffsetYPx + (8 * 18) - 1
+        );
+        return;
+    }
+
+    function void drawGameScreen(){
+        var int xo, yo;
+        let xo = gbScreenOffsetXPx;
+        let yo = gbScreenOffsetYPx;
+
+        do Graphics.drawBrickColumns();
+
+        do Screen.setColor(true);
+
+        // Sides
+        do Screen.drawRectangle(xo + 0, yo + 0, xo + 6, yo + 143);
+        do Screen.drawRectangle(xo + 105, yo + 0, xo + 159, yo + 143);
+
+        // Score display
+        do Screen.setColor(false);
+        do Screen.drawRectangle(xo + 105, yo + 40, xo + 159, yo + 90);
+        do Screen.setColor(true);
+        do Screen.drawRectangle(xo + 105, yo + 41, xo + 159, yo + 41);
+        do Screen.drawRectangle(xo + 105, yo + 89, xo + 159, yo + 89);
+
+        do Graphics.drawNextShapeBox();
+        return;
+    }
+
+    function void drawFancyBox(bool boxColor, int x1, int y1, int x2, int y2){
+        do Screen.setColor(boxColor);
+        do Screen.drawRectangle(x1, y1, x2, y2);
+
+        do Screen.setColor(~boxColor);
+
+        // top left
+        do Screen.drawPixel(x1, y1);
+        do Screen.drawPixel(x1 + 1, y1);
+        do Screen.drawPixel(x1, y1 + 1);
+
+        // top right
+        do Screen.drawPixel(x2, y1);
+        do Screen.drawPixel(x2 - 1, y1);
+        do Screen.drawPixel(x2, y1 + 1);
+
+        // bottom right
+        do Screen.drawPixel(x2, y2);
+        do Screen.drawPixel(x2 - 1, y2);
+        do Screen.drawPixel(x2, y2 - 1);
+
+        // bottom left
+        do Screen.drawPixel(x1, y2);
+        do Screen.drawPixel(x1 + 1, y2);
+        do Screen.drawPixel(x1, y2 - 1);
+        return;
+    }
+
+
+    function void drawNextShapeBox(){
+        var int xo, yo, x1;
+        let xo = gbScreenOffsetXPx;
+        let yo = gbScreenOffsetYPx;
+
+        do Graphics.drawFancyBox(false, xo + 115, yo + 99, xo + 156, yo + 140);
+        do Graphics.drawFancyBox(true, xo + 117, yo + 101, xo + 154, yo + 138);
+        do Screen.setColor(false);
+        do Screen.drawRectangle(xo + 119, yo + 103, xo + 152, yo + 136);
+
+        return;
+    }
+
+    function void drawBrickColumns(){
+        var int y, col1, col2;
+        var array tileBMP;
+
+        let y = 0;
+        let col1 = 1;
+        let col2 = 12;
+        while(y<18){
+            let tileBMP = borderTiles[Utils.mod(y, 3)];
+            do Graphics.drawGBTile(tileBMP, col1, y);
+            do Graphics.drawGBTile(tileBMP, col2, y);
+            let y = y + 1;
+        }
+        return;
+    }
+
+    function void blit(Array sprite, int height, int width, int x, int y){
+        var int row, col, rowBase, widthInWords, xInWords;
+
+        if(~(Utils.mod(width, 16) = 0) | ~(Utils.mod(x, 16) = 0)){
+            do Sys.error(97);
+        }
+        let widthInWords = width/16;
+        let xInWords = x/16;
+
+        let row = 0;
+        let rowBase = y * 32;
+        while(row<height){
+            let col = 0;
+            while(col<widthInWords){
+                let screen[rowBase + xInWords + col] = Matrix.get(sprite, row, col);
+                let col = col+1;
+            }
+            let row = row+1;
+            let rowBase = rowBase + 32;
+        }
+        return;
+    }
+
+    function Array getTetronimoTile(int idx){
+        return tetronimoTiles[idx];
+    }
+
+    /**
+     * Initializes the "titleScreen" bitmap.
+     * GENERATED CODE
+     */
+    function void inittitleScreenBmp() {
+        let titleScreenBmpCols = 10;
+        let titleScreenBmpRows = 144;
+        let titleScreenBmp = Array.new(144);
+        do Graphics.loadtitleScreen();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storetitleScreen(int index, int a, int b, int c, int d, int e, int f, int g, int h, int i, int j){
+        var Array arr;
+        let arr = Array.new(10);
+        let titleScreenBmp[index] = arr;
+        let arr[0] = a;let arr[1] = b;let arr[2] = c;let arr[3] = d;let arr[4] = e;let arr[5] = f;let arr[6] = g;let arr[7] = h;let arr[8] = i;let arr[9] = j;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadtitleScreen(){
+        do Graphics.storetitleScreen(0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Graphics.storetitleScreen(1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Graphics.storetitleScreen(2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Graphics.storetitleScreen(3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Graphics.storetitleScreen(4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Graphics.storetitleScreen(5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Graphics.storetitleScreen(6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Graphics.storetitleScreen(7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Graphics.storetitleScreen(8, 15, 0, 0, 0, 0, 0, 0, 0, 0, -4096);do Graphics.storetitleScreen(9, 23, 0, 0, 0, 0, 0, 0, 0, 0, -6144);do Graphics.storetitleScreen(10, 39, 0, 0, 0, 0, 0, 0, 0, 0, -7168);do Graphics.storetitleScreen(11, 71, 0, 0, 0, 0, 0, 0, 0, 0, -7680);do Graphics.storetitleScreen(12, -121, -1, -1, -1, -1, -1, -1, -1, -1, -7681);do Graphics.storetitleScreen(13, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);do Graphics.storetitleScreen(14, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);do Graphics.storetitleScreen(15, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);do Graphics.storetitleScreen(16, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);do Graphics.storetitleScreen(17, -16249, -16417, -193, -12290, -16417, -193, -32706, -10113, 32255, -7919);do Graphics.storetitleScreen(18, 16519, -20400, -16080, 19460, -20400, -16080, -32542, 19552, 4480, -7909);do Graphics.storetitleScreen(19, 16519, 12360, -16079, 19464, 12360, -16079, -32382, -26016, 4480, -7915);do Graphics.storetitleScreen(20, 16519, 12356, -16078, 19472, 12356, -16078, -31998, 12896, 4481, -7919);do Graphics.storetitleScreen(21, 16519, 12356, -16078, 19488, 12356, -16078, -32254, 12640, 4482, -7919);do Graphics.storetitleScreen(22, 16519, 12354, -16076, 19520, 12354, -16076, -31230, 24928, 386, -7936);do Graphics.storetitleScreen(23, -16249, 12482, -16076, -13184, 12482, -16076, -31102, -16032, 388, -7936);do Graphics.storetitleScreen(24, 16519, 13633, -10952, 19712, 13633, -10952, -30890, -10891, 472, -7936);do Graphics.storetitleScreen(25, 16519, 12865, -7368, 19968, 12865, -7368, -31198, -23710, 425, -7936);do Graphics.storetitleScreen(26, -16249, 13632, -10960, -13184, 13632, -10960, -30890, 22133, 467, -7936);do Graphics.storetitleScreen(27, -16249, 14400, -14032, -14144, 14400, -14032, -31222, 2664, 419, -7936);do Graphics.storetitleScreen(28, 16519, 13632, -10976, 16608, 13632, -10976, -30890, 22133, 455, -7936);do Graphics.storetitleScreen(29, 135, 12864, -7424, 240, 12864, -7424, -31966, 9314, 462, -7936);do Graphics.storetitleScreen(30, 135, 13632, -11008, 216, 13632, -11008, -31914, 21621, 413, -7936);do Graphics.storetitleScreen(31, 135, 15040, -5376, 236, 15040, -5376, -32278, -22422, 282, -7936);do Graphics.storetitleScreen(32, 135, 14144, -2304, 246, 14144, -2304, -32514, 28791, 63, -7936);do Graphics.storetitleScreen(33, 135, 15040, -5376, 236, 15040, -5376, -32738, -23958, 106, -7936);do Graphics.storetitleScreen(34, 135, 15808, -8960, 216, 15808, -8960, -32762, -6531, 221, -7936);do Graphics.storetitleScreen(35, 135, 15040, -5376, 240, 15040, -5376, -32758, -12694, 426, -7936);do Graphics.storetitleScreen(36, 135, 14144, -2304, 224, 14144, -2304, -32754, -29065, 503, -7936);do Graphics.storetitleScreen(37, 135, 15040, -5376, 2240, 15040, -5376, -32742, -26006, 938, -7936);do Graphics.storetitleScreen(38, 135, 15808, -8960, 3200, 15808, -8960, -32706, 15997, 989, -7936);do Graphics.storetitleScreen(39, 135, 16320, -256, 3584, 16320, -256, -32642, 32383, 2046, -7936);do Graphics.storetitleScreen(40, 135, 16320, -256, 3840, 16320, -256, -32642, 32383, 2046, -7936);do Graphics.storetitleScreen(41, 135, 16320, -256, 3968, 16320, -256, -32514, -385, 2044, -7936);do Graphics.storetitleScreen(42, 135, 16320, -256, 4032, 16320, -256, -32258, -385, 2041, -7936);do Graphics.storetitleScreen(43, 135, 16320, -256, 4064, 16320, -256, -31746, -385, 2033, -7936);do Graphics.storetitleScreen(44, 135, 16320, -256, 4080, 16320, -256, -31746, -385, 2035, -7936);do Graphics.storetitleScreen(45, 135, 16320, -256, 4088, 16320, -256, -30722, -385, 999, -7936);do Graphics.storetitleScreen(46, 135, 16320, -256, 4092, 16320, -256, -28674, -385, 975, -7936);do Graphics.storetitleScreen(47, 135, 16320, -256, 4094, 16320, -256, -24578, -385, 495, -7936);do Graphics.storetitleScreen(48, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);do Graphics.storetitleScreen(49, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);do Graphics.storetitleScreen(50, 135, 0, 0, 0, 0, 0, 0, 0, 0, -7936);do Graphics.storetitleScreen(51, -121, -1, -1, -1, -1, -1, -1, -1, -1, -7681);do Graphics.storetitleScreen(52, 71, 0, 0, 0, 0, 0, 0, 0, 0, -7680);do Graphics.storetitleScreen(53, 39, 0, 0, 0, 0, 0, 0, 0, 0, -7168);do Graphics.storetitleScreen(54, 23, 0, 0, 0, 0, 0, 0, 0, 0, -6144);do Graphics.storetitleScreen(55, 15, 0, 0, 0, 0, 0, 0, 0, 0, -4096);do Graphics.storetitleScreen(56, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Graphics.storetitleScreen(57, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Graphics.storetitleScreen(58, -8705, -8739, -8739, -8739, -8739, -8739, -8739, -8739, -8739, -35);do Graphics.storetitleScreen(59, -21761, -21846, -21846, -21846, -21846, -21846, -21846, -21910, -21846, -86);do Graphics.storetitleScreen(60, 30719, 30583, 30583, 30583, 30583, 30583, 30583, 30327, 30583, -137);do Graphics.storetitleScreen(61, -21761, -21846, -21846, -21846, -21846, -21846, -21846, -21462, -21846, -86);do Graphics.storetitleScreen(62, -8705, -8739, -8739, -8739, -8739, -8739, -8739, -9155, -8739, -35);do Graphics.storetitleScreen(63, -21761, -21846, -21846, -21846, -21846, -21846, -21846, -21462, -21846, -86);do Graphics.storetitleScreen(64, 30719, 30583, 30591, 30583, 30591, 30583, 30591, 30327, 30591, -137);do Graphics.storetitleScreen(65, -21761, -21846, -21846, -21846, -21846, -21846, -21846, -21590, -21846, -86);do Graphics.storetitleScreen(66, 22015, 21845, 21845, 21845, 21845, 21845, 21845, 21973, 21845, -171);do Graphics.storetitleScreen(67, 2303, 2056, 2056, 2056, 2056, 2056, 2056, 2440, 2056, -248);do Graphics.storetitleScreen(68, 22015, 21845, 21845, 21845, 21845, 21845, 21845, 21973, 21845, -171);do Graphics.storetitleScreen(69, 8959, 8738, 8738, 8738, 8738, 8738, 8738, 9122, 8738, -222);do Graphics.storetitleScreen(70, 22015, 21845, 21845, 21845, 21845, 21845, 21845, 21973, 21845, -171);do Graphics.storetitleScreen(71, -32513, -32640, -32640, -32640, -32640, -32640, -32640, -32384, -32640, -128);do Graphics.storetitleScreen(72, 22015, 21845, 21845, 21845, 21845, 21845, 21845, 22101, 21845, -171);do Graphics.storetitleScreen(73, 8959, 8738, 8738, 8738, 8738, 8738, 8738, 8802, 8738, -222);do Graphics.storetitleScreen(74, 255, 0, 0, 0, 0, 0, 0, 960, 0, -256);do Graphics.storetitleScreen(75, 255, 0, 0, 0, 0, 0, 0, 1696, 0, -256);do Graphics.storetitleScreen(76, 255, 0, 0, 0, 0, 0, 0, 3600, 0, -256);do Graphics.storetitleScreen(77, 255, 0, 0, 0, 0, 0, 0, 6664, 0, -256);do Graphics.storetitleScreen(78, 255, 0, 0, 0, 0, 0, 0, 14660, 0, -256);do Graphics.storetitleScreen(79, 255, 0, 0, 0, 0, 0, 0, 25122, 0, -256);do Graphics.storetitleScreen(80, 255, 0, 0, 0, 0, 0, 0, -11503, 0, -256);do Graphics.storetitleScreen(81, 255, 0, 0, 0, 0, 0, (-32767 - 1), -23928, 1, -256);do Graphics.storetitleScreen(82, 255, 0, 0, 0, 0, 0, 16384, -32372, -32765, -255);do Graphics.storetitleScreen(83, 255, 0, 0, 0, 0, 0, 8192, 8322, 16390, -254);do Graphics.storetitleScreen(84, 255, 0, 0, 0, 0, 0, 4096, 24899, 16398, -254);do Graphics.storetitleScreen(85, 255, 0, 0, 0, 0, 0, -30720, -24446, 8216, -252);do Graphics.storetitleScreen(86, 255, 0, 0, 0, 0, 0, -15360, -15935, 8249, -252);do Graphics.storetitleScreen(87, 255, 0, 0, 0, 0, 0, -23552, -32608, 8226, -252);do Graphics.storetitleScreen(88, 255, 0, 0, 0, 0, 0, 29184, 16736, 16499, -254);do Graphics.storetitleScreen(89, 255, 0, 0, 0, 0, 8192, -24064, -32608, -32670, -255);do Graphics.storetitleScreen(90, 255, 0, 0, 0, 0, 8192, -9984, -32304, -32563, -255);do Graphics.storetitleScreen(91, 255, 0, 0, 0, 0, 8192, -22272, -32096, -32630, -255);do Graphics.storetitleScreen(92, 255, 0, 0, 0, 0, 8192, 28928, 880, -32569, -255);do Graphics.storetitleScreen(93, 255, 0, 0, 0, 0, 28672, -22272, 672, -32630, -255);do Graphics.storetitleScreen(94, 255, 0, 0, 0, 0, 28680, -9984, 1488, -32563, -255);do Graphics.storetitleScreen(95, 255, 0, 0, 0, 0, 28700, -22272, 672, -32598, -255);do Graphics.storetitleScreen(96, 255, 0, 0, 0, 0, 28734, 29200, 1889, 16487, -254);do Graphics.storetitleScreen(97, 255, 0, 0, 0, 8192, -1921, -24024, 2688, 16482, -254);do Graphics.storetitleScreen(98, 255, 0, 0, 0, 8192, -1921, -11248, -29247, -15823, -253);do Graphics.storetitleScreen(99, 255, 0, 0, 0, 8192, -1921, -23536, -30078, -22742, -250);do Graphics.storetitleScreen(100, 255, 0, 0, 0, 8192, -1986, 2104, 5895, 4629, -242);do Graphics.storetitleScreen(101, 255, 0, 0, 0, 28672, -2048, -3528, -1, 2767, -230);do Graphics.storetitleScreen(102, 255, 0, 0, 0, 28672, -450, 16185, 0, 18116, -199);do Graphics.storetitleScreen(103, 255, 0, 0, 0, 28672, -450, -129, -1, 9215, -158);do Graphics.storetitleScreen(104, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Graphics.storetitleScreen(105, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Graphics.storetitleScreen(106, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Graphics.storetitleScreen(107, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Graphics.storetitleScreen(108, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Graphics.storetitleScreen(109, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);do Graphics.storetitleScreen(110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(111, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(113, 1536, 15884, 15366, 32358, 62, 0, 15902, 15366, 32358, 62);do Graphics.storetitleScreen(114, 3584, 26126, 29190, 1638, 102, 0, 26169, 29190, 1638, 102);do Graphics.storetitleScreen(115, 7680, 26124, 29190, 15932, 102, 0, 26168, 29190, 15932, 102);do Graphics.storetitleScreen(116, 7680, 15884, 32262, 1560, 62, 0, 15902, 32262, 1560, 62);do Graphics.storetitleScreen(117, 3584, 1548, 29190, 1560, 22, 0, 1543, 29190, 1560, 22);do Graphics.storetitleScreen(118, 1536, 1566, 29310, 32280, 102, 0, 1599, 29310, 32280, 102);do Graphics.storetitleScreen(119, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(120, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(121, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(122, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(123, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(124, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(125, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(126, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(127, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(128, 0, 0, 0, 0, 0, 867, 0, 384, 0, 0);do Graphics.storetitleScreen(129, 0, 0, 28, 0, 0, 871, 12, 384, 0, 0);do Graphics.storetitleScreen(130, 0, 0, 6178, 15420, 60, 103, 30, 384, 0, 0);do Graphics.storetitleScreen(131, 0, 0, 7261, 29298, 114, -9365, -19508, 31217, 0, 0);do Graphics.storetitleScreen(132, 0, 0, 6213, 15474, 114, -17557, 30317, -12901, 0, 0);do Graphics.storetitleScreen(133, 0, 0, 6237, 29308, 124, -25741, 14317, -12901, 0, 0);do Graphics.storetitleScreen(134, 0, 0, 6178, 29296, 112, -25741, 12397, -12901, 0, 0);do Graphics.storetitleScreen(135, 0, 0, 15388, 15420, 60, -25757, 14285, 31219, 0, 0);do Graphics.storetitleScreen(136, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(137, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(138, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(139, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(140, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(141, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(142, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);do Graphics.storetitleScreen(143, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        return;
+    }
+
+    /**
+     * Initializes the "brick1" bitmap.
+     * GENERATED CODE
+     */
+    function void initbrick1Bmp() {
+        let brick1BmpCols = 1;
+        let brick1BmpRows = 8;
+        let brick1Bmp = Array.new(8);
+        do Graphics.loadbrick1();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storebrick1(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let brick1Bmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadbrick1(){
+        do Graphics.storebrick1(0, 255);do Graphics.storebrick1(1, 129);do Graphics.storebrick1(2, 189);do Graphics.storebrick1(3, 165);do Graphics.storebrick1(4, 165);do Graphics.storebrick1(5, 189);do Graphics.storebrick1(6, 129);do Graphics.storebrick1(7, 255);
+        return;
+    }
+
+    /**
+     * Initializes the "bricks1" bitmap.
+     * GENERATED CODE
+     */
+    function void initbricks1Bmp() {
+        let bricks1BmpCols = 1;
+        let bricks1BmpRows = 8;
+        let bricks1Bmp = Array.new(8);
+        do Graphics.loadbricks1();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storebricks1(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let bricks1Bmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadbricks1(){
+        do Graphics.storebricks1(0, 34);do Graphics.storebricks1(1, 34);do Graphics.storebricks1(2, 255);do Graphics.storebricks1(3, 136);do Graphics.storebricks1(4, 136);do Graphics.storebricks1(5, 255);do Graphics.storebricks1(6, 34);do Graphics.storebricks1(7, 34);
+        return;
+    }
+
+    /**
+     * Initializes the "bricks2" bitmap.
+     * GENERATED CODE
+     */
+    function void initbricks2Bmp() {
+        let bricks2BmpCols = 1;
+        let bricks2BmpRows = 8;
+        let bricks2Bmp = Array.new(8);
+        do Graphics.loadbricks2();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storebricks2(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let bricks2Bmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadbricks2(){
+        do Graphics.storebricks2(0, 255);do Graphics.storebricks2(1, 136);do Graphics.storebricks2(2, 136);do Graphics.storebricks2(3, 255);do Graphics.storebricks2(4, 34);do Graphics.storebricks2(5, 34);do Graphics.storebricks2(6, 255);do Graphics.storebricks2(7, 136);
+        return;
+    }
+
+    /**
+     * Initializes the "bricks3" bitmap.
+     * GENERATED CODE
+     */
+    function void initbricks3Bmp() {
+        let bricks3BmpCols = 1;
+        let bricks3BmpRows = 8;
+        let bricks3Bmp = Array.new(8);
+        do Graphics.loadbricks3();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storebricks3(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let bricks3Bmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadbricks3(){
+        do Graphics.storebricks3(0, 136);do Graphics.storebricks3(1, 255);do Graphics.storebricks3(2, 34);do Graphics.storebricks3(3, 34);do Graphics.storebricks3(4, 255);do Graphics.storebricks3(5, 136);do Graphics.storebricks3(6, 136);do Graphics.storebricks3(7, 255);
+        return;
+    }
+
+    /**
+     * Initializes the "emptybrick" bitmap.
+     * GENERATED CODE
+     */
+    function void initemptybrickBmp() {
+        let emptybrickBmpCols = 1;
+        let emptybrickBmpRows = 8;
+        let emptybrickBmp = Array.new(8);
+        do Graphics.loademptybrick();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storeemptybrick(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let emptybrickBmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loademptybrick(){
+        do Graphics.storeemptybrick(0, 0);do Graphics.storeemptybrick(1, 0);do Graphics.storeemptybrick(2, 0);do Graphics.storeemptybrick(3, 0);do Graphics.storeemptybrick(4, 0);do Graphics.storeemptybrick(5, 0);do Graphics.storeemptybrick(6, 0);do Graphics.storeemptybrick(7, 0);
+        return;
+    }
+
+    /**
+     * Initializes the "sbrick" bitmap.
+     * GENERATED CODE
+     */
+    function void initsbrickBmp() {
+        let sbrickBmpCols = 1;
+        let sbrickBmpRows = 8;
+        let sbrickBmp = Array.new(8);
+        do Graphics.loadsbrick();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storesbrick(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let sbrickBmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadsbrick(){
+        do Graphics.storesbrick(0, 255);do Graphics.storesbrick(1, 255);do Graphics.storesbrick(2, 195);do Graphics.storesbrick(3, 219);do Graphics.storesbrick(4, 219);do Graphics.storesbrick(5, 195);do Graphics.storesbrick(6, 255);do Graphics.storesbrick(7, 255);
+        return;
+    }
+
+    /**
+     * Initializes the "lbrick" bitmap.
+     * GENERATED CODE
+     */
+    function void initlbrickBmp() {
+        let lbrickBmpCols = 1;
+        let lbrickBmpRows = 8;
+        let lbrickBmp = Array.new(8);
+        do Graphics.loadlbrick();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storelbrick(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let lbrickBmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadlbrick(){
+        do Graphics.storelbrick(0, 255);do Graphics.storelbrick(1, 129);do Graphics.storelbrick(2, 129);do Graphics.storelbrick(3, 129);do Graphics.storelbrick(4, 129);do Graphics.storelbrick(5, 129);do Graphics.storelbrick(6, 129);do Graphics.storelbrick(7, 255);
+        return;
+    }
+
+    /**
+     * Initializes the "jbrick" bitmap.
+     * GENERATED CODE
+     */
+    function void initjbrickBmp() {
+        let jbrickBmpCols = 1;
+        let jbrickBmpRows = 8;
+        let jbrickBmp = Array.new(8);
+        do Graphics.loadjbrick();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storejbrick(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let jbrickBmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadjbrick(){
+        do Graphics.storejbrick(0, 255);do Graphics.storejbrick(1, 129);do Graphics.storejbrick(2, 189);do Graphics.storejbrick(3, 165);do Graphics.storejbrick(4, 165);do Graphics.storejbrick(5, 189);do Graphics.storejbrick(6, 129);do Graphics.storejbrick(7, 255);
+        return;
+    }
+
+    /**
+     * Initializes the "zbrick" bitmap.
+     * GENERATED CODE
+     */
+    function void initzbrickBmp() {
+        let zbrickBmpCols = 1;
+        let zbrickBmpRows = 8;
+        let zbrickBmp = Array.new(8);
+        do Graphics.loadzbrick();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storezbrick(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let zbrickBmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadzbrick(){
+        do Graphics.storezbrick(0, 255);do Graphics.storezbrick(1, 129);do Graphics.storezbrick(2, 129);do Graphics.storezbrick(3, 153);do Graphics.storezbrick(4, 153);do Graphics.storezbrick(5, 129);do Graphics.storezbrick(6, 129);do Graphics.storezbrick(7, 255);
+        return;
+    }
+
+    /**
+     * Initializes the "ibrick" bitmap.
+     * GENERATED CODE
+     */
+    function void initibrickBmp() {
+        let ibrickBmpCols = 1;
+        let ibrickBmpRows = 8;
+        let ibrickBmp = Array.new(8);
+        do Graphics.loadibrick();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storeibrick(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let ibrickBmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadibrick(){
+        do Graphics.storeibrick(0, 255);do Graphics.storeibrick(1, 145);do Graphics.storeibrick(2, 197);do Graphics.storeibrick(3, 129);do Graphics.storeibrick(4, 147);do Graphics.storeibrick(5, 193);do Graphics.storeibrick(6, 149);do Graphics.storeibrick(7, 255);
+        return;
+    }
+
+    /**
+     * Initializes the "obrick" bitmap.
+     * GENERATED CODE
+     */
+    function void initobrickBmp() {
+        let obrickBmpCols = 1;
+        let obrickBmpRows = 8;
+        let obrickBmp = Array.new(8);
+        do Graphics.loadobrick();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storeobrick(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let obrickBmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadobrick(){
+        do Graphics.storeobrick(0, 255);do Graphics.storeobrick(1, 129);do Graphics.storeobrick(2, 189);do Graphics.storeobrick(3, 189);do Graphics.storeobrick(4, 189);do Graphics.storeobrick(5, 189);do Graphics.storeobrick(6, 129);do Graphics.storeobrick(7, 255);
+        return;
+    }
+
+    /**
+     * Initializes the "tbrick" bitmap.
+     * GENERATED CODE
+     */
+    function void inittbrickBmp() {
+        let tbrickBmpCols = 1;
+        let tbrickBmpRows = 8;
+        let tbrickBmp = Array.new(8);
+        do Graphics.loadtbrick();
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void storetbrick(int index, int a){
+        var Array arr;
+        let arr = Array.new(1);
+        let tbrickBmp[index] = arr;
+        let arr[0] = a;
+        return;
+    }
+
+    /**
+     * GENERATED CODE
+     */
+    function void loadtbrick(){
+        do Graphics.storetbrick(0, 255);do Graphics.storetbrick(1, 129);do Graphics.storetbrick(2, 129);do Graphics.storetbrick(3, 161);do Graphics.storetbrick(4, 161);do Graphics.storetbrick(5, 189);do Graphics.storetbrick(6, 129);do Graphics.storetbrick(7, 255);
+        return;
+    }
+}

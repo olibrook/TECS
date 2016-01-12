@@ -1,0 +1,496 @@
+class Game {
+
+    // Board is [rows][cols]
+    static Array board;
+    static int boardCols;
+    static int boardRows;
+
+    static int level;
+    static int linesComplete;
+
+    static int countdown;
+    static int previousKey;
+
+    static Cursor validationCursor;
+    static Cursor previousCursor;
+    static Cursor nextCursor;
+    static Cursor cursor;
+
+    static int boardOffsetX;
+    static int boardOffsetY;
+
+    static int cursorChange;
+    static int boardChange;
+
+    static int gameOver;
+    static int running;
+    static int titleScreen;
+    static int gameState;
+
+    static int maxLevel;
+
+    function void init() {
+
+        do Graphics.init();
+        do Cursor.init();
+
+        let validationCursor = Cursor.new(0, 0, 0, 0);
+        let previousCursor = Cursor.new(0, 0, 0, 0) ;
+        let nextCursor = Cursor.new(0, 0, 0, 0) ;
+        let cursor = Cursor.new(0, 0, 0, 0);
+
+        let boardRows = 18;
+        let boardCols = 10;
+        let board = Game.createBoard(boardRows, boardCols);
+
+        let boardOffsetX = 2;
+        let boardOffsetY = 0;
+
+        // Bit-masks
+        let cursorChange = 1;
+        let boardChange = 2;
+
+        let titleScreen = 1;
+        let running = 2;
+        let gameOver = 3;
+        let gameState = titleScreen;
+
+        let maxLevel = 9;
+
+        do Graphics.drawGBFrame();
+        do Game.enterGameLoop();
+        return;
+    }
+
+    function void updateCountdown(){
+        if(countdown = 0){
+            let countdown = ((maxLevel + 2) - level) * 400;
+        } else {
+            let countdown = countdown -1;
+        }
+        return;
+    }
+
+    function void enterGameLoop(){
+        var int changedFeatures;
+        var int key;
+        var bool firstRender;
+
+
+        while(true){
+            if(gameState = titleScreen){
+                do Graphics.clearGBScreen();
+                do Graphics.drawTitleScreen();
+
+                while(~(Keyboard.keyPressed() = 128)){
+                    do Game.updateCountdown();
+                    do Random.setSeed(countdown);
+                }
+                while(Keyboard.keyPressed() = 128){}
+
+                let gameState = running;
+            }
+
+            if(gameState = running){
+                let linesComplete = 0;
+                let level = 0;
+
+                let cursor = Game.randomizeCursor(cursor);
+                let nextCursor = Game.randomizeCursor(nextCursor);
+
+                // TODO: This happens in two places!
+                do cursor.setX(4);
+                do cursor.setY(0);
+
+                do Game.clearBoard(board, boardRows, boardCols);
+
+                let previousKey = 0;
+                let firstRender = true;
+
+                while(gameState = running){
+                    do Game.updateCountdown();
+                    let changedFeatures = Game.update();
+
+                    if(firstRender | ((changedFeatures & boardChange) > 0)){
+                        // Full re-render
+                        do Graphics.clearGBScreen();
+                        do Graphics.drawGameScreen();
+                        do Game.renderBoard();
+                        do Game.renderShape(cursor, true);
+                        do Game.renderNextShape(nextCursor);
+                        do Game.renderScores();
+
+                    } else {
+                        if((changedFeatures & cursorChange) > 0){
+                            do Game.renderShape(previousCursor, false);
+                            do Game.renderShape(cursor, true);
+                        }
+                    }
+                    let firstRender = false;
+                }
+            }
+
+            if(gameState = gameOver){
+                let gameState = titleScreen;
+            }
+        }
+        return;
+    }
+
+    function Cursor randomizeCursor(Cursor aCursor){
+        do aCursor.setRotation(Random.randRange(3));
+        do aCursor.setTetronimo(Random.randRange(6));
+        return aCursor;
+    }
+
+    function bool update(){
+        var int key, dx, dy, dr, newRotation, possibleRotations;
+        var int changedFeatures;
+        var Cursor temp;
+
+        let key = Keyboard.keyPressed();
+        if(~(key = previousKey)){
+            let previousKey = key;
+
+            let dx = 0;
+            let dr = 0;
+
+            if(key = 130){
+                let dx = -1;
+            }
+
+            if(key = 132){
+                let dx = 1;
+            }
+
+            if(key = 131){ // Up
+                let dr = 1;
+            }
+        }
+
+        if(countdown = 0){
+            let dy = 1;
+        } else {
+            let dy = 0;
+        }
+
+        let changedFeatures = 0;
+        do Game.copyCursorProps(previousCursor, cursor);
+
+        if(~(dx=0) | ~(dr=0)){
+            if(Game.isValidPosition(cursor, dx, 0, dr)){
+                let changedFeatures = changedFeatures | cursorChange;
+                do cursor.setX(cursor.getX() + dx);
+                do cursor.rotate(dr);
+            }
+        }
+
+        // Handle vertical movement last and alone - triggers new blocks
+        if(~(dy=0)){
+            if(Game.isValidPosition(cursor, 0, dy, 0)){
+                let changedFeatures =  changedFeatures | cursorChange;
+                do cursor.setY(cursor.getY() + dy);
+
+            } else {
+
+                let changedFeatures = changedFeatures | boardChange;
+
+                do Game.writeToBoard(cursor, board);
+                do Game.removeCompleteLines();
+
+                let temp = cursor;
+                let cursor = nextCursor;
+                let nextCursor = Game.randomizeCursor(temp);
+                let temp = null;
+
+                // Position the cursor at the top of the screen
+                do cursor.setX(3);
+                do cursor.setY(0);
+
+                if(~Game.isValidPosition(cursor, 0, 0, 0)){
+                    let gameState = gameOver;
+                }
+            }
+        }
+        return changedFeatures;
+    }
+
+    function void renderBoard(){
+        var int boardY, boardX, row;
+        var Array tileBMP;
+
+        let boardY = 0;
+        while(boardY<boardRows){
+            let boardX = 0;
+            let row = board[boardY];
+            while(boardX<boardCols){
+                if(~(row[boardX] = 0)){
+                    let tileBMP = Graphics.getTetronimoTile(row[boardX]);
+                    do Graphics.drawGBTile(tileBMP, boardOffsetX + boardX, boardOffsetY + boardY);
+                }
+                let boardX = boardX+1;
+            }
+            let boardY = boardY+1;
+        }
+        return;
+    }
+
+    /**
+     * Renders a cursor. When positive the cursor is drawn, else
+     * the cursor is cleared.
+     */
+    function void renderShape(Cursor aCursor, bool positive){
+        var int boardX, tileX, cX,
+                boardY, tileY, cY,
+                tile;
+        var Array cTiles, tileBMP;
+
+        let cX = aCursor.getX();
+        let cY = aCursor.getY();
+        let cTiles = aCursor.getTiles();
+
+        let tileY = 0;
+        let boardY = cY + tileY;
+
+        while(tileY<4){
+            let tileX = 0;
+            let boardX = cX + tileX;
+            while(tileX<4){
+                let tile = Matrix.get(cTiles, tileY, tileX);
+                if(~(tile = 0)){
+                    if(positive){
+                        let tileBMP = Graphics.getTetronimoTile(tile);
+                    } else {
+                        let tileBMP = Graphics.getTetronimoTile(0);
+                    }
+                    do Graphics.drawGBTile(tileBMP, boardOffsetX + boardX, boardOffsetY + boardY);
+                }
+                let tileX = tileX+1;
+                let boardX = cX + tileX;
+            }
+            let tileY = tileY+1;
+            let boardY = cY + tileY;
+        }
+        return;
+    }
+
+    function void renderNextShape(Cursor aCursor){
+        var int screenX, tileX, cX,
+                screenY, tileY, cY,
+                tile, tileBMP;
+        var Array cTiles;
+
+        let cX = 15;
+        let cY = 13;
+
+        let cTiles = aCursor.getTiles();
+
+        let tileY = 0;
+        let screenY = cY + tileY;
+
+        while(tileY<4){
+            let tileX = 0;
+            let screenX = cX + tileX;
+            while(tileX<4){
+                let tile = Matrix.get(cTiles, tileY, tileX);
+                let tileBMP = Graphics.getTetronimoTile(tile);
+                do Graphics.drawGBTile(tileBMP, screenX, screenY);
+                let tileX = tileX+1;
+                let screenX = cX + tileX;
+            }
+            let tileY = tileY+1;
+            let screenY = cY + tileY;
+        }
+        return;
+    }
+
+    function void renderScores(){
+        do Output.moveCursor(09, 36);
+        do Output.printString("Level");
+        do Output.moveCursor(10, 36);
+        do Output.printInt(level);
+        do Output.moveCursor(11, 36);
+        do Output.printString("Lines");
+        do Output.moveCursor(12, 36);
+        do Output.printInt(linesComplete);
+        return;
+    }
+
+    function Array createBoard(int rows, int columns){
+        var Array board, row;
+        var int i, j;
+
+        let board = Array.new(rows);
+        let i = 0;
+
+        while(i<rows){
+            let row = Array.new(columns);
+            let board[i] = row;
+            let j = 0;
+            while(j<columns){
+                let row[j] = 0;
+                let j = j+1;
+            }
+            let i = i+1;
+        }
+        return board;
+    }
+
+    function void clearBoard(Array aBoard, int rows, int columns){
+        var Array row;
+        var int i, j;
+
+        let i = 0;
+        while(i<rows){
+            let row = board[i];
+            let j = 0;
+            while(j<columns){
+                let row[j] = 0;
+                let j = j+1;
+            }
+            let i = i+1;
+        }
+        return;
+    }
+
+    function bool rowComplete(Array row){
+        var int i, filledCount;
+
+        let i = 0;
+        let filledCount = 0;
+
+        while(i<boardCols){
+            if(row[i] > 0){
+                let filledCount = filledCount + 1;
+            }
+            let i = i + 1;
+        }
+        return (filledCount = boardCols);
+    }
+
+    function void removeCompleteLines(){
+        var int i, j, k;
+        var Array newRow, oldRow;
+
+        let i = boardRows - 1;
+
+        while(i>-1){
+
+            while(Game.rowComplete(board[i])){
+                let linesComplete = linesComplete + 1;
+                let level = Math.min(linesComplete / 10, maxLevel);
+
+                let oldRow = board[i];
+                do oldRow.dispose();
+                let board[i] = null;
+
+                let j = i;
+                while(j>-1){
+                    if(j>0){
+                        let board[j] = board[j-1];
+                        let board[j-1] = null;
+
+                    } else {
+                        let newRow = Array.new(boardRows);
+                        let k = 0;
+                        while(k<boardRows){
+                            let newRow[k] = 0;
+                            let k = k+1;
+                        }
+                        let board[j] = newRow;
+                    }
+                    let j = j - 1;
+                }
+            }
+            let i = i - 1;
+        }
+        return;
+    }
+
+    function void copyCursorProps(Cursor target, Cursor source){
+        do target.setTetronimo(source.getTetronimo());
+        do target.setX(source.getX());
+        do target.setY(source.getY());
+        do target.setRotation(source.getRotation());
+        return;
+    }
+
+    /**
+     * Is the cursor position valid, optionally with an offset to
+     * decide for candidate moves.
+     *
+     * A position is invalid if the tentronimo overlaps existing pieces
+     * or is off the board.
+     */
+    function bool isValidPosition(Cursor aCursor, int dX, int dY, int dr){
+        var int boardX, boardY, tileX, tileY, boardBaseX, boardBaseY, boardVal, tileVal;
+        var Array cTiles;
+
+        do Game.copyCursorProps(validationCursor, aCursor);
+
+        // Make the dx/dy/dr adjustments
+        do validationCursor.setX(validationCursor.getX() + dX);
+        do validationCursor.setY(validationCursor.getY() + dY);
+        do validationCursor.rotate(dr);
+
+        // Do the rest with the 'hidden' cursor
+        let boardBaseX = validationCursor.getX();
+        let boardBaseY = validationCursor.getY();
+        let cTiles = validationCursor.getTiles();
+
+        let tileY = 0;
+        while(tileY < 4){
+            let tileX = 0;
+            while(tileX < 4){
+                let boardX = boardBaseX + tileX;
+                let boardY = boardBaseY + tileY;
+
+                let tileVal = Matrix.get(cTiles, tileY, tileX);
+                if((boardX>-1) & (boardX<boardCols) & (boardY>-1) & (boardY<boardRows)){
+                    let boardVal = Matrix.get(board, boardY, boardX);
+                } else {
+                    let boardVal = -1;
+                }
+
+                if((tileVal > 0) & (boardVal > 0)){
+                    return false; // Overlapping cells
+                }
+
+                if((tileVal > 0) & (boardVal = -1)) {
+                    return false; // Cells off-the board
+                }
+                let tileX = tileX + 1;
+            }
+            let tileY = tileY + 1;
+        }
+        return true;
+    }
+
+    function void writeToBoard(Cursor aCursor, Array aBoard){
+        var int boardX, boardY, tileX, tileY, boardBaseX, boardBaseY, boardVal, tileVal;
+        var Array cTiles;
+
+        let boardBaseX = aCursor.getX();
+        let boardBaseY = aCursor.getY();
+        let cTiles = aCursor.getTiles();
+
+        let tileY = 0;
+        while(tileY < 4){
+            let tileX = 0;
+            while(tileX < 4){
+                let boardX = boardBaseX + tileX;
+                let boardY = boardBaseY + tileY;
+
+                if((boardX>-1) & (boardX<boardCols) & (boardY>-1) & (boardY<boardRows)){
+                    let tileVal = Matrix.get(cTiles, tileY, tileX);
+                    if(tileVal > 0){  // Don't copy empty!
+                        do Matrix.set(aBoard, boardY, boardX, tileVal);
+                    }
+                }
+                let tileX = tileX + 1;
+            }
+            let tileY = tileY + 1;
+        }
+        return;
+    }
+}
